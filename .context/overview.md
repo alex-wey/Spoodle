@@ -1,8 +1,8 @@
-# Spoodle: Pet Health and Records Platform
+# Spoodle: Pet Healthcare Management Platform
 
 ## Overview
 
-Spoodle is an integrated platform that centralizes pet healthcare management for pet owners and veterinary practices. The app allows pet owners to store and share medical records, receive personalized AI-generated care plans, manage daily health tasks, and book veterinary appointments in one place.
+Spoodle is an integrated platform that centralizes pet healthcare management for pet owners and veterinary practices. The platform allows pet owners to store and share medical records, receive personalized AI-generated care plans, manage daily health tasks, and book veterinary appointments in one place.
 
 On the pet owner side, users can manage detailed pet profiles, upload vaccination and medical documents, schedule and track tasks such as medication and exercise, and book clinic visits. Owners receive reminders for tasks and upcoming appointments and can securely share and receive records with clinics.
 
@@ -48,24 +48,9 @@ Spoodle is designed to be secure, mobile first, and easy to use. It supports bot
 - Add post-visit notes and mark tasks for follow-up
 - Monitor appointment volume and rebook rates
 
-### Third Party Partners (3PP)
-
-**As a shelter or pet store manager, I want to:**
-- Verify vaccine and medical records quickly before adoptions or services
-- Upload documents for new adopters
-- Perform instant compliance checks
-- Print certificates
-- Share my unique referral code to earn revenue
-
-**As an airport or boarding facility staff member, I want to:**
-- Look up pet compliance status instantly before boarding
-- Flag non-compliant pets
-- Notify owners on the spot
-- Generate or print health clearance certificates seamlessly
-
 ## Functional Requirements
 
-### Pet Owner/3PP Side (Mobile App)
+### Pet Owner (Mobile App)
 
 - Create and manage pet profiles, including name, breed, birthday, gender, and photos
 - Upload and store medical records such as vaccinations, blood work, and diagnostic reports
