@@ -19,6 +19,7 @@ Also, always refer to these context files so that you are still aligned with the
 
 * Break down each assigned task into clear, manageable steps.
 * Share the full list of steps before beginning implementation.
+* I want any new file or task being completed to be step-by-step and reviewed before continuing.
 * Get explicit confirmation from me **before moving to any next step**.
 
 ### **Code Quality and Style**
