@@ -12,7 +12,7 @@ Full TypeScript/React/Node.js stack with AWS Lambda serverless backend and Dynam
 - **Navigation:** Expo Router or React Navigation
 
 ### Clinic Web App
-- **Framework:** Next.js (React Native + TS), Vite for build tooling
+- **Framework:** Next.js (React + TS)
 - **State Management:** Zustand or Redux Toolkit
 - **UI Library:** Tailwind CSS + Headless UI
 - **Routing:** React Router
@@ -24,6 +24,7 @@ Full TypeScript/React/Node.js stack with AWS Lambda serverless backend and Dynam
 - **Runtime:** AWS Lambda with Node.js 22.x
 - **API Gateway:** AWS API Gateway for REST endpoints
 - **Framework:** AWS SAM or Serverless Framework for deployment
+- **Abstractions** Abstract shared business logic to packages/common and keep platform-specific logic isolated
 
 ### Database & Storage
 - **Primary DB:** Amazon DynamoDB (NoSQL)
