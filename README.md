@@ -12,8 +12,11 @@ Spoodle is an integrated platform that centralizes pet healthcare management for
 
 - **Mobile App (Pet Owner)** - Expo/React Native with TypeScript
 - **Web App (Clinic)** - Next.js 15 with TypeScript and Tailwind CSS
+- **API Server** - Express.js with TypeScript and CORS configured
+- **Shared Types** - TypeScript definitions for all data models
+- **Local Database** - JSON-based storage system for development
 - **Monorepo Setup** - Turborepo with shared configurations
-- **Development Environment** - Local development servers ready
+- **Development Environment** - All services ready for local development
 
 ## 🏃‍♂️ Quick Start
 
@@ -38,6 +41,14 @@ npm run dev
 ```
 - View at: `http://localhost:3000`
 
+**API Server**
+```bash
+cd packages/api
+npm run dev
+```
+- API at: `http://localhost:3001`
+- Health check: `http://localhost:3001/health`
+
 ## 🛠 Tech Stack
 
 ### Mobile App (Pet Owner)
@@ -52,7 +63,10 @@ npm run dev
 - **UI Components:** Headless UI, Heroicons
 - **State Management:** Zustand
 
-### Shared
+### Backend & Shared
+- **API Server:** Express.js with TypeScript
+- **Database:** JSON-based local storage (development)
+- **Shared Types:** Comprehensive TypeScript definitions
 - **Monorepo:** Turborepo
 - **Package Manager:** npm/pnpm workspaces
 - **TypeScript:** Strict mode with path mappings
@@ -94,11 +108,12 @@ spoodle/
 
 ## 🔄 Next Steps
 
-- [ ] Set up local database and API server
-- [ ] Implement authentication systems
+- [x] Set up local database and API server
+- [ ] Implement authentication systems  
 - [ ] Build core pet profile management
 - [ ] Create appointment booking system
 - [ ] Add medical records functionality
+- [ ] Connect frontend apps to API endpoints
 
 ## 🧑‍💻 Development
 
