@@ -1,0 +1,304 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User authentication and management
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String?
+  image         String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Organization relationship
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  
+  // Role and permissions
+  role          UserRole  @default(STAFF)
+  isActive      Boolean   @default(true)
+  
+  // Staff management
+  invitedBy     String?
+  invitedAt     DateTime?
+  acceptedAt    DateTime?
+  
+  // Audit
+  lastLoginAt   DateTime?
+  
+  @@map("users")
+}
+
+// Organization management
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  type        OrganizationType
+  description String?
+  
+  // Contact information
+  email       String
+  phone       String?
+  website     String?
+  
+  // Location
+  address     String?
+  city        String?
+  state       String?
+  country     String?
+  zipCode     String?
+  
+  // Business details
+  businessLicense String?
+  taxId       String?
+  
+  // Verification status
+  status      VerificationStatus @default(PENDING)
+  verifiedAt  DateTime?
+  verifiedBy  String?
+  
+  // Referral program
+  referralCode String @unique @default(cuid())
+  isActive    Boolean @default(true)
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relationships
+  users       User[]
+  pets        Pet[]
+  complianceChecks ComplianceCheck[]
+  ownerRequests OwnerRequest[]
+  
+  @@map("organizations")
+}
+
+// Pet records
+model Pet {
+  id          String   @id @default(cuid())
+  name        String
+  type        PetType
+  breed       String?
+  age         Int?
+  weight      Float?
+  color       String?
+  microchip   String?  @unique
+  photo       String?
+  
+  // Owner information
+  ownerName   String
+  ownerEmail  String?
+  ownerPhone  String?
+  
+  // Medical information
+  vaccinations Vaccination[]
+  medicalRecords MedicalRecord[]
+  
+  // Organization access
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relationships
+  complianceChecks ComplianceCheck[]
+  documents   Document[]
+  
+  @@map("pets")
+}
+
+// Vaccination records
+model Vaccination {
+  id          String   @id @default(cuid())
+  petId       String
+  pet         Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  
+  name        String
+  date        DateTime
+  expirationDate DateTime
+  administeredBy String?
+  lotNumber   String?
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("vaccinations")
+}
+
+// Medical records
+model MedicalRecord {
+  id          String   @id @default(cuid())
+  petId       String
+  pet         Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  
+  title       String
+  description String
+  date        DateTime
+  veterinarian String?
+  clinic      String?
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("medical_records")
+}
+
+// Compliance check-ins
+model ComplianceCheck {
+  id          String   @id @default(cuid())
+  petId       String
+  pet         Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
+  // Check details
+  checkType   ComplianceCheckType
+  status      ComplianceStatus
+  notes       String?
+  
+  // Compliance items
+  vaccinationsUpToDate Boolean
+  medicalClearance    Boolean?
+  behavioralAssessment Boolean?
+  
+  // Certificate
+  certificateUrl String?
+  certificateGeneratedAt DateTime?
+  
+  // Timestamps
+  checkedAt   DateTime @default(now())
+  checkedBy   String
+  
+  @@map("compliance_checks")
+}
+
+// Document management
+model Document {
+  id          String   @id @default(cuid())
+  petId       String
+  pet         Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  
+  title       String
+  description String?
+  fileUrl     String
+  fileType    String
+  fileSize    Int
+  
+  // Organization context
+  uploadedBy  String
+  uploadedAt  DateTime @default(now())
+  
+  // Tags for categorization
+  tags        String[]
+  
+  @@map("documents")
+}
+
+// Owner requests
+model OwnerRequest {
+  id          String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
+  // Request details
+  type        RequestType
+  status      RequestStatus @default(PENDING)
+  title       String
+  description String?
+  
+  // Owner information
+  ownerName   String
+  ownerEmail  String
+  ownerPhone  String?
+  
+  // Pet information (if applicable)
+  petName     String?
+  petType     PetType?
+  
+  // Response
+  response    String?
+  respondedAt DateTime?
+  respondedBy String?
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("owner_requests")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  STAFF
+  VIEW_ONLY
+}
+
+enum OrganizationType {
+  SHELTER
+  PET_STORE
+  VETERINARY_CLINIC
+  GROOMER
+  TRAINER
+  AIRPORT
+  HOTEL
+  OTHER
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  SUSPENDED
+}
+
+enum PetType {
+  DOG
+  CAT
+  BIRD
+  FISH
+  REPTILE
+  SMALL_ANIMAL
+  OTHER
+}
+
+enum ComplianceCheckType {
+  CHECK_IN
+  COMPLIANCE_VERIFICATION
+  MEDICAL_ASSESSMENT
+  BEHAVIORAL_ASSESSMENT
+}
+
+enum ComplianceStatus {
+  COMPLIANT
+  NON_COMPLIANT
+  PENDING_VERIFICATION
+  CONDITIONAL_APPROVAL
+}
+
+enum RequestType {
+  RECORD_ACCESS
+  COMPLIANCE_CHECK
+  DOCUMENT_UPLOAD
+  GENERAL_INQUIRY
+}
+
+enum RequestStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+}
