@@ -32,22 +32,22 @@ export default function Home() {
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white p-6 rounded-lg shadow border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-2">Today&apos;s Appointments</h3>
+            <h3 className="text-lg font-semibold text-black mb-2">Today&apos;s Appointments</h3>
             <p className="text-3xl font-bold text-primary">12</p>
             <p className="text-sm text-muted-foreground">3 pending confirmations</p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-2">New Records</h3>
+            <h3 className="text-lg font-semibold text-black mb-2">New Records</h3>
             <p className="text-3xl font-bold text-secondary">8</p>
             <p className="text-sm text-muted-foreground">Shared this week</p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-2">Active Patients</h3>
+            <h3 className="text-lg font-semibold text-black mb-2">Active Patients</h3>
             <p className="text-3xl font-bold text-primary">156</p>
             <p className="text-sm text-muted-foreground">This month</p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-2">Pending Tasks</h3>
+            <h3 className="text-lg font-semibold text-black mb-2">Pending Tasks</h3>
             <p className="text-3xl font-bold text-secondary">5</p>
             <p className="text-sm text-muted-foreground">Require attention</p>
           </div>
@@ -56,7 +56,7 @@ export default function Home() {
         {/* Key Features */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-white p-6 rounded-lg shadow border border-border">
-            <h3 className="text-xl font-semibold text-foreground mb-4">Key Features</h3>
+            <h3 className="text-xl font-semibold text-black mb-4">Key Features</h3>
             <ul className="space-y-3 text-muted-foreground">
               <li className="flex items-center">
                 <span className="w-2 h-2 bg-primary rounded-full mr-3"></span>
@@ -78,7 +78,7 @@ export default function Home() {
           </div>
           
           <div className="bg-white p-6 rounded-lg shadow border border-border">
-            <h3 className="text-xl font-semibold text-foreground mb-4">Quick Actions</h3>
+            <h3 className="text-xl font-semibold text-black mb-4">Quick Actions</h3>
             <div className="space-y-3">
               <button className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">
                 View Today&apos;s Schedule
@@ -86,7 +86,7 @@ export default function Home() {
               <button className="w-full bg-secondary text-secondary-foreground px-4 py-2 rounded-md hover:bg-secondary/90 transition-colors">
                 Search Patient Records
               </button>
-              <button className="w-full border border-border text-foreground px-4 py-2 rounded-md hover:bg-muted transition-colors">
+              <button className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
                 Generate Reports
               </button>
             </div>
