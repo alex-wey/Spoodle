@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Skeleton, SkeletonCard } from '@/components/ui/Skeleton';
 import { apiService, Pet, MedicalRecord, ComplianceCheck } from '@/lib/api';
 
 export default function PetProfilePage({ params }: { params: { id: string } }) {
@@ -50,16 +52,81 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
     loadPetData();
   }, [params.id]);
 
-  const getStatusColor = (status: Pet['complianceStatus']) => {
+  const addNote = () => {
+    if (!newNote.trim() || !pet) return;
+    
+    setPet(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        notes: [...prev.notes, newNote]
+      };
+    });
+    setNewNote('');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background py-8 animate-fade-in">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-8">
+            <Skeleton variant="text" width="300px" height="36px" className="mb-2" />
+            <Skeleton variant="text" width="400px" height="20px" />
+          </div>
+          <div className="space-y-6">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background py-8 animate-fade-in">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-8">
+            <div className="text-error text-6xl mb-4">⚠️</div>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Error Loading Pet</h1>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!pet) {
+    return (
+      <div className="min-h-screen bg-background py-8 animate-fade-in">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-8">
+            <div className="text-muted-foreground text-6xl mb-4">🐾</div>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Pet Not Found</h1>
+            <p className="text-muted-foreground mb-4">The pet you're looking for doesn't exist or has been removed.</p>
+            <Button onClick={() => window.location.href = '/search'}>
+              Search for Pets
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const getStatusVariant = (status: Pet['complianceStatus']) => {
     switch (status) {
       case 'compliant':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'compliant' as const;
       case 'missing-records':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'missing-records' as const;
       case 'action-needed':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'action-needed' as const;
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'default' as const;
     }
   };
 
@@ -106,133 +173,106 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
     }
   };
 
-  const getRecordStatusColor = (status: MedicalRecord['status']) => {
+  const getRecordStatusVariant = (status: MedicalRecord['status']) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'success' as const;
       case 'expired':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'error' as const;
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'warning' as const;
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'default' as const;
     }
   };
 
-  const addNote = () => {
-    if (!newNote.trim() || !pet) return;
-    
-    setPet(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        notes: [...prev.notes, newNote]
-      };
-    });
-    setNewNote('');
-  };
-
-  if (isLoading) {
-    return <div className="text-center py-8">Loading...</div>;
-  }
-
-  if (error) {
-    return <div className="text-center py-8 text-red-500">{error}</div>;
-  }
-
-  if (!pet) {
-    return <div className="text-center py-8">Pet not found.</div>;
-  }
-
   const renderOverview = () => (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Pet Info Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Pet Information</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Card variant="elevated">
+        <CardContent className="p-6">
+          <div className="flex items-center space-x-4 mb-6">
+            <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center text-4xl">
+              {pet.photo ? (
+                <img 
+                  src={pet.photo} 
+                  alt={pet.name}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              ) : (
+                getTypeIcon(pet.type)
+              )}
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">{pet.name}</h2>
+              <p className="text-muted-foreground">{getTypeIcon(pet.type)} {pet.breed}</p>
+              <p className="text-muted-foreground">{pet.age} years old</p>
+            </div>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center text-4xl">
-                  {pet.photo ? (
-                    <img 
-                      src={pet.photo} 
-                      alt={pet.name}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  ) : (
-                    getTypeIcon(pet.type)
-                  )}
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold">{pet.name}</h2>
-                  <p className="text-gray-600">{getTypeIcon(pet.type)} {pet.breed}</p>
-                  <p className="text-gray-600">{pet.age} years old</p>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <p><strong>Spoodle ID:</strong> {pet.spoodleId}</p>
-                {pet.microchipNumber && (
-                  <p><strong>Microchip:</strong> {pet.microchipNumber}</p>
-                )}
-                <p><strong>Spay/Neuter:</strong> {pet.spayNeuterStatus.replace(/\b\w/g, l => l.toUpperCase())}</p>
-                <p><strong>Last Check-in:</strong> {pet.lastCheckIn?.toLocaleDateString() || 'Never'}</p>
+            <div className="space-y-2">
+              <p><strong>Spoodle ID:</strong> {pet.spoodleId}</p>
+              {pet.microchipNumber && (
+                <p><strong>Microchip:</strong> {pet.microchipNumber}</p>
+              )}
+              <p><strong>Spay/Neuter:</strong> {pet.spayNeuterStatus.replace(/\b\w/g, l => l.toUpperCase())}</p>
+              <p><strong>Last Check-in:</strong> {pet.lastCheckIn?.toLocaleDateString() || 'Never'}</p>
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="font-medium mb-2">Owner Information</h3>
+              <div className="space-y-1">
+                <p><strong>Name:</strong> {pet.ownerName}</p>
+                <p><strong>Email:</strong> {pet.ownerEmail}</p>
+                <p><strong>Phone:</strong> {pet.ownerPhone}</p>
               </div>
             </div>
             
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-medium mb-2">Owner Information</h3>
-                <div className="space-y-1">
-                  <p><strong>Name:</strong> {pet.ownerName}</p>
-                  <p><strong>Email:</strong> {pet.ownerEmail}</p>
-                  <p><strong>Phone:</strong> {pet.ownerPhone}</p>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="font-medium mb-2">Compliance Status</h3>
-                <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(pet.complianceStatus)}`}>
-                  {getStatusText(pet.complianceStatus)}
-                </span>
-              </div>
-              
-              <div className="pt-4">
-                <Button 
-                  onClick={() => window.location.href = `/compliance/check/${pet.id}`}
-                  className="w-full"
-                >
-                  Start Compliance Check
-                </Button>
-              </div>
+            <div>
+              <h3 className="font-medium mb-2">Compliance Status</h3>
+              <Badge
+                variant={getStatusVariant(pet.complianceStatus)}
+                dot
+                size="lg"
+              >
+                {getStatusText(pet.complianceStatus)}
+              </Badge>
+            </div>
+            
+            <div className="pt-4">
+              <Button 
+                onClick={() => window.location.href = `/compliance/check/${pet.id}`}
+                className="w-full"
+                leftIcon={<span>🏥</span>}
+              >
+                Start Compliance Check
+              </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Quick Stats */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
+        <Card variant="elevated">
           <CardContent className="p-6 text-center">
             <div className="text-3xl font-bold text-primary mb-2">{medicalRecords.length}</div>
-            <p className="text-gray-600">Medical Records</p>
+            <p className="text-muted-foreground">Medical Records</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card variant="elevated">
           <CardContent className="p-6 text-center">
             <div className="text-3xl font-bold text-secondary mb-2">{complianceChecks.length}</div>
-            <p className="text-gray-600">Compliance Checks</p>
+            <p className="text-muted-foreground">Compliance Checks</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card variant="elevated">
           <CardContent className="p-6 text-center">
-            <div className="text-3xl font-bold text-green-600 mb-2">
+            <div className="text-3xl font-bold text-success mb-2">
               {medicalRecords.filter(r => r.status === 'active').length}
             </div>
-            <p className="text-gray-600">Active Records</p>
+            <p className="text-muted-foreground">Active Records</p>
           </CardContent>
         </Card>
       </div>
@@ -240,38 +280,43 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
   );
 
   const renderMedical = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Medical Records</h3>
-        <Button variant="outline" size="sm">
-          Upload New Record
+        <Button 
+          variant="outline"
+          leftIcon={<span>📄</span>}
+        >
+          Upload Record
         </Button>
       </div>
       
       <div className="space-y-4">
         {medicalRecords.map((record) => (
-          <Card key={record.id}>
+          <Card key={record.id} variant="outlined">
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-4">
+                <div className="flex items-start space-x-3">
                   <div className="text-2xl">{getRecordTypeIcon(record.type)}</div>
-                  <div className="flex-1">
+                  <div>
                     <h4 className="font-medium">{record.title}</h4>
-                    <p className="text-gray-600 text-sm mb-2">{record.description}</p>
-                    <div className="flex items-center space-x-4 text-sm text-gray-500">
-                      <span>Date: {record.date.toLocaleDateString()}</span>
+                    <p className="text-sm text-muted-foreground mb-2">{record.description}</p>
+                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                      <span>Date: {new Date(record.date).toLocaleDateString()}</span>
                       {record.expirationDate && (
-                        <span>Expires: {record.expirationDate.toLocaleDateString()}</span>
+                        <span>Expires: {new Date(record.expirationDate).toLocaleDateString()}</span>
                       )}
                       <span>Uploaded by: {record.uploadedBy}</span>
-                      <span>Uploaded: {record.uploadedAt.toLocaleDateString()}</span>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium border ${getRecordStatusColor(record.status)}`}>
+                  <Badge
+                    variant={getRecordStatusVariant(record.status)}
+                    dot
+                  >
                     {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
-                  </span>
+                  </Badge>
                   {record.documentUrl && (
                     <Button variant="outline" size="sm">
                       View
@@ -287,11 +332,12 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
   );
 
   const renderCompliance = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Compliance History</h3>
         <Button 
           onClick={() => window.location.href = `/compliance/check/${pet.id}`}
+          leftIcon={<span>🏥</span>}
         >
           New Compliance Check
         </Button>
@@ -299,49 +345,23 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
       
       <div className="space-y-4">
         {complianceChecks.map((check) => (
-          <Card key={check.id}>
+          <Card key={check.id} variant="outlined">
             <CardContent className="p-4">
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start justify-between">
                 <div>
-                  <h4 className="font-medium">Compliance Check #{check.id}</h4>
-                  <p className="text-sm text-gray-600">
-                    Performed by {check.performedBy} on {check.date.toLocaleDateString()}
+                  <h4 className="font-medium">Compliance Check</h4>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Date: {new Date(check.date).toLocaleDateString()} • Performed by: {check.performedBy}
                   </p>
+                  <p className="text-sm text-muted-foreground">{check.notes}</p>
                 </div>
-                <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${
-                  check.status === 'passed' ? 'bg-green-100 text-green-800 border-green-200' :
-                  check.status === 'failed' ? 'bg-red-100 text-red-800 border-red-200' :
-                  'bg-yellow-100 text-yellow-800 border-yellow-200'
-                }`}>
+                <Badge
+                  variant={check.status === 'passed' ? 'success' : check.status === 'failed' ? 'error' : 'warning'}
+                  dot
+                >
                   {check.status.charAt(0).toUpperCase() + check.status.slice(1)}
-                </span>
+                </Badge>
               </div>
-              
-              <div className="mb-4">
-                <h5 className="font-medium mb-2">Requirements Checked:</h5>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {check.requirements.map((req, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      <span className={`w-3 h-3 rounded-full ${
-                        req.status === 'met' ? 'bg-green-500' :
-                        req.status === 'not-met' ? 'bg-red-500' :
-                        'bg-yellow-500'
-                      }`}></span>
-                      <span className="text-sm">{req.name}</span>
-                      {req.notes && (
-                        <span className="text-xs text-gray-500">({req.notes})</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              {check.notes && (
-                <div>
-                  <h5 className="font-medium mb-2">Notes:</h5>
-                  <p className="text-sm text-gray-600">{check.notes}</p>
-                </div>
-              )}
             </CardContent>
           </Card>
         ))}
@@ -350,95 +370,80 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
   );
 
   const renderNotes = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Staff Notes</h3>
-        <Button variant="outline" size="sm">
-          Export Notes
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium">Notes</h3>
+        <Button 
+          onClick={addNote}
+          disabled={!newNote.trim()}
+          leftIcon={<span>➕</span>}
+        >
+          Add Note
         </Button>
       </div>
       
       <div className="space-y-4">
-        {pet.notes.map((note, index) => (
-          <Card key={index}>
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between">
-                <p className="text-gray-700">{note}</p>
-                <span className="text-xs text-gray-500">Note #{index + 1}</span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        <div className="flex space-x-3">
+          <input
+            type="text"
+            placeholder="Add a new note..."
+            value={newNote}
+            onChange={(e) => setNewNote(e.target.value)}
+            className="input flex-1"
+            onKeyPress={(e) => e.key === 'Enter' && addNote()}
+          />
+        </div>
+        
+        <div className="space-y-4">
+          {pet.notes.map((note, index) => (
+            <Card key={index} variant="outlined">
+              <CardContent className="p-4">
+                <p className="text-sm">{note}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Add New Note</CardTitle>
-          <CardDescription>
-            Add internal notes visible only to organization staff
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <textarea
-              value={newNote}
-              onChange={(e) => setNewNote(e.target.value)}
-              placeholder="Enter your note here..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-              rows={4}
-            />
-            <div className="flex justify-end">
-              <Button 
-                onClick={addNote}
-                disabled={!newNote.trim()}
-              >
-                Add Note
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: '📋' },
+    { id: 'medical', label: 'Medical Records', icon: '🏥' },
+    { id: 'compliance', label: 'Compliance', icon: '✅' },
+    { id: 'notes', label: 'Notes', icon: '📝' },
+  ];
+
   return (
-    <div className="min-h-screen bg-background py-8">
+    <div className="min-h-screen bg-background py-8 animate-fade-in">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
+        <div className="flex items-center justify-between mb-8">
+          <div>
             <Button 
-              variant="outline" 
-              size="sm"
+              variant="ghost" 
               onClick={() => window.history.back()}
+              leftIcon={<span>←</span>}
             >
-              ← Back
+              Back
             </Button>
             <h1 className="text-3xl font-bold text-foreground">
               Pet Profile: {pet.name}
             </h1>
           </div>
-          <p className="text-muted-foreground">
-            View and manage pet records, medical documents, and compliance history
-          </p>
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-200 mb-8">
-          <nav className="-mb-px flex space-x-8">
-            {[
-              { id: 'overview', label: 'Overview', icon: '📋' },
-              { id: 'medical', label: 'Medical Records', icon: '🏥' },
-              { id: 'compliance', label: 'Compliance', icon: '✅' },
-              { id: 'notes', label: 'Staff Notes', icon: '📝' }
-            ].map((tab) => (
+        <div className="border-b border-border mb-6">
+          <nav className="flex space-x-8">
+            {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === tab.id
                     ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                 }`}
               >
                 {tab.icon} {tab.label}
@@ -447,11 +452,11 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
           </nav>
         </div>
 
-                  {/* Tab Content */}
-          {activeTab === 'overview' && renderOverview()}
-          {activeTab === 'medical' && renderMedical()}
-          {activeTab === 'compliance' && renderCompliance()}
-          {activeTab === 'notes' && renderNotes()}
+        {/* Tab Content */}
+        {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'medical' && renderMedical()}
+        {activeTab === 'compliance' && renderCompliance()}
+        {activeTab === 'notes' && renderNotes()}
       </div>
     </div>
   );

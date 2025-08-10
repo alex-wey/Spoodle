@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Badge, Input, Skeleton, SkeletonCard } from '@/components/ui';
 import { apiService, Pet, ComplianceRequirement } from '@/lib/api';
 
 export default function ComplianceCheckPage() {
@@ -79,18 +78,18 @@ export default function ComplianceCheckPage() {
     return 'partial';
   };
 
-  const getStatusColor = (status: ComplianceRequirement['status']) => {
+  const getStatusVariant = (status: ComplianceRequirement['status']) => {
     switch (status) {
       case 'met':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'success' as const;
       case 'not-met':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'error' as const;
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'warning' as const;
       case 'not-applicable':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'default' as const;
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'default' as const;
     }
   };
 
@@ -124,16 +123,16 @@ export default function ComplianceCheckPage() {
     }
   };
 
-  const getOverallStatusColor = (status: string) => {
+  const getOverallStatusVariant = (status: string) => {
     switch (status) {
       case 'passed':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'success' as const;
       case 'failed':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'error' as const;
       case 'partial':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'warning' as const;
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'default' as const;
     }
   };
 
@@ -186,7 +185,7 @@ export default function ComplianceCheckPage() {
   };
 
   const renderSearchSection = () => (
-    <Card>
+    <Card variant="elevated" className="animate-fade-in">
       <CardHeader>
         <CardTitle>Start Compliance Check</CardTitle>
         <CardDescription>
@@ -196,20 +195,20 @@ export default function ComplianceCheckPage() {
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
-            <input
-              type="text"
+            <Input
               placeholder="Enter microchip number, Spoodle ID, or scan QR code..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              leftIcon={<span className="text-lg">🔍</span>}
+              variant="filled"
             />
           </div>
           <div>
             <select
               value={searchType}
               onChange={(e) => setSearchType(e.target.value as any)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              className="select"
             >
               <option value="microchip">Microchip</option>
               <option value="spoodle-id">Spoodle ID</option>
@@ -222,14 +221,17 @@ export default function ComplianceCheckPage() {
           <Button 
             onClick={handleSearch}
             isLoading={isSearching}
+            loadingText="Searching..."
             disabled={!searchQuery.trim()}
             className="flex-1"
+            leftIcon={<span>🔍</span>}
           >
             Search Pet
           </Button>
           <Button 
             variant="outline"
             className="flex-1"
+            leftIcon={<span>📷</span>}
           >
             Scan QR Code
           </Button>
@@ -237,14 +239,17 @@ export default function ComplianceCheckPage() {
 
         {/* Error Message */}
         {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-red-800">{error}</p>
+          <div className="p-4 bg-error-light border border-error rounded-lg animate-fade-in">
+            <div className="flex items-center">
+              <span className="text-error mr-2">⚠️</span>
+              <p className="text-error font-medium">{error}</p>
+            </div>
           </div>
         )}
 
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-          <h4 className="font-medium text-blue-800 mb-2">Quick Tips:</h4>
-          <ul className="text-sm text-blue-700 space-y-1">
+        <div className="p-4 bg-primary-light border border-primary/20 rounded-md">
+          <h4 className="font-medium text-primary mb-2">Quick Tips:</h4>
+          <ul className="text-sm text-primary/80 space-y-1">
             <li>• Microchip numbers are typically 15 digits</li>
             <li>• Spoodle IDs start with "SP" followed by numbers</li>
             <li>• QR codes can be scanned from pet tags or documents</li>
@@ -259,7 +264,7 @@ export default function ComplianceCheckPage() {
     if (!currentPet) return null;
 
     return (
-      <Card>
+      <Card variant="elevated" className="animate-slide-in">
         <CardHeader>
           <CardTitle>Pet Information</CardTitle>
           <CardDescription>
@@ -268,7 +273,7 @@ export default function ComplianceCheckPage() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-2xl">
+            <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center text-2xl">
               {currentPet.photo ? (
                 <img 
                   src={currentPet.photo} 
@@ -281,14 +286,18 @@ export default function ComplianceCheckPage() {
             </div>
             <div className="flex-1">
               <h3 className="text-xl font-semibold">{currentPet.name}</h3>
-              <p className="text-gray-600">{currentPet.breed} • {currentPet.age} years old</p>
-              <p className="text-gray-600">Owner: {currentPet.ownerName}</p>
-              <p className="text-gray-600">Spoodle ID: {currentPet.spoodleId}</p>
+              <p className="text-muted-foreground">{currentPet.breed} • {currentPet.age} years old</p>
+              <p className="text-muted-foreground">Owner: {currentPet.ownerName}</p>
+              <p className="text-muted-foreground">Spoodle ID: {currentPet.spoodleId}</p>
             </div>
             <div className="text-right">
-              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getOverallStatusColor(getOverallStatus())}`}>
+              <Badge
+                variant={getOverallStatusVariant(getOverallStatus())}
+                dot
+                size="lg"
+              >
                 {getOverallStatusText(getOverallStatus())}
-              </span>
+              </Badge>
             </div>
           </div>
         </CardContent>
@@ -300,7 +309,7 @@ export default function ComplianceCheckPage() {
     if (!currentPet) return null;
 
     return (
-      <Card>
+      <Card variant="elevated" className="animate-scale-in">
         <CardHeader>
           <CardTitle>Compliance Requirements Check</CardTitle>
           <CardDescription>
@@ -320,53 +329,55 @@ export default function ComplianceCheckPage() {
                 </h4>
                 <div className="space-y-3">
                   {categoryRequirements.map((requirement) => (
-                    <div key={requirement.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h5 className="font-medium">{requirement.name}</h5>
-                            {requirement.required && (
-                              <span className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
-                                Required
-                              </span>
+                    <Card key={requirement.id} variant="outlined">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <h5 className="font-medium">{requirement.name}</h5>
+                              {requirement.required && (
+                                <Badge variant="error" size="sm">
+                                  Required
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-2">{requirement.description}</p>
+                            {requirement.expirationDate && (
+                              <p className="text-sm text-muted-foreground">
+                                Expires: {new Date(requirement.expirationDate).toLocaleDateString()}
+                              </p>
                             )}
                           </div>
-                          <p className="text-sm text-gray-600 mb-2">{requirement.description}</p>
-                          {requirement.expirationDate && (
-                            <p className="text-sm text-gray-500">
-                              Expires: {new Date(requirement.expirationDate).toLocaleDateString()}
-                            </p>
-                          )}
+                          <div className="flex items-center space-x-2">
+                            <select
+                              value={requirement.status}
+                              onChange={(e) => handleRequirementStatusChange(requirement.id, e.target.value as any)}
+                              className="select"
+                            >
+                              <option value="met">Met</option>
+                              <option value="not-met">Not Met</option>
+                              <option value="pending">Pending</option>
+                              <option value="not-applicable">N/A</option>
+                            </select>
+                            {requirement.documentUrl && (
+                              <Button variant="outline" size="sm">
+                                View Doc
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <select
-                            value={requirement.status}
-                            onChange={(e) => handleRequirementStatusChange(requirement.id, e.target.value as any)}
-                            className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                          >
-                            <option value="met">Met</option>
-                            <option value="not-met">Not Met</option>
-                            <option value="pending">Pending</option>
-                            <option value="not-applicable">N/A</option>
-                          </select>
-                          {requirement.documentUrl && (
-                            <Button variant="outline" size="sm">
-                              View Doc
-                            </Button>
-                          )}
+                        
+                        <div className="space-y-2">
+                          <textarea
+                            placeholder="Add notes about this requirement..."
+                            value={requirementNotes[requirement.id] || ''}
+                            onChange={(e) => handleRequirementNoteChange(requirement.id, e.target.value)}
+                            className="input resize-none"
+                            rows={2}
+                          />
                         </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <textarea
-                          placeholder="Add notes about this requirement..."
-                          value={requirementNotes[requirement.id] || ''}
-                          onChange={(e) => handleRequirementNoteChange(requirement.id, e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                          rows={2}
-                        />
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               </div>
@@ -380,7 +391,7 @@ export default function ComplianceCheckPage() {
               placeholder="Add general notes about this compliance check..."
               value={checkNotes}
               onChange={(e) => setCheckNotes(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              className="input resize-none"
               rows={4}
             />
           </div>
@@ -397,8 +408,10 @@ export default function ComplianceCheckPage() {
             <Button 
               onClick={handleCompleteCheck}
               isLoading={checkInProgress}
+              loadingText="Completing check..."
               disabled={getOverallStatus() === 'pending'}
               className="flex-1"
+              variant="success"
             >
               Complete Compliance Check
             </Button>
@@ -409,7 +422,7 @@ export default function ComplianceCheckPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background py-8">
+    <div className="min-h-screen bg-background py-8 animate-fade-in">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
