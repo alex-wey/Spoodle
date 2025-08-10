@@ -285,10 +285,10 @@ export default function ComplianceCheckPage() {
               )}
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-semibold">{currentPet.name}</h3>
-              <p className="text-muted-foreground">{currentPet.breed} • {currentPet.age} years old</p>
-              <p className="text-muted-foreground">Owner: {currentPet.ownerName}</p>
-              <p className="text-muted-foreground">Spoodle ID: {currentPet.spoodleId}</p>
+                             <h3 className="text-xl font-semibold">{currentPet.name}</h3>
+               <p className="text-foreground">{currentPet.breed} • {currentPet.age} years old</p>
+               <p className="text-foreground">Owner: {currentPet.ownerName}</p>
+               <p className="text-foreground">Spoodle ID: {currentPet.spoodleId}</p>
             </div>
             <div className="text-right">
               <Badge
@@ -341,12 +341,12 @@ export default function ComplianceCheckPage() {
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-sm text-muted-foreground mb-2">{requirement.description}</p>
-                            {requirement.expirationDate && (
-                              <p className="text-sm text-muted-foreground">
-                                Expires: {new Date(requirement.expirationDate).toLocaleDateString()}
-                              </p>
-                            )}
+                                                         <p className="text-sm text-foreground mb-2">{requirement.description}</p>
+                             {requirement.expirationDate && (
+                               <p className="text-sm text-foreground">
+                                 Expires: {new Date(requirement.expirationDate).toLocaleDateString()}
+                               </p>
+                             )}
                           </div>
                           <div className="flex items-center space-x-2">
                             <select

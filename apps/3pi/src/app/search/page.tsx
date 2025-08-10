@@ -239,13 +239,13 @@ export default function SearchPage() {
                                 )}
                               </div>
                               <div className="flex-1">
-                                <div className="flex items-center space-x-3 mb-2">
-                                  <h4 className="text-lg font-semibold">{pet.name}</h4>
-                                  <span className="text-sm text-muted-foreground">{getTypeIcon(pet.type)} {pet.breed}</span>
-                                  <span className="text-sm text-muted-foreground">{pet.age} years old</span>
-                                </div>
-                                <p className="text-muted-foreground mb-2">Owner: {pet.ownerName}</p>
-                                <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                                                                 <div className="flex items-center space-x-3 mb-2">
+                                   <h4 className="text-lg font-semibold">{pet.name}</h4>
+                                   <span className="text-sm text-foreground">{getTypeIcon(pet.type)} {pet.breed}</span>
+                                   <span className="text-sm text-foreground">{pet.age} years old</span>
+                                 </div>
+                                 <p className="text-foreground mb-2">Owner: {pet.ownerName}</p>
+                                 <div className="flex items-center space-x-4 text-sm text-foreground">
                                   <span>ID: {pet.spoodleId}</span>
                                   {pet.microchipNumber && (
                                     <span>Microchip: {pet.microchipNumber}</span>
@@ -286,10 +286,10 @@ export default function SearchPage() {
                 {searchResults.length === 0 && searchQuery && !isSearching && !error && (
                   <div className="text-center py-8 animate-fade-in">
                     <div className="text-muted-foreground text-6xl mb-4">🔍</div>
-                    <h3 className="text-lg font-medium text-foreground mb-2">No pets found</h3>
-                    <p className="text-muted-foreground">
-                      Try adjusting your search criteria or check the spelling
-                    </p>
+                                         <h3 className="text-lg font-medium text-foreground mb-2">No pets found</h3>
+                     <p className="text-foreground">
+                       Try adjusting your search criteria or check the spelling
+                     </p>
                   </div>
                 )}
               </CardContent>
@@ -321,10 +321,10 @@ export default function SearchPage() {
                             <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center text-lg">
                               {getTypeIcon(pet.type)}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">{pet.name}</p>
-                              <p className="text-xs text-muted-foreground truncate">{pet.ownerName}</p>
-                            </div>
+                                                         <div className="flex-1 min-w-0">
+                               <p className="font-medium text-sm truncate">{pet.name}</p>
+                               <p className="text-xs text-foreground truncate">{pet.ownerName}</p>
+                             </div>
                             <Badge
                               variant={getStatusVariant(pet.complianceStatus)}
                               dot

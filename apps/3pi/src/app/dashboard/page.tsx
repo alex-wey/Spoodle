@@ -112,28 +112,28 @@ export default function DashboardPage() {
               <Card variant="elevated" className="animate-scale-in">
                 <CardContent className="p-6 text-center">
                   <div className="text-3xl font-bold text-primary mb-2">{quickStats.totalPets}</div>
-                  <p className="text-muted-foreground">Total Pets</p>
+                  <p className="text-foreground font-medium">Total Pets</p>
                 </CardContent>
               </Card>
               
               <Card variant="elevated" className="animate-scale-in">
                 <CardContent className="p-6 text-center">
                   <div className="text-3xl font-bold text-success mb-2">{quickStats.activeCompliance}</div>
-                  <p className="text-muted-foreground">Compliant Pets</p>
+                  <p className="text-foreground font-medium">Compliant Pets</p>
                 </CardContent>
               </Card>
               
               <Card variant="elevated" className="animate-scale-in">
                 <CardContent className="p-6 text-center">
                   <div className="text-3xl font-bold text-warning mb-2">{quickStats.pendingChecks}</div>
-                  <p className="text-muted-foreground">Pending Checks</p>
+                  <p className="text-foreground font-medium">Pending Checks</p>
                 </CardContent>
               </Card>
               
               <Card variant="elevated" className="animate-scale-in">
                 <CardContent className="p-6 text-center">
                   <div className="text-3xl font-bold text-secondary mb-2">{quickStats.recentRegistrations}</div>
-                  <p className="text-muted-foreground">New This Week</p>
+                  <p className="text-foreground font-medium">New This Week</p>
                 </CardContent>
               </Card>
             </div>
@@ -201,7 +201,7 @@ export default function DashboardPage() {
                       <div className="text-2xl">{getActivityIcon(activity.type)}</div>
                       <div className="flex-1">
                         <p className="font-medium">{getActivityText(activity)}</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-foreground">
                           {new Date(activity.timestamp).toLocaleString()} • {activity.performedBy}
                         </p>
                       </div>
@@ -230,10 +230,10 @@ export default function DashboardPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <h3 className="font-medium text-lg">{organizationInfo.name}</h3>
-                  <p className="text-muted-foreground">{organizationInfo.address}</p>
-                </div>
+                                 <div>
+                   <h3 className="font-medium text-lg">{organizationInfo.name}</h3>
+                   <p className="text-foreground">{organizationInfo.address}</p>
+                 </div>
                 
                 <div className="space-y-2 text-sm">
                   <p><strong>Phone:</strong> {organizationInfo.phone}</p>
@@ -277,12 +277,12 @@ export default function DashboardPage() {
                   </Badge>
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Last Backup</span>
-                  <span className="text-sm text-muted-foreground">
-                    {new Date().toLocaleDateString()}
-                  </span>
-                </div>
+                                 <div className="flex items-center justify-between">
+                   <span className="text-sm">Last Backup</span>
+                   <span className="text-sm text-foreground">
+                     {new Date().toLocaleDateString()}
+                   </span>
+                 </div>
               </CardContent>
             </Card>
 

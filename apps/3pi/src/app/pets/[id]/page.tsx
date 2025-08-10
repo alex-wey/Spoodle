@@ -203,11 +203,11 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
                 getTypeIcon(pet.type)
               )}
             </div>
-            <div>
-              <h2 className="text-2xl font-bold">{pet.name}</h2>
-              <p className="text-muted-foreground">{getTypeIcon(pet.type)} {pet.breed}</p>
-              <p className="text-muted-foreground">{pet.age} years old</p>
-            </div>
+                         <div>
+               <h2 className="text-2xl font-bold">{pet.name}</h2>
+               <p className="text-foreground">{getTypeIcon(pet.type)} {pet.breed}</p>
+               <p className="text-foreground">{pet.age} years old</p>
+             </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -258,13 +258,13 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
         <Card variant="elevated">
           <CardContent className="p-6 text-center">
             <div className="text-3xl font-bold text-primary mb-2">{medicalRecords.length}</div>
-            <p className="text-muted-foreground">Medical Records</p>
+            <p className="text-foreground font-medium">Medical Records</p>
           </CardContent>
         </Card>
         <Card variant="elevated">
           <CardContent className="p-6 text-center">
             <div className="text-3xl font-bold text-secondary mb-2">{complianceChecks.length}</div>
-            <p className="text-muted-foreground">Compliance Checks</p>
+            <p className="text-foreground font-medium">Compliance Checks</p>
           </CardContent>
         </Card>
         <Card variant="elevated">
@@ -272,7 +272,7 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
             <div className="text-3xl font-bold text-success mb-2">
               {medicalRecords.filter(r => r.status === 'active').length}
             </div>
-            <p className="text-muted-foreground">Active Records</p>
+            <p className="text-foreground font-medium">Active Records</p>
           </CardContent>
         </Card>
       </div>
@@ -300,8 +300,8 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
                   <div className="text-2xl">{getRecordTypeIcon(record.type)}</div>
                   <div>
                     <h4 className="font-medium">{record.title}</h4>
-                    <p className="text-sm text-muted-foreground mb-2">{record.description}</p>
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                                         <p className="text-sm text-foreground mb-2">{record.description}</p>
+                     <div className="flex items-center space-x-4 text-sm text-foreground">
                       <span>Date: {new Date(record.date).toLocaleDateString()}</span>
                       {record.expirationDate && (
                         <span>Expires: {new Date(record.expirationDate).toLocaleDateString()}</span>
@@ -350,10 +350,10 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
               <div className="flex items-start justify-between">
                 <div>
                   <h4 className="font-medium">Compliance Check</h4>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Date: {new Date(check.date).toLocaleDateString()} • Performed by: {check.performedBy}
-                  </p>
-                  <p className="text-sm text-muted-foreground">{check.notes}</p>
+                                     <p className="text-sm text-foreground mb-2">
+                     Date: {new Date(check.date).toLocaleDateString()} • Performed by: {check.performedBy}
+                   </p>
+                   <p className="text-sm text-foreground">{check.notes}</p>
                 </div>
                 <Badge
                   variant={check.status === 'passed' ? 'success' : check.status === 'failed' ? 'error' : 'warning'}
