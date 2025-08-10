@@ -3,104 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
-
-interface ComplianceRequirement {
-  id: string;
-  name: string;
-  description: string;
-  required: boolean;
-  category: 'vaccination' | 'health' | 'prevention' | 'documentation';
-  status: 'met' | 'not-met' | 'pending' | 'not-applicable';
-  notes?: string;
-  documentUrl?: string;
-  expirationDate?: Date;
-}
-
-interface Pet {
-  id: string;
-  name: string;
-  type: 'dog' | 'cat' | 'bird' | 'other';
-  breed: string;
-  age: number;
-  ownerName: string;
-  spoodleId: string;
-  photo?: string;
-  requirements: ComplianceRequirement[];
-}
-
-// Mock data for demonstration
-const mockPet: Pet = {
-  id: '1',
-  name: 'Max',
-  type: 'dog',
-  breed: 'Golden Retriever',
-  age: 3,
-  ownerName: 'Sarah Johnson',
-  spoodleId: 'SP001234',
-  photo: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=200&h=200&fit=crop&crop=face',
-  requirements: [
-    {
-      id: '1',
-      name: 'Rabies Vaccination',
-      description: 'Current rabies vaccination required',
-      required: true,
-      category: 'vaccination',
-      status: 'met',
-      documentUrl: '/documents/rabies-vaccination-max.pdf',
-      expirationDate: new Date('2025-01-10')
-    },
-    {
-      id: '2',
-      name: 'DHPP Vaccination',
-      description: 'Core vaccination series',
-      required: true,
-      category: 'vaccination',
-      status: 'met',
-      documentUrl: '/documents/dhpp-vaccination-max.pdf',
-      expirationDate: new Date('2025-01-10')
-    },
-    {
-      id: '3',
-      name: 'Bordetella Vaccination',
-      description: 'Kennel cough prevention',
-      required: true,
-      category: 'vaccination',
-      status: 'met',
-      documentUrl: '/documents/bordetella-vaccination-max.pdf',
-      expirationDate: new Date('2025-01-10')
-    },
-    {
-      id: '4',
-      name: 'Flea/Tick Prevention',
-      description: 'Current flea and tick prevention',
-      required: true,
-      category: 'prevention',
-      status: 'met',
-      documentUrl: '/documents/flea-tick-prevention-max.pdf',
-      expirationDate: new Date('2024-04-15')
-    },
-    {
-      id: '5',
-      name: 'Health Certificate',
-      description: 'Recent health examination certificate',
-      required: true,
-      category: 'documentation',
-      status: 'met',
-      documentUrl: '/documents/health-certificate-max.pdf',
-      expirationDate: new Date('2024-07-10')
-    },
-    {
-      id: '6',
-      name: 'Heartworm Test',
-      description: 'Annual heartworm test result',
-      required: false,
-      category: 'health',
-      status: 'met',
-      documentUrl: '/documents/heartworm-test-max.pdf',
-      expirationDate: new Date('2024-12-10')
-    }
-  ]
-};
+import { apiService, Pet, ComplianceRequirement } from '@/lib/api';
 
 export default function ComplianceCheckPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -110,17 +13,38 @@ export default function ComplianceCheckPage() {
   const [checkInProgress, setCheckInProgress] = useState(false);
   const [checkNotes, setCheckNotes] = useState('');
   const [requirementNotes, setRequirementNotes] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     
     setIsSearching(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    setError(null);
     
-    // For demo purposes, always return the mock pet
-    setCurrentPet(mockPet);
-    setIsSearching(false);
+    try {
+      let response;
+      
+      if (searchType === 'microchip') {
+        response = await apiService.getPetByMicrochip(searchQuery);
+      } else if (searchType === 'spoodle-id') {
+        response = await apiService.getPetBySpoodleId(searchQuery);
+      } else {
+        // For QR code, we'll treat it as a Spoodle ID for now
+        response = await apiService.getPetBySpoodleId(searchQuery);
+      }
+
+      if (response.success && response.data) {
+        setCurrentPet(response.data);
+      } else {
+        setError(response.error || 'Pet not found');
+        setCurrentPet(null);
+      }
+    } catch (err) {
+      setError('An error occurred while searching for the pet');
+      setCurrentPet(null);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const handleRequirementStatusChange = (requirementId: string, status: ComplianceRequirement['status']) => {
@@ -230,18 +154,35 @@ export default function ComplianceCheckPage() {
     if (!currentPet) return;
     
     setCheckInProgress(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    setError(null);
     
-    // In a real app, this would save the compliance check
-    alert('Compliance check completed successfully!');
-    setCheckInProgress(false);
-    
-    // Reset for next check
-    setCurrentPet(null);
-    setSearchQuery('');
-    setCheckNotes('');
-    setRequirementNotes({});
+    try {
+      const checkData = {
+        requirements: currentPet.requirements.map(req => ({
+          id: req.id,
+          status: req.status,
+          notes: requirementNotes[req.id] || undefined,
+        })),
+        overallNotes: checkNotes || undefined,
+      };
+
+      const response = await apiService.performComplianceCheck(currentPet.id, checkData);
+
+      if (response.success) {
+        alert('Compliance check completed successfully!');
+        // Reset for next check
+        setCurrentPet(null);
+        setSearchQuery('');
+        setCheckNotes('');
+        setRequirementNotes({});
+      } else {
+        setError(response.error || 'Failed to complete compliance check');
+      }
+    } catch (err) {
+      setError('An error occurred while completing the compliance check');
+    } finally {
+      setCheckInProgress(false);
+    }
   };
 
   const renderSearchSection = () => (
@@ -293,6 +234,13 @@ export default function ComplianceCheckPage() {
             Scan QR Code
           </Button>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-red-800">{error}</p>
+          </div>
+        )}
 
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
           <h4 className="font-medium text-blue-800 mb-2">Quick Tips:</h4>
@@ -386,7 +334,7 @@ export default function ComplianceCheckPage() {
                           <p className="text-sm text-gray-600 mb-2">{requirement.description}</p>
                           {requirement.expirationDate && (
                             <p className="text-sm text-gray-500">
-                              Expires: {requirement.expirationDate.toLocaleDateString()}
+                              Expires: {new Date(requirement.expirationDate).toLocaleDateString()}
                             </p>
                           )}
                         </div>

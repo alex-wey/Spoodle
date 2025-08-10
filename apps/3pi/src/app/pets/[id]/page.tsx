@@ -1,159 +1,54 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
-
-interface Pet {
-  id: string;
-  name: string;
-  type: 'dog' | 'cat' | 'bird' | 'other';
-  breed: string;
-  age: number;
-  ownerName: string;
-  ownerEmail: string;
-  ownerPhone: string;
-  microchipNumber?: string;
-  spoodleId: string;
-  spayNeuterStatus: 'spayed' | 'neutered' | 'intact' | 'unknown';
-  complianceStatus: 'compliant' | 'missing-records' | 'action-needed';
-  lastCheckIn?: Date;
-  photo?: string;
-  notes: string[];
-}
-
-interface MedicalRecord {
-  id: string;
-  type: 'vaccination' | 'health-check' | 'treatment' | 'test-result' | 'boarding' | 'other';
-  title: string;
-  description: string;
-  date: Date;
-  expirationDate?: Date;
-  status: 'active' | 'expired' | 'pending';
-  documentUrl?: string;
-  uploadedBy: string;
-  uploadedAt: Date;
-}
-
-interface ComplianceCheck {
-  id: string;
-  date: Date;
-  performedBy: string;
-  status: 'passed' | 'failed' | 'partial';
-  notes: string;
-  requirements: {
-    name: string;
-    status: 'met' | 'not-met' | 'pending';
-    notes?: string;
-  }[];
-}
-
-// Mock data for demonstration
-const mockPet: Pet = {
-  id: '1',
-  name: 'Max',
-  type: 'dog',
-  breed: 'Golden Retriever',
-  age: 3,
-  ownerName: 'Sarah Johnson',
-  ownerEmail: 'sarah.johnson@email.com',
-  ownerPhone: '(555) 123-4567',
-  microchipNumber: '985141000123456',
-  spoodleId: 'SP001234',
-  spayNeuterStatus: 'neutered',
-  complianceStatus: 'compliant',
-  lastCheckIn: new Date('2024-01-15'),
-  photo: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=300&h=300&fit=crop&crop=face',
-  notes: [
-    'Friendly and well-behaved during visits',
-    'Owner prefers morning appointments',
-    'Allergic to chicken - use alternative treats'
-  ]
-};
-
-const mockMedicalRecords: MedicalRecord[] = [
-  {
-    id: '1',
-    type: 'vaccination',
-    title: 'Rabies Vaccination',
-    description: 'Annual rabies vaccination administered',
-    date: new Date('2024-01-10'),
-    expirationDate: new Date('2025-01-10'),
-    status: 'active',
-    documentUrl: '/documents/rabies-vaccination-max.pdf',
-    uploadedBy: 'Dr. Smith',
-    uploadedAt: new Date('2024-01-10')
-  },
-  {
-    id: '2',
-    type: 'vaccination',
-    title: 'DHPP Vaccination',
-    description: 'Core vaccination series completed',
-    date: new Date('2024-01-10'),
-    expirationDate: new Date('2025-01-10'),
-    status: 'active',
-    documentUrl: '/documents/dhpp-vaccination-max.pdf',
-    uploadedBy: 'Dr. Smith',
-    uploadedAt: new Date('2024-01-10')
-  },
-  {
-    id: '3',
-    type: 'health-check',
-    title: 'Annual Wellness Exam',
-    description: 'Comprehensive health check - all systems normal',
-    date: new Date('2024-01-10'),
-    status: 'active',
-    documentUrl: '/documents/wellness-exam-max.pdf',
-    uploadedBy: 'Dr. Smith',
-    uploadedAt: new Date('2024-01-10')
-  },
-  {
-    id: '4',
-    type: 'treatment',
-    title: 'Ear Infection Treatment',
-    description: 'Prescribed antibiotics for mild ear infection',
-    date: new Date('2023-12-15'),
-    status: 'active',
-    documentUrl: '/documents/ear-treatment-max.pdf',
-    uploadedBy: 'Dr. Johnson',
-    uploadedAt: new Date('2023-12-15')
-  }
-];
-
-const mockComplianceChecks: ComplianceCheck[] = [
-  {
-    id: '1',
-    date: new Date('2024-01-15'),
-    performedBy: 'Jane Doe',
-    status: 'passed',
-    notes: 'All requirements met for boarding',
-    requirements: [
-      { name: 'Rabies Vaccination', status: 'met' },
-      { name: 'DHPP Vaccination', status: 'met' },
-      { name: 'Bordetella Vaccination', status: 'met' },
-      { name: 'Flea/Tick Prevention', status: 'met' },
-      { name: 'Health Certificate', status: 'met' }
-    ]
-  },
-  {
-    id: '2',
-    date: new Date('2023-12-20'),
-    performedBy: 'Mike Wilson',
-    status: 'partial',
-    notes: 'Missing flea/tick prevention documentation',
-    requirements: [
-      { name: 'Rabies Vaccination', status: 'met' },
-      { name: 'DHPP Vaccination', status: 'met' },
-      { name: 'Bordetella Vaccination', status: 'met' },
-      { name: 'Flea/Tick Prevention', status: 'not-met', notes: 'Owner to provide updated records' },
-      { name: 'Health Certificate', status: 'met' }
-    ]
-  }
-];
+import { apiService, Pet, MedicalRecord, ComplianceCheck } from '@/lib/api';
 
 export default function PetProfilePage({ params }: { params: { id: string } }) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'medical' | 'compliance' | 'notes'>('overview');
+  const [pet, setPet] = useState<Pet | null>(null);
+  const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
+  const [complianceChecks, setComplianceChecks] = useState<ComplianceCheck[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [newNote, setNewNote] = useState('');
+  const [activeTab, setActiveTab] = useState<'overview' | 'medical' | 'compliance' | 'notes'>('overview');
+
+  useEffect(() => {
+    const loadPetData = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        // Load pet data
+        const petResponse = await apiService.getPetById(params.id);
+        if (petResponse.success && petResponse.data) {
+          setPet(petResponse.data);
+        } else {
+          setError(petResponse.error || 'Failed to load pet data');
+          return;
+        }
+
+        // Load medical records
+        const recordsResponse = await apiService.getMedicalRecords(params.id);
+        if (recordsResponse.success && recordsResponse.data) {
+          setMedicalRecords(recordsResponse.data);
+        }
+
+        // Load compliance history
+        const complianceResponse = await apiService.getComplianceHistory(params.id);
+        if (complianceResponse.success && complianceResponse.data) {
+          setComplianceChecks(complianceResponse.data);
+        }
+      } catch (err) {
+        setError('An error occurred while loading pet data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPetData();
+  }, [params.id]);
 
   const getStatusColor = (status: Pet['complianceStatus']) => {
     switch (status) {
@@ -225,11 +120,29 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
   };
 
   const addNote = () => {
-    if (newNote.trim()) {
-      mockPet.notes.push(newNote);
-      setNewNote('');
-    }
+    if (!newNote.trim() || !pet) return;
+    
+    setPet(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        notes: [...prev.notes, newNote]
+      };
+    });
+    setNewNote('');
   };
+
+  if (isLoading) {
+    return <div className="text-center py-8">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-8 text-red-500">{error}</div>;
+  }
+
+  if (!pet) {
+    return <div className="text-center py-8">Pet not found.</div>;
+  }
 
   const renderOverview = () => (
     <div className="space-y-6">
@@ -243,30 +156,30 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
                 <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center text-4xl">
-                  {mockPet.photo ? (
+                  {pet.photo ? (
                     <img 
-                      src={mockPet.photo} 
-                      alt={mockPet.name}
+                      src={pet.photo} 
+                      alt={pet.name}
                       className="w-full h-full object-cover rounded-lg"
                     />
                   ) : (
-                    getTypeIcon(mockPet.type)
+                    getTypeIcon(pet.type)
                   )}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold">{mockPet.name}</h2>
-                  <p className="text-gray-600">{getTypeIcon(mockPet.type)} {mockPet.breed}</p>
-                  <p className="text-gray-600">{mockPet.age} years old</p>
+                  <h2 className="text-2xl font-bold">{pet.name}</h2>
+                  <p className="text-gray-600">{getTypeIcon(pet.type)} {pet.breed}</p>
+                  <p className="text-gray-600">{pet.age} years old</p>
                 </div>
               </div>
               
               <div className="space-y-2">
-                <p><strong>Spoodle ID:</strong> {mockPet.spoodleId}</p>
-                {mockPet.microchipNumber && (
-                  <p><strong>Microchip:</strong> {mockPet.microchipNumber}</p>
+                <p><strong>Spoodle ID:</strong> {pet.spoodleId}</p>
+                {pet.microchipNumber && (
+                  <p><strong>Microchip:</strong> {pet.microchipNumber}</p>
                 )}
-                <p><strong>Spay/Neuter:</strong> {mockPet.spayNeuterStatus.replace(/\b\w/g, l => l.toUpperCase())}</p>
-                <p><strong>Last Check-in:</strong> {mockPet.lastCheckIn?.toLocaleDateString() || 'Never'}</p>
+                <p><strong>Spay/Neuter:</strong> {pet.spayNeuterStatus.replace(/\b\w/g, l => l.toUpperCase())}</p>
+                <p><strong>Last Check-in:</strong> {pet.lastCheckIn?.toLocaleDateString() || 'Never'}</p>
               </div>
             </div>
             
@@ -274,22 +187,22 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
               <div>
                 <h3 className="font-medium mb-2">Owner Information</h3>
                 <div className="space-y-1">
-                  <p><strong>Name:</strong> {mockPet.ownerName}</p>
-                  <p><strong>Email:</strong> {mockPet.ownerEmail}</p>
-                  <p><strong>Phone:</strong> {mockPet.ownerPhone}</p>
+                  <p><strong>Name:</strong> {pet.ownerName}</p>
+                  <p><strong>Email:</strong> {pet.ownerEmail}</p>
+                  <p><strong>Phone:</strong> {pet.ownerPhone}</p>
                 </div>
               </div>
               
               <div>
                 <h3 className="font-medium mb-2">Compliance Status</h3>
-                <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(mockPet.complianceStatus)}`}>
-                  {getStatusText(mockPet.complianceStatus)}
+                <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(pet.complianceStatus)}`}>
+                  {getStatusText(pet.complianceStatus)}
                 </span>
               </div>
               
               <div className="pt-4">
                 <Button 
-                  onClick={() => window.location.href = `/compliance/check/${mockPet.id}`}
+                  onClick={() => window.location.href = `/compliance/check/${pet.id}`}
                   className="w-full"
                 >
                   Start Compliance Check
@@ -304,20 +217,20 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardContent className="p-6 text-center">
-            <div className="text-3xl font-bold text-primary mb-2">{mockMedicalRecords.length}</div>
+            <div className="text-3xl font-bold text-primary mb-2">{medicalRecords.length}</div>
             <p className="text-gray-600">Medical Records</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6 text-center">
-            <div className="text-3xl font-bold text-secondary mb-2">{mockComplianceChecks.length}</div>
+            <div className="text-3xl font-bold text-secondary mb-2">{complianceChecks.length}</div>
             <p className="text-gray-600">Compliance Checks</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6 text-center">
             <div className="text-3xl font-bold text-green-600 mb-2">
-              {mockMedicalRecords.filter(r => r.status === 'active').length}
+              {medicalRecords.filter(r => r.status === 'active').length}
             </div>
             <p className="text-gray-600">Active Records</p>
           </CardContent>
@@ -336,7 +249,7 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
       </div>
       
       <div className="space-y-4">
-        {mockMedicalRecords.map((record) => (
+        {medicalRecords.map((record) => (
           <Card key={record.id}>
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
@@ -378,14 +291,14 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Compliance History</h3>
         <Button 
-          onClick={() => window.location.href = `/compliance/check/${mockPet.id}`}
+          onClick={() => window.location.href = `/compliance/check/${pet.id}`}
         >
           New Compliance Check
         </Button>
       </div>
       
       <div className="space-y-4">
-        {mockComplianceChecks.map((check) => (
+        {complianceChecks.map((check) => (
           <Card key={check.id}>
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-4">
@@ -446,7 +359,7 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
       </div>
       
       <div className="space-y-4">
-        {mockPet.notes.map((note, index) => (
+        {pet.notes.map((note, index) => (
           <Card key={index}>
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
@@ -502,7 +415,7 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
               ← Back
             </Button>
             <h1 className="text-3xl font-bold text-foreground">
-              Pet Profile: {mockPet.name}
+              Pet Profile: {pet.name}
             </h1>
           </div>
           <p className="text-muted-foreground">
@@ -534,11 +447,11 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
           </nav>
         </div>
 
-        {/* Tab Content */}
-        {activeTab === 'overview' && renderOverview()}
-        {activeTab === 'medical' && renderMedical()}
-        {activeTab === 'compliance' && renderCompliance()}
-        {activeTab === 'notes' && renderNotes()}
+                  {/* Tab Content */}
+          {activeTab === 'overview' && renderOverview()}
+          {activeTab === 'medical' && renderMedical()}
+          {activeTab === 'compliance' && renderCompliance()}
+          {activeTab === 'notes' && renderNotes()}
       </div>
     </div>
   );

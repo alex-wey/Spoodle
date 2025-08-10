@@ -16,6 +16,135 @@ app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Mock data for development
+const mockPets = [
+  {
+    id: '1',
+    name: 'Max',
+    type: 'dog',
+    breed: 'Golden Retriever',
+    age: 3,
+    ownerName: 'Sarah Johnson',
+    ownerEmail: 'sarah.johnson@email.com',
+    ownerPhone: '(555) 123-4567',
+    microchipNumber: '985141000123456',
+    spoodleId: 'SP001234',
+    spayNeuterStatus: 'neutered',
+    complianceStatus: 'compliant',
+    lastCheckIn: new Date('2024-01-15'),
+    photo: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=300&h=300&fit=crop&crop=face',
+    notes: [
+      'Friendly and well-behaved during visits',
+      'Owner prefers morning appointments',
+      'Allergic to chicken - use alternative treats'
+    ]
+  },
+  {
+    id: '2',
+    name: 'Luna',
+    type: 'cat',
+    breed: 'Siamese',
+    age: 2,
+    ownerName: 'Michael Chen',
+    ownerEmail: 'michael.chen@email.com',
+    ownerPhone: '(555) 234-5678',
+    spoodleId: 'SP001235',
+    complianceStatus: 'missing-records',
+    lastCheckIn: new Date('2024-01-10'),
+    notes: []
+  }
+];
+
+const mockMedicalRecords = [
+  {
+    id: '1',
+    petId: '1',
+    type: 'vaccination',
+    title: 'Rabies Vaccination',
+    description: 'Annual rabies vaccination administered',
+    date: new Date('2024-01-10'),
+    expirationDate: new Date('2025-01-10'),
+    status: 'active',
+    documentUrl: '/documents/rabies-vaccination-max.pdf',
+    uploadedBy: 'Dr. Smith',
+    uploadedAt: new Date('2024-01-10')
+  },
+  {
+    id: '2',
+    petId: '1',
+    type: 'vaccination',
+    title: 'DHPP Vaccination',
+    description: 'Core vaccination series completed',
+    date: new Date('2024-01-10'),
+    expirationDate: new Date('2025-01-10'),
+    status: 'active',
+    documentUrl: '/documents/dhpp-vaccination-max.pdf',
+    uploadedBy: 'Dr. Smith',
+    uploadedAt: new Date('2024-01-10')
+  }
+];
+
+const mockComplianceRequirements = [
+  {
+    id: '1',
+    name: 'Rabies Vaccination',
+    description: 'Current rabies vaccination required',
+    required: true,
+    category: 'vaccination',
+    status: 'met',
+    documentUrl: '/documents/rabies-vaccination-max.pdf',
+    expirationDate: new Date('2025-01-10')
+  },
+  {
+    id: '2',
+    name: 'DHPP Vaccination',
+    description: 'Core vaccination series',
+    required: true,
+    category: 'vaccination',
+    status: 'met',
+    documentUrl: '/documents/dhpp-vaccination-max.pdf',
+    expirationDate: new Date('2025-01-10')
+  },
+  {
+    id: '3',
+    name: 'Bordetella Vaccination',
+    description: 'Kennel cough prevention',
+    required: true,
+    category: 'vaccination',
+    status: 'met',
+    documentUrl: '/documents/bordetella-vaccination-max.pdf',
+    expirationDate: new Date('2025-01-10')
+  },
+  {
+    id: '4',
+    name: 'Flea/Tick Prevention',
+    description: 'Current flea and tick prevention',
+    required: true,
+    category: 'prevention',
+    status: 'met',
+    documentUrl: '/documents/flea-tick-prevention-max.pdf',
+    expirationDate: new Date('2024-04-15')
+  }
+];
+
+const mockComplianceChecks = [
+  {
+    id: '1',
+    petId: '1',
+    date: new Date('2024-01-15'),
+    performedBy: 'Jane Doe',
+    status: 'passed',
+    notes: 'All requirements met for boarding',
+    requirements: [
+      { name: 'Rabies Vaccination', status: 'met' },
+      { name: 'DHPP Vaccination', status: 'met' },
+      { name: 'Bordetella Vaccination', status: 'met' },
+      { name: 'Flea/Tick Prevention', status: 'met' },
+      { name: 'Health Certificate', status: 'met' }
+    ]
+  }
+];
+
 // Health check
 app.get('/health', (req: Request, res: Response) => {
   res.json({ 
@@ -26,9 +155,157 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-// API Routes - Basic endpoints for now
+// Pet search endpoint
+app.get('/api/pets/search', (req: Request, res: Response) => {
+  const { q, type, status } = req.query;
+  
+  let results = mockPets.filter(pet => {
+    const matchesQuery = q ? 
+      pet.name.toLowerCase().includes(q.toString().toLowerCase()) ||
+      pet.ownerName.toLowerCase().includes(q.toString().toLowerCase()) ||
+      pet.microchipNumber?.toLowerCase().includes(q.toString().toLowerCase()) ||
+      pet.spoodleId.toLowerCase().includes(q.toString().toLowerCase()) : true;
+    
+    const matchesType = type && type !== 'all' ? pet.type === type : true;
+    const matchesStatus = status && status !== 'all' ? pet.complianceStatus === status : true;
+    
+    return matchesQuery && matchesType && matchesStatus;
+  });
+
+  res.json({ 
+    success: true, 
+    data: results,
+    message: `Found ${results.length} pets`
+  });
+});
+
+// Get pet by ID
+app.get('/api/pets/:id', (req: Request, res: Response) => {
+  const pet = mockPets.find(p => p.id === req.params.id);
+  
+  if (pet) {
+    // Add compliance requirements to the pet
+    const petWithRequirements = {
+      ...pet,
+      requirements: mockComplianceRequirements
+    };
+    
+    res.json({ 
+      success: true, 
+      data: petWithRequirements 
+    });
+  } else {
+    res.status(404).json({ 
+      success: false, 
+      error: 'Pet not found' 
+    });
+  }
+});
+
+// Get pet by microchip
+app.get('/api/pets/microchip/:microchip', (req: Request, res: Response) => {
+  const pet = mockPets.find(p => p.microchipNumber === req.params.microchip);
+  
+  if (pet) {
+    // Add compliance requirements to the pet
+    const petWithRequirements = {
+      ...pet,
+      requirements: mockComplianceRequirements
+    };
+    
+    res.json({ 
+      success: true, 
+      data: petWithRequirements 
+    });
+  } else {
+    res.status(404).json({ 
+      success: false, 
+      error: 'Pet not found' 
+    });
+  }
+});
+
+// Get pet by Spoodle ID
+app.get('/api/pets/spoodle/:spoodleId', (req: Request, res: Response) => {
+  const pet = mockPets.find(p => p.spoodleId === req.params.spoodleId);
+  
+  if (pet) {
+    // Add compliance requirements to the pet
+    const petWithRequirements = {
+      ...pet,
+      requirements: mockComplianceRequirements
+    };
+    
+    res.json({ 
+      success: true, 
+      data: petWithRequirements 
+    });
+  } else {
+    res.status(404).json({ 
+      success: false, 
+      error: 'Pet not found' 
+    });
+  }
+});
+
+// Get medical records for a pet
+app.get('/api/pets/:petId/medical-records', (req: Request, res: Response) => {
+  const records = mockMedicalRecords.filter(r => r.petId === req.params.petId);
+  
+  res.json({ 
+    success: true, 
+    data: records,
+    message: `Found ${records.length} medical records`
+  });
+});
+
+// Get compliance requirements for a pet
+app.get('/api/pets/:petId/compliance-requirements', (req: Request, res: Response) => {
+  res.json({ 
+    success: true, 
+    data: mockComplianceRequirements,
+    message: `Found ${mockComplianceRequirements.length} compliance requirements`
+  });
+});
+
+// Perform compliance check
+app.post('/api/pets/:petId/compliance-check', (req: Request, res: Response) => {
+  const { requirements, overallNotes } = req.body;
+  
+  // In a real app, this would save to the database
+  const newCheck = {
+    id: Date.now().toString(),
+    petId: req.params.petId,
+    date: new Date(),
+    performedBy: 'Current User', // Would come from auth
+    status: requirements.every((r: any) => r.status === 'met') ? 'passed' : 'partial',
+    notes: overallNotes || '',
+    requirements: requirements
+  };
+  
+  mockComplianceChecks.push(newCheck);
+  
+  res.json({ 
+    success: true, 
+    data: newCheck,
+    message: 'Compliance check completed successfully'
+  });
+});
+
+// Get compliance history for a pet
+app.get('/api/pets/:petId/compliance-history', (req: Request, res: Response) => {
+  const checks = mockComplianceChecks.filter(c => c.petId === req.params.petId);
+  
+  res.json({ 
+    success: true, 
+    data: checks,
+    message: `Found ${checks.length} compliance checks`
+  });
+});
+
+// Basic endpoints (keeping for backward compatibility)
 app.get('/api/pets', (req: Request, res: Response) => {
-  res.json({ success: true, data: [], message: 'Pets endpoint (placeholder)' });
+  res.json({ success: true, data: mockPets, message: 'Pets endpoint' });
 });
 
 app.get('/api/appointments', (req: Request, res: Response) => {

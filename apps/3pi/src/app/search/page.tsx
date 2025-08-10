@@ -3,71 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
-
-interface Pet {
-  id: string;
-  name: string;
-  type: 'dog' | 'cat' | 'bird' | 'other';
-  breed: string;
-  age: number;
-  ownerName: string;
-  microchipNumber?: string;
-  spoodleId: string;
-  complianceStatus: 'compliant' | 'missing-records' | 'action-needed';
-  lastCheckIn?: Date;
-  photo?: string;
-}
-
-// Mock data for demonstration
-const mockPets: Pet[] = [
-  {
-    id: '1',
-    name: 'Max',
-    type: 'dog',
-    breed: 'Golden Retriever',
-    age: 3,
-    ownerName: 'Sarah Johnson',
-    microchipNumber: '985141000123456',
-    spoodleId: 'SP001234',
-    complianceStatus: 'compliant',
-    lastCheckIn: new Date('2024-01-15'),
-    photo: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=150&h=150&fit=crop&crop=face'
-  },
-  {
-    id: '2',
-    name: 'Luna',
-    type: 'cat',
-    breed: 'Siamese',
-    age: 2,
-    ownerName: 'Michael Chen',
-    spoodleId: 'SP001235',
-    complianceStatus: 'missing-records',
-    lastCheckIn: new Date('2024-01-10')
-  },
-  {
-    id: '3',
-    name: 'Buddy',
-    type: 'dog',
-    breed: 'Labrador Retriever',
-    age: 5,
-    ownerName: 'Emily Davis',
-    microchipNumber: '985141000789012',
-    spoodleId: 'SP001236',
-    complianceStatus: 'action-needed',
-    lastCheckIn: new Date('2024-01-12')
-  },
-  {
-    id: '4',
-    name: 'Whiskers',
-    type: 'cat',
-    breed: 'Maine Coon',
-    age: 4,
-    ownerName: 'David Wilson',
-    spoodleId: 'SP001237',
-    complianceStatus: 'compliant',
-    lastCheckIn: new Date('2024-01-14')
-  }
-];
+import { apiService, Pet } from '@/lib/api';
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,46 +13,32 @@ export default function SearchPage() {
   const [recentlyViewed, setRecentlyViewed] = useState<Pet[]>([]);
   const [searchResults, setSearchResults] = useState<Pet[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     
     setIsSearching(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    setError(null);
     
-    let results = mockPets.filter(pet => {
-      const matchesQuery = searchQuery.toLowerCase();
-      const matchesType = filterType === 'all' || pet.type === filterType;
-      const matchesStatus = filterStatus === 'all' || pet.complianceStatus === filterStatus;
-      
-      let queryMatch = false;
-      switch (searchType) {
-        case 'name':
-          queryMatch = pet.name.toLowerCase().includes(matchesQuery);
-          break;
-        case 'owner':
-          queryMatch = pet.ownerName.toLowerCase().includes(matchesQuery);
-          break;
-        case 'microchip':
-          queryMatch = pet.microchipNumber?.toLowerCase().includes(matchesQuery) || false;
-          break;
-        case 'spoodle-id':
-          queryMatch = pet.spoodleId.toLowerCase().includes(matchesQuery);
-          break;
-        default:
-          queryMatch = 
-            pet.name.toLowerCase().includes(matchesQuery) ||
-            pet.ownerName.toLowerCase().includes(matchesQuery) ||
-            pet.microchipNumber?.toLowerCase().includes(matchesQuery) ||
-            pet.spoodleId.toLowerCase().includes(matchesQuery);
+    try {
+      const response = await apiService.searchPets(searchQuery, {
+        type: filterType === 'all' ? undefined : filterType,
+        status: filterStatus === 'all' ? undefined : filterStatus,
+      });
+
+      if (response.success && response.data) {
+        setSearchResults(response.data);
+      } else {
+        setError(response.error || 'Failed to search pets');
+        setSearchResults([]);
       }
-      
-      return queryMatch && matchesType && matchesStatus;
-    });
-    
-    setSearchResults(results);
-    setIsSearching(false);
+    } catch (err) {
+      setError('An error occurred while searching');
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const handlePetClick = (pet: Pet) => {
@@ -267,6 +189,13 @@ export default function SearchPage() {
                   </div>
                 </div>
 
+                {/* Error Message */}
+                {error && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+                    <p className="text-red-800">{error}</p>
+                  </div>
+                )}
+
                 {/* Search Results */}
                 {searchResults.length > 0 && (
                   <div className="space-y-4">
@@ -305,7 +234,7 @@ export default function SearchPage() {
                                   <span>Microchip: {pet.microchipNumber}</span>
                                 )}
                                 {pet.lastCheckIn && (
-                                  <span>Last Check-in: {pet.lastCheckIn.toLocaleDateString()}</span>
+                                  <span>Last Check-in: {new Date(pet.lastCheckIn).toLocaleDateString()}</span>
                                 )}
                               </div>
                             </div>
@@ -332,7 +261,7 @@ export default function SearchPage() {
                   </div>
                 )}
 
-                {searchResults.length === 0 && searchQuery && !isSearching && (
+                {searchResults.length === 0 && searchQuery && !isSearching && !error && (
                   <div className="text-center py-8">
                     <div className="text-gray-400 text-6xl mb-4">🔍</div>
                     <h3 className="text-lg font-medium text-gray-600 mb-2">No pets found</h3>
