@@ -11,6 +11,11 @@ export interface DatabaseConfig {
   dataDir: string;
 }
 
+// Define a more flexible base interface for all entities
+interface BaseEntity {
+  [key: string]: any;
+}
+
 export class LocalDatabase {
   private dataDir: string;
   private cache: Map<string, any> = new Map();
@@ -38,7 +43,7 @@ export class LocalDatabase {
     return path.join(this.dataDir, `${tableName}.json`);
   }
 
-  private async readTable<T>(tableName: TableName): Promise<T[]> {
+  private async readTable<T extends BaseEntity>(tableName: TableName): Promise<T[]> {
     const cacheKey = tableName;
     if (this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey);
@@ -50,14 +55,14 @@ export class LocalDatabase {
     return data;
   }
 
-  private async writeTable<T>(tableName: TableName, data: T[]): Promise<void> {
+  private async writeTable<T extends BaseEntity>(tableName: TableName, data: T[]): Promise<void> {
     const filePath = this.getFilePath(tableName);
     await fs.writeJson(filePath, data, { spaces: 2 });
     this.cache.set(tableName, data);
   }
 
   // Generic CRUD operations
-  async create<T extends { [key: string]: any }>(tableName: TableName, item: Omit<T, 'createdAt' | 'updatedAt'>): Promise<T> {
+  async create<T extends BaseEntity>(tableName: TableName, item: Partial<T>): Promise<T> {
     const data = await this.readTable<T>(tableName);
     const now = new Date().toISOString();
     
@@ -65,12 +70,12 @@ export class LocalDatabase {
       ...item,
       createdAt: now,
       updatedAt: now,
-    } as T;
+    } as unknown as T;
 
     // Generate ID if not provided
     const idField = this.getIdField(tableName);
-    if (!newItem[idField]) {
-      newItem[idField] = generateId();
+    if (!(newItem as any)[idField]) {
+      (newItem as any)[idField] = generateId();
     }
 
     data.push(newItem);
@@ -78,25 +83,25 @@ export class LocalDatabase {
     return newItem;
   }
 
-  async findById<T>(tableName: TableName, id: string): Promise<T | null> {
+  async findById<T extends BaseEntity>(tableName: TableName, id: string): Promise<T | null> {
     const data = await this.readTable<T>(tableName);
     const idField = this.getIdField(tableName);
-    return data.find(item => item[idField] === id) || null;
+    return data.find(item => (item as any)[idField] === id) || null;
   }
 
-  async findAll<T>(tableName: TableName): Promise<T[]> {
+  async findAll<T extends BaseEntity>(tableName: TableName): Promise<T[]> {
     return await this.readTable<T>(tableName);
   }
 
-  async findWhere<T>(tableName: TableName, predicate: (item: T) => boolean): Promise<T[]> {
+  async findWhere<T extends BaseEntity>(tableName: TableName, predicate: (item: T) => boolean): Promise<T[]> {
     const data = await this.readTable<T>(tableName);
     return data.filter(predicate);
   }
 
-  async update<T>(tableName: TableName, id: string, updates: Partial<T>): Promise<T | null> {
+  async update<T extends BaseEntity>(tableName: TableName, id: string, updates: Partial<T>): Promise<T | null> {
     const data = await this.readTable<T>(tableName);
     const idField = this.getIdField(tableName);
-    const index = data.findIndex(item => item[idField] === id);
+    const index = data.findIndex(item => (item as any)[idField] === id);
     
     if (index === -1) return null;
 
@@ -116,7 +121,7 @@ export class LocalDatabase {
     const idField = this.getIdField(tableName);
     const initialLength = data.length;
     
-    const filteredData = data.filter(item => item[idField] !== id);
+    const filteredData = data.filter(item => (item as any)[idField] !== id);
     
     if (filteredData.length === initialLength) return false;
     
@@ -140,19 +145,19 @@ export class LocalDatabase {
 
   // Convenient typed methods
   async createUser(user: Omit<User, 'petOwnerId' | 'createdAt' | 'updatedAt'>): Promise<User> {
-    return await this.create<User>('users', user);
+    return await this.create<User>('users', user as any);
   }
 
   async createPet(pet: Omit<Pet, 'petId' | 'createdAt' | 'updatedAt'>): Promise<Pet> {
-    return await this.create<Pet>('pets', pet);
+    return await this.create<Pet>('pets', pet as any);
   }
 
   async createTask(task: Omit<Task, 'taskId' | 'createdAt' | 'updatedAt'>): Promise<Task> {
-    return await this.create<Task>('tasks', task);
+    return await this.create<Task>('tasks', task as any);
   }
 
   async createAppointment(appointment: Omit<Appointment, 'appointmentId' | 'createdAt' | 'updatedAt'>): Promise<Appointment> {
-    return await this.create<Appointment>('appointments', appointment);
+    return await this.create<Appointment>('appointments', appointment as any);
   }
 
   async getPetsByOwner(ownerId: string): Promise<Pet[]> {
