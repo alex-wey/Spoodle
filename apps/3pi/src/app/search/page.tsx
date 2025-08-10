@@ -98,7 +98,7 @@ export default function SearchPage() {
           <h1 className="text-3xl font-bold text-foreground mb-2">
             Search & Pet Lookup
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-foreground">
             Search for pets by name, owner, microchip, or Spoodle ID
           </p>
         </div>
@@ -386,7 +386,7 @@ export default function SearchPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="text-sm text-muted-foreground space-y-2">
+                <ul className="text-sm text-foreground space-y-2">
                   <li>• Use partial names for broader results</li>
                   <li>• Microchip numbers are 15 digits</li>
                   <li>• Spoodle IDs start with "SP"</li>

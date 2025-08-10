@@ -429,7 +429,7 @@ export default function ComplianceCheckPage() {
           <h1 className="text-3xl font-bold text-foreground mb-2">
             Compliance Check-In
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-foreground">
             Verify pet compliance status for boarding, travel, or other services
           </p>
         </div>

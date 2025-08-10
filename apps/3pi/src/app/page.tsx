@@ -57,7 +57,7 @@ export default function Home() {
           <h2 className="text-3xl font-bold text-foreground mb-4">
             Welcome to Your Partner Dashboard
           </h2>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-foreground text-lg">
             Manage pet records, compliance checks, and referral programs with Spoodle&apos;s Third Party Interface.
           </p>
         </div>
@@ -67,22 +67,22 @@ export default function Home() {
           <div className="bg-white p-6 rounded-lg shadow border border-border">
             <h3 className="text-lg font-semibold text-foreground mb-2">Today&apos;s Check-ins</h3>
             <p className="text-3xl font-bold text-primary">8</p>
-            <p className="text-sm text-muted-foreground">Compliance verifications</p>
+            <p className="text-sm text-foreground font-medium">Compliance verifications</p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow border border-border">
             <h3 className="text-lg font-semibold text-foreground mb-2">Pet Records</h3>
             <p className="text-3xl font-bold text-secondary">24</p>
-            <p className="text-sm text-muted-foreground">Accessed this week</p>
+            <p className="text-sm text-foreground font-medium">Accessed this week</p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow border border-border">
             <h3 className="text-lg font-semibold text-foreground mb-2">Referral Earnings</h3>
             <p className="text-3xl font-bold text-primary">$1,245</p>
-            <p className="text-sm text-muted-foreground">This month</p>
+            <p className="text-sm text-foreground font-medium">This month</p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow border border-border">
             <h3 className="text-lg font-semibold text-foreground mb-2">Pending Requests</h3>
             <p className="text-3xl font-bold text-secondary">3</p>
-            <p className="text-sm text-muted-foreground">From pet owners</p>
+            <p className="text-sm text-foreground font-medium">From pet owners</p>
           </div>
         </div>
 
@@ -105,7 +105,7 @@ export default function Home() {
           
           <div className="bg-white p-6 rounded-lg shadow border border-border">
             <h3 className="text-xl font-semibold text-foreground mb-4">Recent Activity</h3>
-            <ul className="space-y-3 text-muted-foreground">
+            <ul className="space-y-3 text-foreground">
               <li className="flex items-center">
                 <span className="w-2 h-2 bg-primary rounded-full mr-3"></span>
                 Compliance check completed for Max (Golden Retriever)

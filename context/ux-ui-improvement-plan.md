@@ -4,6 +4,24 @@
 
 This document outlines a comprehensive plan to enhance the user experience and visual design of the Spoodle 3PI application, transforming it from a functional interface into a modern, intuitive, and delightful user experience.
 
+## ⚠️ **Critical Development Guidelines**
+
+### **Infinite Loop Prevention**
+- **NEVER** use recursive functions without clear termination conditions
+- **ALWAYS** implement maximum iteration limits for loops
+- **AVOID** circular dependencies in component imports
+- **USE** explicit exit conditions for all iterative processes
+- **TEST** all loops and recursive functions with edge cases
+- **MONITOR** for patterns that could cause infinite re-renders in React
+
+### **Mandatory Testing Requirements**
+- **ALWAYS** test changes before pushing to any branch
+- **REQUIRED** to run `npm test` or equivalent before commits
+- **MANDATORY** to verify UI changes in browser before pushing
+- **ESSENTIAL** to test error handling and edge cases
+- **CRITICAL** to validate accessibility improvements
+- **NECESSARY** to test responsive design across devices
+
 ## 📊 **Current State Analysis**
 
 ### **Strengths**
@@ -45,6 +63,10 @@ This document outlines a comprehensive plan to enhance the user experience and v
 --compliant: #10b981
 --missing-records: #f59e0b
 --action-needed: #ef4444
+
+/* Text Colors - Enhanced for Readability */
+--foreground: #1e293b (Navy-like for better contrast)
+--muted-foreground: #475569 (Darker for better readability)
 ```
 
 ### **2. Typography Scale**
@@ -296,12 +318,12 @@ h4: 1.25rem (20px) - Card titles
 ```css
 /* Light mode */
 --background: #ffffff
---foreground: #0f172a
+--foreground: #1e293b
 --card: #ffffff
 
 /* Dark mode */
 --background: #0f172a
---foreground: #f8fafc
+--foreground: #e2e8f0
 --card: #1e293b
 ```
 
