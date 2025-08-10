@@ -4,12 +4,12 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3007;
 
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:8081', 'http://localhost:19006'],
+  origin: ['http://localhost:3000', 'http://localhost:3004', 'http://localhost:3005', 'http://localhost:3006', 'http://localhost:8081', 'http://localhost:19006'],
   credentials: true
 }));
 app.use(morgan('combined'));
