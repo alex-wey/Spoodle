@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Badge, Skeleton, SkeletonCard } from '@/components';
 import { apiService, Pet, MedicalRecord, ComplianceCheck } from '@/lib/api';
 
-export default function PetProfilePage({ params }: { params: { id: string } }) {
+export default function PetProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
   const [pet, setPet] = useState<Pet | null>(null);
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [complianceChecks, setComplianceChecks] = useState<ComplianceCheck[]>([]);
@@ -15,12 +16,19 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     const loadPetData = async () => {
+      // Special handling for "new" pet registration
+      if (resolvedParams.id === 'new') {
+        setIsLoading(false);
+        setError('This is a placeholder for new pet registration. Please use the search page to find existing pets.');
+        return;
+      }
+
       setIsLoading(true);
       setError(null);
       
       try {
         // Load pet data
-        const petResponse = await apiService.getPetById(params.id);
+        const petResponse = await apiService.getPetById(resolvedParams.id);
         if (petResponse.success && petResponse.data) {
           setPet(petResponse.data);
         } else {
@@ -29,13 +37,13 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
         }
 
         // Load medical records
-        const recordsResponse = await apiService.getMedicalRecords(params.id);
+        const recordsResponse = await apiService.getMedicalRecords(resolvedParams.id);
         if (recordsResponse.success && recordsResponse.data) {
           setMedicalRecords(recordsResponse.data);
         }
 
         // Load compliance history
-        const complianceResponse = await apiService.getComplianceHistory(params.id);
+        const complianceResponse = await apiService.getComplianceHistory(resolvedParams.id);
         if (complianceResponse.success && complianceResponse.data) {
           setComplianceChecks(complianceResponse.data);
         }
@@ -47,7 +55,7 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
     };
 
     loadPetData();
-  }, [params.id]);
+  }, [resolvedParams.id]);
 
   const addNote = () => {
     if (!newNote.trim() || !pet) return;
@@ -86,11 +94,26 @@ export default function PetProfilePage({ params }: { params: { id: string } }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center py-8">
             <div className="text-error text-6xl mb-4">⚠️</div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">Error Loading Pet</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-2">
+              {resolvedParams.id === 'new' ? 'New Pet Registration' : 'Error Loading Pet'}
+            </h1>
             <p className="text-muted-foreground mb-4">{error}</p>
-            <Button onClick={() => window.location.reload()}>
-              Try Again
-            </Button>
+            <div className="flex justify-center space-x-4">
+              {resolvedParams.id === 'new' ? (
+                <>
+                  <Button onClick={() => window.location.href = '/search'}>
+                    Search for Pets
+                  </Button>
+                  <Button variant="outline" onClick={() => window.location.href = '/dashboard'}>
+                    Back to Dashboard
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={() => window.location.reload()}>
+                  Try Again
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>

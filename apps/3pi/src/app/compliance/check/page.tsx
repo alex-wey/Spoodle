@@ -8,6 +8,7 @@ export default function ComplianceCheckPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchType, setSearchType] = useState<'microchip' | 'spoodle-id' | 'qr-code'>('microchip');
   const [currentPet, setCurrentPet] = useState<Pet | null>(null);
+  const [requirements, setRequirements] = useState<ComplianceRequirement[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [checkInProgress, setCheckInProgress] = useState(false);
   const [checkNotes, setCheckNotes] = useState('');
@@ -34,9 +35,17 @@ export default function ComplianceCheckPage() {
 
       if (response.success && response.data) {
         setCurrentPet(response.data);
+        // Load compliance requirements for this pet
+        const requirementsResponse = await apiService.getComplianceRequirements(response.data.id);
+        if (requirementsResponse.success && requirementsResponse.data) {
+          setRequirements(requirementsResponse.data);
+        } else {
+          setRequirements([]);
+        }
       } else {
         setError(response.error || 'Pet not found');
         setCurrentPet(null);
+        setRequirements([]);
       }
     } catch (err) {
       setError('An error occurred while searching for the pet');
@@ -47,17 +56,11 @@ export default function ComplianceCheckPage() {
   };
 
   const handleRequirementStatusChange = (requirementId: string, status: ComplianceRequirement['status']) => {
-    if (!currentPet) return;
-    
-    setCurrentPet(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        requirements: prev.requirements.map(req => 
-          req.id === requirementId ? { ...req, status } : req
-        )
-      };
-    });
+    setRequirements(prev => 
+      prev.map(req => 
+        req.id === requirementId ? { ...req, status } : req
+      )
+    );
   };
 
   const handleRequirementNoteChange = (requirementId: string, note: string) => {
@@ -68,9 +71,9 @@ export default function ComplianceCheckPage() {
   };
 
   const getOverallStatus = () => {
-    if (!currentPet) return 'pending';
+    if (!currentPet || requirements.length === 0) return 'pending';
     
-    const requiredRequirements = currentPet.requirements.filter(req => req.required);
+    const requiredRequirements = requirements.filter(req => req.required);
     const metRequirements = requiredRequirements.filter(req => req.status === 'met');
     
     if (metRequirements.length === requiredRequirements.length) return 'passed';
@@ -157,7 +160,7 @@ export default function ComplianceCheckPage() {
     
     try {
       const checkData = {
-        requirements: currentPet.requirements.map(req => ({
+        requirements: requirements.map(req => ({
           id: req.id,
           status: req.status,
           notes: requirementNotes[req.id] || undefined,
@@ -319,7 +322,7 @@ export default function ComplianceCheckPage() {
         <CardContent className="space-y-6">
           {/* Requirements by Category */}
           {['vaccination', 'health', 'prevention', 'documentation'].map(category => {
-            const categoryRequirements = currentPet.requirements.filter(req => req.category === category);
+            const categoryRequirements = requirements.filter(req => req.category === category);
             if (categoryRequirements.length === 0) return null;
 
             return (
@@ -341,7 +344,7 @@ export default function ComplianceCheckPage() {
                                 </Badge>
                               )}
                             </div>
-                                                         <p className="text-sm text-foreground mb-2">{requirement.description}</p>
+                                                         <p className="text-sm text-foreground mb-2">{requirement.description.replace(/"/g, '&quot;')}</p>
                              {requirement.expirationDate && (
                                <p className="text-sm text-foreground">
                                  Expires: {new Date(requirement.expirationDate).toLocaleDateString()}
