@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Badge, Input, Skeleton, SkeletonCard } from '@/components/ui';
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Badge, Input, Skeleton, SkeletonCard } from '@/components';
 import { apiService, Pet, ComplianceRequirement } from '@/lib/api';
 
 export default function ComplianceCheckPage() {

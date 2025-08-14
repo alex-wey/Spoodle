@@ -1,9 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Badge } from '@/components';
 
 export default function DashboardPage() {
   const [recentActivity] = useState([

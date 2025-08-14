@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components';
 
 interface VerificationFormData {
   organizationName: string;

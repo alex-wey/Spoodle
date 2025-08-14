@@ -1,10 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Skeleton, SkeletonCard } from '@/components/ui/Skeleton';
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Badge, Skeleton, SkeletonCard } from '@/components';
 import { apiService, Pet, MedicalRecord, ComplianceCheck } from '@/lib/api';
 
 export default function PetProfilePage({ params }: { params: { id: string } }) {

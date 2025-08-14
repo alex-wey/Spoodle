@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Badge, Input, Skeleton, SkeletonCard } from '@/components/ui';
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Badge, Input, Skeleton, SkeletonCard } from '@/components';
 import { apiService, Pet } from '@/lib/api';
 
 export default function SearchPage() {
