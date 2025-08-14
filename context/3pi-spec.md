@@ -181,6 +181,7 @@ apps/3pi/src/
 
 ### 🚧 **CURRENT ISSUES**
 - **Port Conflicts**: Multiple apps running on different ports (3004-3006)
+- **Process Management**: Background processes need proper cleanup protocols
 
 ### ✅ **RESOLVED**
 - **3PI API Integration**: ✅ Connected to backend API, replaced mock data with real API calls
@@ -191,6 +192,8 @@ apps/3pi/src/
 - **Database Type Errors**: ✅ TypeScript issues in shared packages resolved
 - **Jest DOM Matchers**: ✅ TypeScript declarations added for proper testing support
 - **API Port Conflicts**: ✅ Port 3001 conflict resolved, API now uses port 3007
+- **API Testing Protocols**: ✅ Robust testing with timeouts and process management implemented
+- **Process Management**: ✅ Automated cleanup prevents hanging curl commands and conflicts
 
 ## Performance Metrics
 

@@ -322,6 +322,28 @@ describe('Cross-App Integration', () => {
    - Prepare documentation
    - Plan launch strategy
 
+## 🔧 **Development Best Practices**
+
+### **API Testing Protocols**
+- **Always use timeouts**: `curl --max-time 5` for all API calls
+- **Limit output**: Use `head -10` to prevent overwhelming responses
+- **Process management**: Clean up before testing with `lsof -ti:3007 | xargs kill -9`
+- **Check server status**: Verify API is running before making requests
+- **Use robust commands**: Follow documented testing approach in `api-testing-guide.md`
+
+### **Process Management**
+- **Clean startup**: Kill conflicting processes before starting servers
+- **Port management**: Check for port conflicts with `lsof -i :3007`
+- **Background processes**: Use `&` for background execution with proper cleanup
+- **Error handling**: Implement proper error handling and fallbacks
+
+### **Testing Workflow**
+1. **Pre-test cleanup**: Kill existing processes and clear ports
+2. **Start services**: Start API and app servers with proper delays
+3. **Verify status**: Check that services are running and responding
+4. **Execute tests**: Use timeout-limited commands with output limits
+5. **Post-test cleanup**: Clean up processes and verify no conflicts
+
 ---
 
 *This strategy ensures a robust, scalable, and user-friendly cross-app ecosystem that meets the highest standards of quality and reliability.*

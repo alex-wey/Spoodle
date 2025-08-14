@@ -181,6 +181,8 @@ cd apps/web && npm run dev
 2. **Commit frequently**: Small, focused commits
 3. **Test before committing**: Run tests to ensure quality
 4. **Restart development after git operations**: Ensure everything works
+5. **Follow API testing protocols**: Use documented testing approach for API calls
+6. **Clean up processes**: Proper process management prevents conflicts
 
 ## ⚠️ **Important Notes**
 
@@ -188,6 +190,8 @@ cd apps/web && npm run dev
 - **Always test after restarting**: Make sure your changes work correctly
 - **Use the safe script**: It's designed to prevent these issues
 - **Keep commits small**: Easier to debug and review
+- **Use API testing protocols**: Follow documented testing approach to prevent hanging commands
+- **Clean up processes**: Proper process management prevents conflicts and hanging operations
 
 ---
 

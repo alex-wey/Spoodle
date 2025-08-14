@@ -382,6 +382,20 @@ h4: 1.25rem (20px) - Card titles
 5. **Deployment**: Gradual rollout with feature flags
 6. **Monitoring**: Track user engagement and performance metrics
 
+## 🔧 **Development Best Practices**
+
+### **API Testing Protocols**
+- **Robust Testing**: Use documented API testing protocols from `api-testing-guide.md`
+- **Process Management**: Implement proper cleanup and conflict resolution
+- **Timeout Handling**: Always use timeouts to prevent hanging commands
+- **Error Handling**: Proper error states and user feedback
+
+### **Quality Assurance**
+- **Pre-deployment Testing**: Test all features thoroughly before pushing
+- **Cross-browser Testing**: Ensure compatibility across all browsers
+- **Performance Testing**: Monitor and optimize for performance
+- **Accessibility Testing**: Regular accessibility audits and improvements
+
 ## 📚 **Resources**
 
 - **Design System**: [Figma Design System](link-to-figma)
