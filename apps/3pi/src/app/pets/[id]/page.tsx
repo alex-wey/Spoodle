@@ -18,8 +18,8 @@ export default function PetProfilePage({ params }: { params: Promise<{ id: strin
     const loadPetData = async () => {
       // Special handling for "new" pet registration
       if (resolvedParams.id === 'new') {
-        setIsLoading(false);
-        setError('This is a placeholder for new pet registration. Please use the search page to find existing pets.');
+        // Redirect to the proper registration page
+        window.location.href = '/pets/register';
         return;
       }
 

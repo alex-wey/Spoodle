@@ -165,7 +165,7 @@ export default function DashboardPage() {
                   
                   <Button 
                     variant="outline"
-                    onClick={() => window.location.href = '/pets/new'}
+                    onClick={() => window.location.href = '/pets/register'}
                     className="h-16 text-lg"
                     leftIcon={<span className="text-xl">🐾</span>}
                   >
@@ -177,6 +177,9 @@ export default function DashboardPage() {
                     onClick={() => window.location.href = '/reports'}
                     className="h-16 text-lg"
                     leftIcon={<span className="text-xl">📊</span>}
+                  >
+                    View Reports
+                  </Button>
                   >
                     View Reports
                   </Button>

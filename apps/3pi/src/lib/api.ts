@@ -167,6 +167,62 @@ class ApiService {
     return this.request<ComplianceCheck[]>(`/api/pets/${petId}/compliance-history`);
   }
 
+  // Pet registration API call
+  async registerPet(petData: {
+    name: string;
+    type: 'dog' | 'cat' | 'bird' | 'other';
+    breed: string;
+    age: number;
+    ownerName: string;
+    ownerEmail: string;
+    ownerPhone: string;
+    microchipNumber?: string;
+    spayNeuterStatus: 'spayed' | 'neutered' | 'intact' | 'unknown';
+    description?: string;
+    specialNeeds?: string;
+    emergencyContact?: {
+      name: string;
+      phone: string;
+      relationship: string;
+    };
+    medicalHistory?: {
+      conditions: string[];
+      medications: string[];
+      allergies: string[];
+    };
+  }): Promise<ApiResponse<Pet>> {
+    return this.request<Pet>('/api/pets/register', {
+      method: 'POST',
+      body: JSON.stringify(petData),
+    });
+  }
+
+  // Reports API calls
+  async getReports(dateRange: '7d' | '30d' | '90d' | '1y' = '30d'): Promise<ApiResponse<{
+    totalPets: number;
+    compliantPets: number;
+    nonCompliantPets: number;
+    recentCheckIns: number;
+    monthlyTrends: Array<{
+      month: string;
+      checkIns: number;
+      complianceChecks: number;
+    }>;
+    topPetTypes: Array<{
+      type: string;
+      count: number;
+      percentage: number;
+    }>;
+    complianceByCategory: Array<{
+      category: string;
+      compliant: number;
+      nonCompliant: number;
+      total: number;
+    }>;
+  }>> {
+    return this.request(`/api/reports?dateRange=${dateRange}`);
+  }
+
   // Health check
   async healthCheck(): Promise<ApiResponse<{ status: string; timestamp: string; service: string; version: string }>> {
     return this.request('/health');

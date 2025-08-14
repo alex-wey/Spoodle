@@ -303,6 +303,86 @@ app.get('/api/pets/:petId/compliance-history', (req: Request, res: Response) => 
   });
 });
 
+// Register new pet
+app.post('/api/pets/register', (req: Request, res: Response) => {
+  const petData = req.body;
+  
+  // Validate required fields
+  if (!petData.name || !petData.type || !petData.breed || !petData.ownerName || !petData.ownerEmail || !petData.ownerPhone) {
+    return res.status(400).json({
+      success: false,
+      error: 'Missing required fields: name, type, breed, ownerName, ownerEmail, ownerPhone'
+    });
+  }
+  
+  // Create new pet with generated ID
+  const newPet = {
+    id: `pet_${Date.now()}`,
+    name: petData.name,
+    type: petData.type,
+    breed: petData.breed,
+    age: petData.age || 0,
+    ownerName: petData.ownerName,
+    ownerEmail: petData.ownerEmail,
+    ownerPhone: petData.ownerPhone,
+    microchipNumber: petData.microchipNumber || '',
+    spoodleId: `SP${String(Date.now()).slice(-6)}`,
+    spayNeuterStatus: petData.spayNeuterStatus || 'unknown',
+    complianceStatus: 'pending',
+    lastCheckIn: new Date(),
+    photo: '',
+    notes: []
+  };
+  
+  // Add to mock data
+  mockPets.push(newPet);
+  
+  res.status(201).json({
+    success: true,
+    data: newPet,
+    message: 'Pet registered successfully'
+  });
+});
+
+// Get reports data
+app.get('/api/reports', (req: Request, res: Response) => {
+  const { dateRange = '30d' } = req.query;
+  
+  // Mock reports data
+  const reportsData = {
+    totalPets: mockPets.length,
+    compliantPets: Math.floor(mockPets.length * 0.72), // 72% compliance rate
+    nonCompliantPets: Math.floor(mockPets.length * 0.28),
+    recentCheckIns: Math.floor(mockPets.length * 0.15), // 15% checked in recently
+    monthlyTrends: [
+      { month: 'Jan', checkIns: 45, complianceChecks: 23 },
+      { month: 'Feb', checkIns: 52, complianceChecks: 28 },
+      { month: 'Mar', checkIns: 48, complianceChecks: 31 },
+      { month: 'Apr', checkIns: 61, complianceChecks: 35 },
+      { month: 'May', checkIns: 58, complianceChecks: 42 },
+      { month: 'Jun', checkIns: 67, complianceChecks: 38 },
+    ],
+    topPetTypes: [
+      { type: 'Dogs', count: Math.floor(mockPets.length * 0.54), percentage: 54.4 },
+      { type: 'Cats', count: Math.floor(mockPets.length * 0.34), percentage: 33.9 },
+      { type: 'Birds', count: Math.floor(mockPets.length * 0.07), percentage: 7.1 },
+      { type: 'Other', count: Math.floor(mockPets.length * 0.05), percentage: 4.6 },
+    ],
+    complianceByCategory: [
+      { category: 'Vaccination', compliant: 156, nonCompliant: 23, total: 179 },
+      { category: 'Health Check', compliant: 134, nonCompliant: 18, total: 152 },
+      { category: 'Prevention', compliant: 98, nonCompliant: 31, total: 129 },
+      { category: 'Documentation', compliant: 87, nonCompliant: 42, total: 129 },
+    ],
+  };
+  
+  res.json({
+    success: true,
+    data: reportsData,
+    message: `Reports data for ${dateRange}`
+  });
+});
+
 // Basic endpoints (keeping for backward compatibility)
 app.get('/api/pets', (req: Request, res: Response) => {
   res.json({ success: true, data: mockPets, message: 'Pets endpoint' });
