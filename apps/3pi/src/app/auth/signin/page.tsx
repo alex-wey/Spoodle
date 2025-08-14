@@ -1,15 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 
 export default function SignInPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const { login } = useAuth()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const message = searchParams.get('message')
+    if (message) {
+      setSuccessMessage(message)
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -71,6 +81,12 @@ export default function SignInPage() {
               />
             </div>
           </div>
+
+          {successMessage && (
+            <div className="text-green-600 text-sm text-center bg-green-50 p-3 rounded-md mb-4">
+              {successMessage}
+            </div>
+          )}
 
           {error && (
             <div className="text-red-600 text-sm text-center">{error}</div>

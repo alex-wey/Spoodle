@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 // User authentication and management
@@ -201,8 +201,8 @@ model Document {
   uploadedBy  String
   uploadedAt  DateTime @default(now())
   
-  // Tags for categorization
-  tags        String[]
+  // Tags for categorization (comma-separated for SQLite)
+  tags        String
   
   @@map("documents")
 }

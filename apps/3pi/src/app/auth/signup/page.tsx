@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -35,13 +36,49 @@ export default function SignUpPage() {
     }
 
     try {
-      // TODO: Implement organization signup API call
-      console.log('Signup data:', formData)
-      
-      // For now, just redirect to signin
-      router.push('/auth/signin?message=Account created successfully! Please sign in.')
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          organizationName: formData.organizationName,
+          organizationType: formData.organizationType,
+          email: formData.email,
+          password: formData.password,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+          businessLicense: formData.businessLicense,
+          description: formData.description
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create account')
+      }
+
+      // Account created successfully - automatically log in the user
+      const signInResult = await signIn('credentials', {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      })
+
+      if (signInResult?.error) {
+        // If auto-login fails, redirect to signin page
+        router.push('/auth/signin?message=Account created successfully! Please sign in with your credentials.')
+      } else {
+        // Auto-login successful - redirect to dashboard
+        router.push('/dashboard')
+      }
     } catch (error) {
-      setError('Failed to create account. Please try again.')
+      console.error('Signup error:', error)
+      setError(error instanceof Error ? error.message : 'Failed to create account. Please try again.')
     } finally {
       setIsLoading(false)
     }
