@@ -98,7 +98,7 @@ export default function DashboardPage() {
             Dashboard
           </h1>
           <p className="text-muted-foreground">
-            Welcome back! Here's what's happening with your pet management system.
+            Welcome back! Here&apos;s what&apos;s happening with your pet management system.
           </p>
         </div>
 
@@ -177,9 +177,6 @@ export default function DashboardPage() {
                     onClick={() => window.location.href = '/reports'}
                     className="h-16 text-lg"
                     leftIcon={<span className="text-xl">📊</span>}
-                  >
-                    View Reports
-                  </Button>
                   >
                     View Reports
                   </Button>

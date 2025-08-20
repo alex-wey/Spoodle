@@ -389,7 +389,7 @@ export default function SearchPage() {
                 <ul className="text-sm text-foreground space-y-2">
                   <li>• Use partial names for broader results</li>
                   <li>• Microchip numbers are 15 digits</li>
-                  <li>• Spoodle IDs start with "SP"</li>
+                  <li>• Spoodle IDs start with &quot;SP&quot;</li>
                   <li>• Filter by pet type for specific results</li>
                   <li>• Check compliance status for quick overview</li>
                 </ul>

@@ -58,3 +58,6 @@ global.matchMedia = jest.fn().mockImplementation(query => ({
   removeEventListener: jest.fn(),
   dispatchEvent: jest.fn(),
 }))
+
+// Mock fetch globally
+global.fetch = jest.fn()

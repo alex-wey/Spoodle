@@ -73,7 +73,7 @@ export default function RegisterPetPage() {
     }));
   };
 
-  const handleEmergencyContactChange = (field: keyof typeof formData.emergencyContact, value: string) => {
+  const handleEmergencyContactChange = (field: 'name' | 'phone' | 'relationship', value: string) => {
     setFormData(prev => ({
       ...prev,
       emergencyContact: {
@@ -83,7 +83,7 @@ export default function RegisterPetPage() {
     }));
   };
 
-  const handleMedicalHistoryChange = (field: keyof typeof formData.medicalHistory, value: string[]) => {
+  const handleMedicalHistoryChange = (field: 'conditions' | 'medications' | 'allergies', value: string[]) => {
     setFormData(prev => ({
       ...prev,
       medicalHistory: {
@@ -93,13 +93,13 @@ export default function RegisterPetPage() {
     }));
   };
 
-  const addMedicalItem = (field: keyof typeof formData.medicalHistory, item: string) => {
+  const addMedicalItem = (field: 'conditions' | 'medications' | 'allergies', item: string) => {
     if (!item.trim()) return;
     const currentItems = formData.medicalHistory?.[field] || [];
     handleMedicalHistoryChange(field, [...currentItems, item.trim()]);
   };
 
-  const removeMedicalItem = (field: keyof typeof formData.medicalHistory, index: number) => {
+  const removeMedicalItem = (field: 'conditions' | 'medications' | 'allergies', index: number) => {
     const currentItems = formData.medicalHistory?.[field] || [];
     handleMedicalHistoryChange(field, currentItems.filter((_, i) => i !== index));
   };
@@ -144,7 +144,7 @@ export default function RegisterPetPage() {
         
         // Redirect to the new pet's profile after a short delay
         setTimeout(() => {
-          router.push(`/pets/${response.data.id}`);
+          router.push(`/pets/${response.data!.id}`);
         }, 2000);
       } else {
         setError(response.error || 'Failed to register pet. Please try again.');
@@ -311,7 +311,7 @@ export default function RegisterPetPage() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {formData.medicalHistory?.conditions.map((condition, index) => (
-                    <Badge key={index} variant="outline" className="cursor-pointer" onClick={() => removeMedicalItem('conditions', index)}>
+                    <Badge key={index} variant="default" className="cursor-pointer" onClick={() => removeMedicalItem('conditions', index)}>
                       {condition} ×
                     </Badge>
                   ))}
@@ -345,7 +345,7 @@ export default function RegisterPetPage() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {formData.medicalHistory?.medications.map((medication, index) => (
-                    <Badge key={index} variant="outline" className="cursor-pointer" onClick={() => removeMedicalItem('medications', index)}>
+                    <Badge key={index} variant="default" className="cursor-pointer" onClick={() => removeMedicalItem('medications', index)}>
                       {medication} ×
                     </Badge>
                   ))}
@@ -461,7 +461,7 @@ export default function RegisterPetPage() {
                       <strong>Conditions:</strong>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {formData.medicalHistory.conditions.map((condition, index) => (
-                          <Badge key={index} variant="outline" size="sm">{condition}</Badge>
+                          <Badge key={index} variant="default" size="sm">{condition}</Badge>
                         ))}
                       </div>
                     </div>
@@ -469,7 +469,7 @@ export default function RegisterPetPage() {
                       <strong>Medications:</strong>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {formData.medicalHistory.medications.map((medication, index) => (
-                          <Badge key={index} variant="outline" size="sm">{medication}</Badge>
+                          <Badge key={index} variant="default" size="sm">{medication}</Badge>
                         ))}
                       </div>
                     </div>

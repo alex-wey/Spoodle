@@ -127,7 +127,7 @@ export default function PetProfilePage({ params }: { params: Promise<{ id: strin
           <div className="text-center py-8">
             <div className="text-muted-foreground text-6xl mb-4">🐾</div>
             <h1 className="text-2xl font-bold text-foreground mb-2">Pet Not Found</h1>
-            <p className="text-muted-foreground mb-4">The pet you're looking for doesn't exist or has been removed.</p>
+            <p className="text-muted-foreground mb-4">The pet you&apos;re looking for doesn&apos;t exist or has been removed.</p>
             <Button onClick={() => window.location.href = '/search'}>
               Search for Pets
             </Button>

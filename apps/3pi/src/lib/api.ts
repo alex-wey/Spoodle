@@ -232,5 +232,4 @@ class ApiService {
 // Export singleton instance
 export const apiService = new ApiService();
 
-// Export types for use in components
-export type { Pet, MedicalRecord, ComplianceCheck, ComplianceRequirement };
+

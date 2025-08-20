@@ -3,12 +3,23 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import SignInPage from '../page'
 
+// Import the SignInForm component directly for testing
+import { SignInForm } from '../page'
+import { AuthProvider } from '@/contexts/AuthContext'
+
 // Mock the auth context
 const mockLogin = jest.fn()
+const mockAuthContext = {
+  user: null,
+  isLoading: false,
+  login: mockLogin,
+  logout: jest.fn(),
+  isAuthenticated: false,
+}
+
 jest.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({
-    login: mockLogin,
-  }),
+  useAuth: () => mockAuthContext,
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="auth-provider">{children}</div>,
 }))
 
 // Mock Next.js router
@@ -17,7 +28,17 @@ jest.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
   }),
+  useSearchParams: () => new URLSearchParams(),
 }))
+
+// Helper function to render with providers
+const renderWithProviders = (component: React.ReactElement) => {
+  return render(
+    <AuthProvider>
+      {component}
+    </AuthProvider>
+  )
+}
 
 describe('SignInPage', () => {
   beforeEach(() => {
@@ -25,27 +46,27 @@ describe('SignInPage', () => {
   })
 
   it('renders the sign-in form', () => {
-    render(<SignInPage />)
+    renderWithProviders(<SignInForm />)
     
     expect(screen.getByText('Sign in to your account')).toBeInTheDocument()
     expect(screen.getByText('Access your Spoodle 3PI Partner Portal')).toBeInTheDocument()
   })
 
   it('has email and password input fields', () => {
-    render(<SignInPage />)
+    renderWithProviders(<SignInForm />)
     
     expect(screen.getByLabelText(/email address/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument()
   })
 
   it('has a sign-in button', () => {
-    render(<SignInPage />)
+    renderWithProviders(<SignInForm />)
     
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
   })
 
   it('has a link to sign up', () => {
-    render(<SignInPage />)
+    renderWithProviders(<SignInForm />)
     
     expect(screen.getByText("Don't have an account? Sign up")).toBeInTheDocument()
   })
@@ -54,7 +75,7 @@ describe('SignInPage', () => {
     const user = userEvent.setup()
     mockLogin.mockResolvedValue(undefined)
     
-    render(<SignInPage />)
+    renderWithProviders(<SignInForm />)
     
     const emailInput = screen.getByLabelText(/email address/i)
     const passwordInput = screen.getByLabelText(/password/i)
@@ -71,7 +92,7 @@ describe('SignInPage', () => {
     const user = userEvent.setup()
     mockLogin.mockRejectedValue(new Error('Invalid credentials'))
     
-    render(<SignInPage />)
+    renderWithProviders(<SignInForm />)
     
     const emailInput = screen.getByLabelText(/email address/i)
     const passwordInput = screen.getByLabelText(/password/i)
@@ -90,7 +111,7 @@ describe('SignInPage', () => {
     const user = userEvent.setup()
     mockLogin.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
     
-    render(<SignInPage />)
+    renderWithProviders(<SignInForm />)
     
     const emailInput = screen.getByLabelText(/email address/i)
     const passwordInput = screen.getByLabelText(/password/i)
@@ -105,7 +126,7 @@ describe('SignInPage', () => {
   })
 
   it('requires email and password fields', () => {
-    render(<SignInPage />)
+    renderWithProviders(<SignInForm />)
     
     const emailInput = screen.getByLabelText(/email address/i)
     const passwordInput = screen.getByLabelText(/password/i)
@@ -115,7 +136,7 @@ describe('SignInPage', () => {
   })
 
   it('has proper form validation attributes', () => {
-    render(<SignInPage />)
+    renderWithProviders(<SignInForm />)
     
     const emailInput = screen.getByLabelText(/email address/i)
     const passwordInput = screen.getByLabelText(/password/i)

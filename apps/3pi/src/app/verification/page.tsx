@@ -60,7 +60,7 @@ export default function VerificationPage() {
       <CardHeader>
         <CardTitle>Organization Verification</CardTitle>
         <CardDescription>
-          Complete your organization profile to get verified and start using Spoodle's Third Party Interface.
+          Complete your organization profile to get verified and start using Spoodle&apos;s Third Party Interface.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -360,7 +360,7 @@ export default function VerificationPage() {
 
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
           <p className="text-sm text-blue-700">
-            By submitting this verification request, you agree to Spoodle's terms of service and privacy policy. 
+            By submitting this verification request, you agree to Spoodle&apos;s terms of service and privacy policy. 
             Verification typically takes 2-3 business days.
           </p>
         </div>
@@ -402,9 +402,9 @@ export default function VerificationPage() {
           <h4 className="font-medium mb-2">What happens next?</h4>
           <ol className="text-sm text-gray-600 space-y-1">
             <li>1. Our verification team will review your documents (2-3 business days)</li>
-            <li>2. You'll receive email updates on your verification status</li>
-            <li>3. Once approved, you'll get access to your partner dashboard</li>
-            <li>4. You can start inviting staff members and using Spoodle's tools</li>
+            <li>2. You&apos;ll receive email updates on your verification status</li>
+            <li>3. Once approved, you&apos;ll get access to your partner dashboard</li>
+            <li>4. You can start inviting staff members and using Spoodle&apos;s tools</li>
           </ol>
         </div>
         
@@ -435,7 +435,7 @@ export default function VerificationPage() {
             Organization Verification
           </h1>
           <p className="text-muted-foreground">
-            Complete your setup to access Spoodle's Third Party Interface
+            Complete your setup to access Spoodle&apos;s Third Party Interface
           </p>
         </div>
 

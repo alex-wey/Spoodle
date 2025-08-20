@@ -271,7 +271,7 @@ export default function ReportsPage() {
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-foreground">{petType.count}</span>
-                      <Badge variant="outline">{petType.percentage}%</Badge>
+                      <Badge variant="default">{petType.percentage}%</Badge>
                     </div>
                   </div>
                 ))}

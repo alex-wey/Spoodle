@@ -254,7 +254,7 @@ export default function ComplianceCheckPage() {
           <h4 className="font-medium text-primary mb-2">Quick Tips:</h4>
           <ul className="text-sm text-primary/80 space-y-1">
             <li>• Microchip numbers are typically 15 digits</li>
-            <li>• Spoodle IDs start with "SP" followed by numbers</li>
+            <li>• Spoodle IDs start with &quot;SP&quot; followed by numbers</li>
             <li>• QR codes can be scanned from pet tags or documents</li>
             <li>• Use the camera icon to scan QR codes directly</li>
           </ul>
@@ -328,7 +328,7 @@ export default function ComplianceCheckPage() {
             return (
               <div key={category} className="space-y-3">
                 <h4 className="font-medium text-lg flex items-center">
-                  {getCategoryIcon(category)} {category.charAt(0).toUpperCase() + category.slice(1)} Requirements
+                  {getCategoryIcon(category as ComplianceRequirement['category'])} {category.charAt(0).toUpperCase() + category.slice(1)} Requirements
                 </h4>
                 <div className="space-y-3">
                   {categoryRequirements.map((requirement) => (
