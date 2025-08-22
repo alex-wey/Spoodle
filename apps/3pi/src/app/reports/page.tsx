@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Badge, Input, Skeleton, SkeletonCard } from '@/components';
 import { apiService } from '@/lib/api';
+import { exportToPDF, exportToCSV, formatDateRange } from '@/lib/exportUtils';
+import Toast from '@/components/Toast';
 
 interface ReportData {
   totalPets: number;
@@ -33,6 +35,11 @@ export default function ReportsPage() {
   const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
   const [reportType, setReportType] = useState<'overview' | 'compliance' | 'trends' | 'details'>('overview');
+  const [isExporting, setIsExporting] = useState(false);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: 'success' | 'error' | 'info';
+  } | null>(null);
 
   useEffect(() => {
     loadReportData();
@@ -81,6 +88,47 @@ export default function ReportsPage() {
       setError('Failed to load report data');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+    setToast({ message, type });
+  };
+
+  const handleExportPDF = async () => {
+    if (!reportData) return;
+    
+    setIsExporting(true);
+    try {
+      const filename = await exportToPDF(reportData, {
+        dateRange: formatDateRange(dateRange),
+        reportType: reportType.charAt(0).toUpperCase() + reportType.slice(1),
+        organizationName: 'Test Clinic' // This could come from user context
+      });
+      
+      showToast(`PDF exported successfully: ${filename}`, 'success');
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+      showToast('Failed to export PDF. Please try again.', 'error');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (!reportData) return;
+    
+    try {
+      const filename = exportToCSV(reportData, {
+        dateRange: formatDateRange(dateRange),
+        reportType: reportType.charAt(0).toUpperCase() + reportType.slice(1),
+        organizationName: 'Test Clinic' // This could come from user context
+      });
+      
+      showToast(`CSV exported successfully: ${filename}`, 'success');
+    } catch (error) {
+      console.error('Failed to export CSV:', error);
+      showToast('Failed to export CSV. Please try again.', 'error');
     }
   };
 
@@ -145,195 +193,218 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-8 animate-fade-in">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Reports & Analytics</h1>
-          <p className="text-foreground">Comprehensive insights into pet compliance and activity</p>
-        </div>
+    <>
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
 
-        {/* Controls */}
-        <div className="mb-8">
-          <Card variant="outlined" className="animate-fade-in">
-            <CardContent className="p-6">
-              <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Date Range</label>
-                    <select
-                      value={dateRange}
-                      onChange={(e) => setDateRange(e.target.value as any)}
-                      className="select"
+      <div className="min-h-screen bg-background py-8 animate-fade-in">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-foreground mb-2">Reports & Analytics</h1>
+            <p className="text-foreground">Comprehensive insights into pet compliance and activity</p>
+          </div>
+
+          {/* Controls */}
+          <div className="mb-8">
+            <Card variant="outlined" className="animate-fade-in">
+              <CardContent className="p-6">
+                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1">Date Range</label>
+                      <select
+                        value={dateRange}
+                        onChange={(e) => setDateRange(e.target.value as any)}
+                        className="select"
+                      >
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d">Last 30 Days</option>
+                        <option value="90d">Last 90 Days</option>
+                        <option value="1y">Last Year</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1">Report Type</label>
+                      <select
+                        value={reportType}
+                        onChange={(e) => setReportType(e.target.value as any)}
+                        className="select"
+                      >
+                        <option value="overview">Overview</option>
+                        <option value="compliance">Compliance</option>
+                        <option value="trends">Trends</option>
+                        <option value="details">Details</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex space-x-3">
+                    <Button 
+                      variant="outline" 
+                      leftIcon={<span>📊</span>}
+                      onClick={handleExportPDF}
+                      disabled={isExporting}
+                      className="min-w-[120px]"
                     >
-                      <option value="7d">Last 7 Days</option>
-                      <option value="30d">Last 30 Days</option>
-                      <option value="90d">Last 90 Days</option>
-                      <option value="1y">Last Year</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Report Type</label>
-                    <select
-                      value={reportType}
-                      onChange={(e) => setReportType(e.target.value as any)}
-                      className="select"
+                      {isExporting ? 'Generating...' : 'Export PDF'}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      leftIcon={<span>📈</span>}
+                      onClick={handleExportCSV}
+                      disabled={isExporting}
+                      className="min-w-[120px]"
                     >
-                      <option value="overview">Overview</option>
-                      <option value="compliance">Compliance</option>
-                      <option value="trends">Trends</option>
-                      <option value="details">Details</option>
-                    </select>
+                      Export CSV
+                    </Button>
+                    <Button leftIcon={<span>🔄</span>} onClick={loadReportData}>
+                      Refresh
+                    </Button>
                   </div>
                 </div>
-                <div className="flex space-x-3">
-                  <Button variant="outline" leftIcon={<span>📊</span>}>
-                    Export PDF
-                  </Button>
-                  <Button variant="outline" leftIcon={<span>📈</span>}>
-                    Export CSV
-                  </Button>
-                  <Button leftIcon={<span>🔄</span>} onClick={loadReportData}>
-                    Refresh
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card variant="elevated" className="animate-scale-in">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-foreground">Total Pets</p>
-                  <p className="text-3xl font-bold text-foreground">{reportData.totalPets.toLocaleString()}</p>
-                </div>
-                <div className="text-primary text-3xl">🐾</div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card variant="elevated" className="animate-scale-in">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-foreground">Compliance Rate</p>
-                  <p className="text-3xl font-bold text-foreground">{getCompliancePercentage()}%</p>
-                </div>
-                <div className="text-success text-3xl">✅</div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card variant="elevated" className="animate-scale-in">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-foreground">Recent Check-ins</p>
-                  <p className="text-3xl font-bold text-foreground">{reportData.recentCheckIns}</p>
-                </div>
-                <div className="text-warning text-3xl">📅</div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card variant="elevated" className="animate-scale-in">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-foreground">Non-Compliant</p>
-                  <p className="text-3xl font-bold text-foreground">{reportData.nonCompliantPets}</p>
-                </div>
-                <div className="text-error text-3xl">⚠️</div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Detailed Reports */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Pet Types Distribution */}
-          <Card variant="elevated" className="animate-slide-in">
-            <CardHeader>
-              <CardTitle>Pet Types Distribution</CardTitle>
-              <CardDescription>Breakdown of pets by type</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {reportData.topPetTypes.map((petType, index) => (
-                  <div key={petType.type} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 rounded-full bg-primary"></div>
-                      <span className="font-medium text-foreground">{petType.type}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-foreground">{petType.count}</span>
-                      <Badge variant="default">{petType.percentage}%</Badge>
-                    </div>
+          {/* Key Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card variant="elevated" className="animate-scale-in">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Total Pets</p>
+                    <p className="text-3xl font-bold text-foreground">{reportData.totalPets.toLocaleString()}</p>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  <div className="text-primary text-3xl">🐾</div>
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Compliance by Category */}
-          <Card variant="elevated" className="animate-slide-in">
-            <CardHeader>
-              <CardTitle>Compliance by Category</CardTitle>
-              <CardDescription>Compliance rates across different categories</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {reportData.complianceByCategory.map((category) => {
-                  const complianceRate = Math.round((category.compliant / category.total) * 100);
-                  return (
-                    <div key={category.category} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-foreground">{category.category}</span>
-                        <Badge variant={getStatusVariant(complianceRate)}>{complianceRate}%</Badge>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div
-                          className="bg-primary h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${complianceRate}%` }}
-                        ></div>
-                      </div>
-                      <div className="flex justify-between text-sm text-foreground">
-                        <span>{category.compliant} compliant</span>
-                        <span>{category.nonCompliant} non-compliant</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Monthly Trends */}
-          <Card variant="elevated" className="animate-slide-in lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Monthly Activity Trends</CardTitle>
-              <CardDescription>Check-ins and compliance checks over time</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-6 gap-4">
-                {reportData.monthlyTrends.map((trend) => (
-                  <div key={trend.month} className="text-center space-y-2">
-                    <div className="text-sm font-medium text-foreground">{trend.month}</div>
-                    <div className="space-y-1">
-                      <div className="text-xs text-foreground">Check-ins: {trend.checkIns}</div>
-                      <div className="text-xs text-foreground">Compliance: {trend.complianceChecks}</div>
-                    </div>
+            <Card variant="elevated" className="animate-scale-in">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Compliance Rate</p>
+                    <p className="text-3xl font-bold text-foreground">{getCompliancePercentage()}%</p>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  <div className="text-success text-3xl">✅</div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card variant="elevated" className="animate-scale-in">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Recent Check-ins</p>
+                    <p className="text-3xl font-bold text-foreground">{reportData.recentCheckIns}</p>
+                  </div>
+                  <div className="text-warning text-3xl">📅</div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card variant="elevated" className="animate-scale-in">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Non-Compliant</p>
+                    <p className="text-3xl font-bold text-foreground">{reportData.nonCompliantPets}</p>
+                  </div>
+                  <div className="text-error text-3xl">⚠️</div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Detailed Reports */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Pet Types Distribution */}
+            <Card variant="elevated" className="animate-slide-in">
+              <CardHeader>
+                <CardTitle>Pet Types Distribution</CardTitle>
+                <CardDescription>Breakdown of pets by type</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {reportData.topPetTypes.map((petType, index) => (
+                    <div key={petType.type} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-3 h-3 rounded-full bg-primary"></div>
+                        <span className="font-medium text-foreground">{petType.type}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-foreground">{petType.count}</span>
+                        <Badge variant="default">{petType.percentage}%</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Compliance by Category */}
+            <Card variant="elevated" className="animate-slide-in">
+              <CardHeader>
+                <CardTitle>Compliance by Category</CardTitle>
+                <CardDescription>Compliance rates across different categories</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {reportData.complianceByCategory.map((category) => {
+                    const complianceRate = Math.round((category.compliant / category.total) * 100);
+                    return (
+                      <div key={category.category} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-foreground">{category.category}</span>
+                          <Badge variant={getStatusVariant(complianceRate)}>{complianceRate}%</Badge>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2">
+                          <div
+                            className="bg-primary h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${complianceRate}%` }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between text-sm text-foreground">
+                          <span>{category.compliant} compliant</span>
+                          <span>{category.nonCompliant} non-compliant</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Monthly Trends */}
+            <Card variant="elevated" className="animate-slide-in lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Monthly Activity Trends</CardTitle>
+                <CardDescription>Check-ins and compliance checks over time</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-6 gap-4">
+                  {reportData.monthlyTrends.map((trend) => (
+                    <div key={trend.month} className="text-center space-y-2">
+                      <div className="text-sm font-medium text-foreground">{trend.month}</div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-foreground">Check-ins: {trend.checkIns}</div>
+                        <div className="text-xs text-foreground">Compliance: {trend.complianceChecks}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
