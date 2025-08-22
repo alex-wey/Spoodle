@@ -20,6 +20,7 @@ export default function Navigation() {
     { name: 'Compliance', href: '/compliance', icon: '✅' },
     { name: 'Search', href: '/search', icon: '🔍' },
     { name: 'Verification', href: '/verification', icon: '🔐' },
+    { name: 'Settings', href: '/settings', icon: '⚙️' },
   ]
 
   const getBreadcrumbs = () => {
