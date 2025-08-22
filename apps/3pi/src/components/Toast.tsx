@@ -89,12 +89,7 @@ export const useToast = (): ToastContextType => {
     setToasts(prev => [...prev, { id, message, type, duration }])
   }
 
-  const removeToast = (id: string) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id))
-  }
-
   return {
-    showToast,
-    removeToast
+    showToast
   }
 }

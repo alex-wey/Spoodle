@@ -1,5 +1,12 @@
 import { jsPDF } from 'jspdf'
-import 'jspdf-autotable'
+import autoTable from 'jspdf-autotable'
+
+// Extend jsPDF with autoTable functionality
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF
+  }
+}
 
 interface ReportData {
   totalPets: number;
@@ -68,7 +75,7 @@ export const exportToPDF = async (data: ReportData, options: ExportOptions) => {
     ['Compliance Rate', `${Math.round((data.compliantPets / data.totalPets) * 100)}%`]
   ]
   
-  doc.autoTable({
+  autoTable(doc, {
     startY: 65,
     head: [['Metric', 'Value']],
     body: metrics,
@@ -80,7 +87,7 @@ export const exportToPDF = async (data: ReportData, options: ExportOptions) => {
   // Pet Types Distribution
   doc.setFontSize(16)
   doc.setTextColor(30, 30, 30)
-  doc.text('Pet Types Distribution', 20, doc.lastAutoTable.finalY + 20)
+  doc.text('Pet Types Distribution', 20, (doc as any).lastAutoTable.finalY + 20)
   
   const petTypesData = data.topPetTypes.map(pt => [
     pt.type,
@@ -88,8 +95,8 @@ export const exportToPDF = async (data: ReportData, options: ExportOptions) => {
     `${pt.percentage}%`
   ])
   
-  doc.autoTable({
-    startY: doc.lastAutoTable.finalY + 25,
+  autoTable(doc, {
+    startY: (doc as any).lastAutoTable.finalY + 25,
     head: [['Pet Type', 'Count', 'Percentage']],
     body: petTypesData,
     theme: 'grid',
@@ -100,7 +107,7 @@ export const exportToPDF = async (data: ReportData, options: ExportOptions) => {
   // Compliance by Category
   doc.setFontSize(16)
   doc.setTextColor(30, 30, 30)
-  doc.text('Compliance by Category', 20, doc.lastAutoTable.finalY + 20)
+  doc.text('Compliance by Category', 20, (doc as any).lastAutoTable.finalY + 20)
   
   const complianceData = data.complianceByCategory.map(cat => {
     const rate = Math.round((cat.compliant / cat.total) * 100)
@@ -113,8 +120,8 @@ export const exportToPDF = async (data: ReportData, options: ExportOptions) => {
     ]
   })
   
-  doc.autoTable({
-    startY: doc.lastAutoTable.finalY + 25,
+  autoTable(doc, {
+    startY: (doc as any).lastAutoTable.finalY + 25,
     head: [['Category', 'Compliant', 'Non-Compliant', 'Total', 'Rate']],
     body: complianceData,
     theme: 'grid',
@@ -125,7 +132,7 @@ export const exportToPDF = async (data: ReportData, options: ExportOptions) => {
   // Monthly Trends
   doc.setFontSize(16)
   doc.setTextColor(30, 30, 30)
-  doc.text('Monthly Activity Trends', 20, doc.lastAutoTable.finalY + 20)
+  doc.text('Monthly Activity Trends', 20, (doc as any).lastAutoTable.finalY + 20)
   
   const trendsData = data.monthlyTrends.map(trend => [
     trend.month,
@@ -133,8 +140,8 @@ export const exportToPDF = async (data: ReportData, options: ExportOptions) => {
     trend.complianceChecks.toString()
   ])
   
-  doc.autoTable({
-    startY: doc.lastAutoTable.finalY + 25,
+  autoTable(doc, {
+    startY: (doc as any).lastAutoTable.finalY + 25,
     head: [['Month', 'Check-ins', 'Compliance Checks']],
     body: trendsData,
     theme: 'grid',
