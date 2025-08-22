@@ -36,7 +36,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (session?.user) {
-      setUser(session.user as User)
+      // Ensure the user object has all required properties
+      const userData: User = {
+        id: session.user.id || '',
+        email: session.user.email || '',
+        name: session.user.name,
+        role: session.user.role || 'user',
+        organizationId: session.user.organizationId,
+        organization: session.user.organization
+      }
+      setUser(userData)
     } else {
       setUser(null)
     }
