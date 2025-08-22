@@ -20,19 +20,29 @@ export default function OwnerProfilePage({ params }: { params: Promise<{ id: str
       setError(null);
       
       try {
-        // Load owner data
-        const ownerResponse = await apiService.getOwnerById(resolvedParams.id);
+        // Check if the ID parameter looks like an email
+        const isEmail = resolvedParams.id.includes('@');
+        
+        let ownerResponse;
+        if (isEmail) {
+          // If it's an email, use the email endpoint
+          ownerResponse = await apiService.getOwnerByEmail(resolvedParams.id);
+        } else {
+          // If it's an ID, use the ID endpoint
+          ownerResponse = await apiService.getOwnerById(resolvedParams.id);
+        }
+        
         if (ownerResponse.success && ownerResponse.data) {
           setOwner(ownerResponse.data);
+          
+          // Load owner's pets using the owner ID from the response
+          const petsResponse = await apiService.getOwnerPets(ownerResponse.data.id);
+          if (petsResponse.success && petsResponse.data) {
+            setOwnerPets(petsResponse.data);
+          }
         } else {
           setError(ownerResponse.error || 'Failed to load owner data');
           return;
-        }
-
-        // Load owner's pets
-        const petsResponse = await apiService.getOwnerPets(resolvedParams.id);
-        if (petsResponse.success && petsResponse.data) {
-          setOwnerPets(petsResponse.data);
         }
       } catch (err) {
         setError('An error occurred while loading owner data');
