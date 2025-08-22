@@ -3,9 +3,11 @@
 import { useState, useEffect, use } from 'react';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Badge, Skeleton, SkeletonCard } from '@/components';
 import { apiService, Pet, MedicalRecord, ComplianceCheck } from '@/lib/api';
+import { useRouter } from 'next/navigation';
 
 export default function PetProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
+  const router = useRouter();
   const [pet, setPet] = useState<Pet | null>(null);
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [complianceChecks, setComplianceChecks] = useState<ComplianceCheck[]>([]);
@@ -247,6 +249,15 @@ export default function PetProfilePage({ params }: { params: Promise<{ id: strin
                 <p><strong>Email:</strong> {pet.ownerEmail}</p>
                 <p><strong>Phone:</strong> {pet.ownerPhone}</p>
               </div>
+              <Button
+                onClick={() => router.push(`/owners/${pet.ownerEmail}`)}
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                leftIcon={<span>👤</span>}
+              >
+                View Owner Profile
+              </Button>
             </div>
             
             <div>

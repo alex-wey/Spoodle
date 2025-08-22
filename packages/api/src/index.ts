@@ -145,6 +145,73 @@ const mockComplianceChecks = [
   }
 ];
 
+// Mock owner data
+const mockOwners = [
+  {
+    id: '1',
+    name: 'John Smith',
+    email: 'john.smith@email.com',
+    phone: '(555) 111-2222',
+    address: '123 Main St, Anytown, ST 12345',
+    emergencyContact: {
+      name: 'Jane Smith',
+      phone: '(555) 111-3333',
+      relationship: 'Spouse'
+    },
+    pets: ['1'], // Pet IDs
+    registrationDate: '2024-01-01',
+    lastActive: '2024-01-15',
+    notes: ['Prefers morning appointments', 'Has 2 children under 10'],
+    preferences: {
+      communicationMethod: 'email',
+      appointmentReminders: true,
+      marketingEmails: false
+    }
+  },
+  {
+    id: '2',
+    name: 'Sarah Johnson',
+    email: 'sarah.johnson@email.com',
+    phone: '(555) 123-4567',
+    address: '456 Oak Ave, Somewhere, ST 54321',
+    emergencyContact: {
+      name: 'Mike Johnson',
+      phone: '(555) 123-7890',
+      relationship: 'Husband'
+    },
+    pets: ['2'],
+    registrationDate: '2024-01-05',
+    lastActive: '2024-01-14',
+    notes: ['Works from home', 'Available for last-minute appointments'],
+    preferences: {
+      communicationMethod: 'phone',
+      appointmentReminders: true,
+      marketingEmails: true
+    }
+  },
+  {
+    id: '3',
+    name: 'Michael Chen',
+    email: 'michael.chen@email.com',
+    phone: '(555) 234-5678',
+    address: '789 Pine Rd, Elsewhere, ST 67890',
+    emergencyContact: {
+      name: 'Lisa Chen',
+      phone: '(555) 234-1111',
+      relationship: 'Wife'
+    },
+    pets: ['3'],
+    registrationDate: '2024-01-10',
+    lastActive: '2024-01-12',
+    notes: ['Prefers weekend appointments', 'Has dietary restrictions for pets'],
+    preferences: {
+      communicationMethod: 'sms',
+      appointmentReminders: false,
+      marketingEmails: false
+    }
+  }
+];
+
 // Health check
 app.get('/health', (req: Request, res: Response) => {
   res.json({ 
@@ -380,6 +447,61 @@ app.get('/api/reports', (req: Request, res: Response) => {
     success: true,
     data: reportsData,
     message: `Reports data for ${dateRange}`
+  });
+});
+
+// Owner API endpoints
+app.get('/api/owners/:id', (req: Request, res: Response) => {
+  const ownerId = req.params.id;
+  const owner = mockOwners.find(o => o.id === ownerId);
+  
+  if (!owner) {
+    return res.status(404).json({
+      success: false,
+      error: 'Owner not found'
+    });
+  }
+  
+  res.json({
+    success: true,
+    data: owner
+  });
+});
+
+app.get('/api/owners/email/:email', (req: Request, res: Response) => {
+  const email = decodeURIComponent(req.params.email);
+  const owner = mockOwners.find(o => o.email === email);
+  
+  if (!owner) {
+    return res.status(404).json({
+      success: false,
+      error: 'Owner not found'
+    });
+  }
+  
+  res.json({
+    success: true,
+    data: owner
+  });
+});
+
+app.get('/api/owners/:id/pets', (req: Request, res: Response) => {
+  const ownerId = req.params.id;
+  const owner = mockOwners.find(o => o.id === ownerId);
+  
+  if (!owner) {
+    return res.status(404).json({
+      success: false,
+      error: 'Owner not found'
+    });
+  }
+  
+  // Get pets for this owner
+  const ownerPets = mockPets.filter(pet => owner.pets.includes(pet.id));
+  
+  res.json({
+    success: true,
+    data: ownerPets
   });
 });
 

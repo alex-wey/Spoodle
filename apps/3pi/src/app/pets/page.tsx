@@ -275,6 +275,14 @@ export default function PetsPage() {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => router.push(`/owners/${pet.ownerEmail}`)}
+                        leftIcon={<span>👤</span>}
+                      >
+                        Owner Profile
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleStartComplianceCheck(pet.id)}
                         leftIcon={<span>🏥</span>}
                       >

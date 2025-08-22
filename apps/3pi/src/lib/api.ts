@@ -26,6 +26,28 @@ export interface Pet {
   notes: string[];
 }
 
+export interface Owner {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address?: string;
+  emergencyContact?: {
+    name: string;
+    phone: string;
+    relationship: string;
+  };
+  pets: string[]; // Array of pet IDs
+  registrationDate: Date;
+  lastActive: Date;
+  notes?: string[];
+  preferences?: {
+    communicationMethod: 'email' | 'phone' | 'sms';
+    appointmentReminders: boolean;
+    marketingEmails: boolean;
+  };
+}
+
 export interface MedicalRecord {
   id: string;
   type: 'vaccination' | 'health-check' | 'treatment' | 'test-result' | 'boarding' | 'other';
@@ -221,6 +243,26 @@ class ApiService {
     }>;
   }>> {
     return this.request(`/api/reports?dateRange=${dateRange}`);
+  }
+
+  // Owner API calls
+  async getOwnerById(ownerId: string): Promise<ApiResponse<Owner>> {
+    return this.request<Owner>(`/api/owners/${ownerId}`);
+  }
+
+  async getOwnerByEmail(email: string): Promise<ApiResponse<Owner>> {
+    return this.request<Owner>(`/api/owners/email/${encodeURIComponent(email)}`);
+  }
+
+  async getOwnerPets(ownerId: string): Promise<ApiResponse<Pet[]>> {
+    return this.request<Pet[]>(`/api/owners/${ownerId}/pets`);
+  }
+
+  async updateOwnerProfile(ownerId: string, updates: Partial<Owner>): Promise<ApiResponse<Owner>> {
+    return this.request<Owner>(`/api/owners/${ownerId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
   }
 
   // Health check
