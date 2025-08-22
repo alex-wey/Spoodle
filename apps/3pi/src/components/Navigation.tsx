@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePathname, useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
+import { Button } from './ui/Button'
+import { Badge } from './ui/Badge'
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
