@@ -275,7 +275,7 @@ export default function PetsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => router.push(`/owners/${pet.ownerEmail}`)}
+                        onClick={() => router.push(`/owners/email/${encodeURIComponent(pet.ownerEmail)}`)}
                         leftIcon={<span>👤</span>}
                       >
                         Owner Profile

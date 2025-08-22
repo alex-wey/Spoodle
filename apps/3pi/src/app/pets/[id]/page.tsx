@@ -250,7 +250,7 @@ export default function PetProfilePage({ params }: { params: Promise<{ id: strin
                 <p><strong>Phone:</strong> {pet.ownerPhone}</p>
               </div>
               <Button
-                onClick={() => router.push(`/owners/${pet.ownerEmail}`)}
+                onClick={() => router.push(`/owners/email/${encodeURIComponent(pet.ownerEmail)}`)}
                 variant="outline"
                 size="sm"
                 className="mt-2"
