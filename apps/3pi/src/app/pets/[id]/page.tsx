@@ -237,7 +237,7 @@ export default function PetProfilePage({ params }: { params: Promise<{ id: strin
                 <p><strong>Microchip:</strong> {pet.microchipNumber}</p>
               )}
               <p><strong>Spay/Neuter:</strong> {pet.spayNeuterStatus.replace(/\b\w/g, l => l.toUpperCase())}</p>
-              <p><strong>Last Check-in:</strong> {pet.lastCheckIn?.toLocaleDateString() || 'Never'}</p>
+              <p><strong>Last Check-in:</strong> {pet.lastCheckIn ? new Date(pet.lastCheckIn).toLocaleDateString() : 'Never'}</p>
             </div>
             
             <div className="space-y-2">

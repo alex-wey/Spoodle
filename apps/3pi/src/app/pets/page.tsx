@@ -250,7 +250,7 @@ export default function PetsPage() {
                         Owner: {pet.ownerName} • Spoodle ID: {pet.spoodleId}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Last check-in: {new Date(pet.lastCheckIn).toLocaleDateString()}
+                        Last check-in: {pet.lastCheckIn ? new Date(pet.lastCheckIn).toLocaleDateString() : 'Never'}
                       </p>
                     </div>
                   </div>
