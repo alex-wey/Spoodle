@@ -108,7 +108,7 @@ export default function Navigation() {
       }`}>
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200" style={{ marginTop: '50px' }}>
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">S</span>
@@ -129,7 +129,7 @@ export default function Navigation() {
           </div>
 
           {/* Navigation Items */}
-          <nav className="flex-1 px-4 py-6 space-y-2" style={{ marginTop: '150px' }}>
+          <nav className="flex-1 px-4 py-6 space-y-2" style={{ marginTop: '100px' }}>
             {navigationItems.map((item) => (
               <a
                 key={item.name}
