@@ -228,10 +228,10 @@ export default function DashboardPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                                 <div>
-                   <h3 className="font-medium text-lg">{organizationInfo.name}</h3>
-                   <p className="text-foreground">{organizationInfo.address}</p>
-                 </div>
+                <div>
+                  <h3 className="font-medium text-lg">{organizationInfo.name}</h3>
+                  <p className="text-foreground">{organizationInfo.address}</p>
+                </div>
                 
                 <div className="space-y-2 text-sm">
                   <p><strong>Phone:</strong> {organizationInfo.phone}</p>
@@ -275,12 +275,12 @@ export default function DashboardPage() {
                   </Badge>
                 </div>
                 
-                                 <div className="flex items-center justify-between">
-                   <span className="text-sm">Last Backup</span>
-                   <span className="text-sm text-foreground">
-                     {new Date().toLocaleDateString()}
-                   </span>
-                 </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Last Backup</span>
+                  <span className="text-sm text-foreground">
+                    {new Date().toLocaleDateString()}
+                  </span>
+                </div>
               </CardContent>
             </Card>
 
