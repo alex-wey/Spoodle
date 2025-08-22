@@ -451,23 +451,6 @@ app.get('/api/reports', (req: Request, res: Response) => {
 });
 
 // Owner API endpoints
-app.get('/api/owners/:id', (req: Request, res: Response) => {
-  const ownerId = req.params.id;
-  const owner = mockOwners.find(o => o.id === ownerId);
-  
-  if (!owner) {
-    return res.status(404).json({
-      success: false,
-      error: 'Owner not found'
-    });
-  }
-  
-  res.json({
-    success: true,
-    data: owner
-  });
-});
-
 app.get('/api/owners/email/:email', (req: Request, res: Response) => {
   const email = decodeURIComponent(req.params.email);
   const owner = mockOwners.find(o => o.email === email);
@@ -502,6 +485,23 @@ app.get('/api/owners/:id/pets', (req: Request, res: Response) => {
   res.json({
     success: true,
     data: ownerPets
+  });
+});
+
+app.get('/api/owners/:id', (req: Request, res: Response) => {
+  const ownerId = req.params.id;
+  const owner = mockOwners.find(o => o.id === ownerId);
+  
+  if (!owner) {
+    return res.status(404).json({
+      success: false,
+      error: 'Owner not found'
+    });
+  }
+  
+  res.json({
+    success: true,
+    data: owner
   });
 });
 
