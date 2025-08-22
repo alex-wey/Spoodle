@@ -5,8 +5,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePathname } from "next/navigation";
 import Navigation from "./Navigation";
-import QuickAccessToolbar from "./QuickAccessToolbar";
-import FloatingActionButton from "./FloatingActionButton";
 
 function NavigationWrapper({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -27,11 +25,7 @@ function NavigationWrapper({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Navigation />
-      <QuickAccessToolbar />
-      <div className="lg:pl-64">
-        {children}
-      </div>
-      <FloatingActionButton />
+      {children}
     </>
   );
 }

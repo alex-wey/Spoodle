@@ -7,7 +7,7 @@ import { Button } from './ui/Button'
 import { Badge } from './ui/Badge'
 
 export default function Navigation() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false) // Start collapsed
   const [isSearchExpanded, setIsSearchExpanded] = useState(false)
   const { user, logout } = useAuth()
   const pathname = usePathname()
@@ -46,20 +46,33 @@ export default function Navigation() {
     }
   }
 
+  const toggleMenu = () => {
+    console.log('Hamburger menu clicked! Current state:', isMenuOpen)
+    setIsMenuOpen(prev => !prev)
+    console.log('New state will be:', !isMenuOpen)
+  }
+
   return (
     <>
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden animate-backdrop-fade-in"
-          onClick={() => setIsMenuOpen(false)}
+          onClick={() => {
+            console.log('Overlay clicked, closing menu')
+            setIsMenuOpen(false)
+          }}
         />
       )}
 
       {/* Floating Hamburger Menu Button - Fixed position on all screens */}
       <button
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
-        className="fixed top-8 left-8 w-[50px] h-[50px] bg-white border-2 border-gray-300 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 z-50 flex items-center justify-center hover:bg-gray-50"
+        onClick={toggleMenu}
+        className={`fixed top-8 left-8 w-[50px] h-[50px] bg-white border-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 z-50 flex items-center justify-center hover:bg-gray-50 active:bg-gray-100 active:scale-95 cursor-pointer ${
+          isMenuOpen 
+            ? 'border-primary bg-primary/5 shadow-primary/20' 
+            : 'border-gray-300 hover:border-gray-400'
+        }`}
         aria-label="Toggle navigation menu"
         style={{
           top: '32px', // 50px from top
@@ -67,16 +80,32 @@ export default function Navigation() {
           width: '50px',
           height: '50px'
         }}
+        onMouseDown={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }}
+        onTouchStart={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }}
       >
-        <svg className="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
+        {isMenuOpen ? (
+          // X icon when menu is open
+          <svg className="w-6 h-6 text-primary transition-colors duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        ) : (
+          // Hamburger icon when menu is closed
+          <svg className="w-6 h-6 text-gray-700 transition-colors duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        )}
       </button>
 
-      {/* Mobile Sidebar */}
-      <div className={`fixed top-0 left-0 h-full w-64 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${
-        isMenuOpen ? 'translate-x-0' : '-translate-x-full'
-      } animate-menu-slide-in`}>
+      {/* Sidebar - Now controlled by hamburger menu on all screen sizes */}
+      <div className={`fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 shadow-sm z-40 transform transition-all duration-300 ease-in-out ${
+        isMenuOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full shadow-none'
+      }`}>
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
@@ -87,8 +116,11 @@ export default function Navigation() {
               <span className="font-bold text-lg text-gray-900">Spoodle 3PI</span>
             </div>
             <button
-              onClick={() => setIsMenuOpen(false)}
-              className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              onClick={() => {
+                console.log('Close button clicked')
+                setIsMenuOpen(false)
+              }}
+              className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 lg:hidden"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -97,17 +129,23 @@ export default function Navigation() {
           </div>
 
           {/* Navigation Items */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
+          <nav className="flex-1 px-4 py-6 space-y-2" style={{ marginTop: '150px' }}>
             {navigationItems.map((item) => (
               <a
                 key={item.name}
                 href={item.href}
-                className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
                   pathname === item.href
-                    ? 'bg-primary text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'text-gray-700 hover:bg-gray-100 hover:shadow-sm'
                 }`}
-                onClick={() => setIsMenuOpen(false)}
+                onClick={() => {
+                  console.log('Navigation item clicked:', item.name)
+                  // Only auto-close on mobile
+                  if (window.innerWidth < 1024) {
+                    setIsMenuOpen(false)
+                  }
+                }}
               >
                 <span className="text-lg">{item.icon}</span>
                 <span className="font-medium">{item.name}</span>
@@ -139,63 +177,10 @@ export default function Navigation() {
         </div>
       </div>
 
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 shadow-sm z-40">
-        <div className="flex flex-col h-full">
-          {/* Sidebar Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">S</span>
-              </div>
-              <span className="font-bold text-lg text-gray-900">Spoodle 3PI</span>
-            </div>
-          </div>
-
-          {/* Navigation Items */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
-            {navigationItems.map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-                  pathname === item.href
-                    ? 'bg-primary text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span className="text-lg">{item.icon}</span>
-                <span className="font-medium">{item.name}</span>
-              </a>
-            ))}
-          </nav>
-
-          {/* User Section */}
-          <div className="border-t border-gray-200 p-4">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                <span className="text-white font-medium">
-                  {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                </span>
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">{user?.name || 'User'}</p>
-                <p className="text-sm text-gray-500">{user?.email}</p>
-              </div>
-            </div>
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              className="w-full"
-            >
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Area with proper offset for desktop sidebar */}
-      <div className="lg:pl-64">
+      {/* Main Content Area - Now adjusts based on sidebar state */}
+      <div className={`transition-all duration-300 ease-in-out ${
+        isMenuOpen ? 'lg:pl-64' : 'lg:pl-0'
+      }`}>
         {/* Breadcrumb Navigation */}
         <div className="pt-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -222,6 +207,15 @@ export default function Navigation() {
                 ))}
               </ol>
             </nav>
+          </div>
+        </div>
+        
+        {/* Sidebar State Indicator (subtle) */}
+        <div className={`fixed top-20 left-4 transition-all duration-300 ease-in-out ${
+          isMenuOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'
+        }`}>
+          <div className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-md shadow-sm">
+            Sidebar Open
           </div>
         </div>
       </div>

@@ -7,8 +7,6 @@ export { Skeleton, SkeletonText, SkeletonCard } from './ui/Skeleton';
 
 // Navigation Components
 export { default as Navigation } from './Navigation';
-export { default as QuickAccessToolbar } from './QuickAccessToolbar';
-export { default as FloatingActionButton } from './FloatingActionButton';
 
 // Utility Components
 export { default as Toast } from './Toast';
