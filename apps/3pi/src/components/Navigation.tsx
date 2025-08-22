@@ -107,28 +107,10 @@ export default function Navigation() {
         isMenuOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full shadow-none'
       }`}>
         <div className="flex flex-col h-full">
-          {/* Sidebar Header - Just the logo */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200" style={{ marginTop: '80px' }}>
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">S</span>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                console.log('Close button clicked')
-                setIsMenuOpen(false)
-              }}
-              className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 lg:hidden"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+
 
           {/* Navigation Items */}
-          <nav className="flex-1 px-4 py-6 space-y-2" style={{ marginTop: '20px' }}>
+          <nav className="flex-1 px-4 py-6 space-y-2" style={{ marginTop: '80px' }}>
             {navigationItems.map((item) => (
               <a
                 key={item.name}
