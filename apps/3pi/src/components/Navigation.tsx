@@ -65,10 +65,10 @@ export default function Navigation() {
         />
       )}
 
-      {/* Floating Hamburger Menu Button - Fixed position on all screens */}
+      {/* Floating Hamburger Menu Button - Positioned to avoid sidebar overlap */}
       <button
         onClick={toggleMenu}
-        className={`fixed top-8 left-8 w-[50px] h-[50px] bg-white border-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 z-50 flex items-center justify-center hover:bg-gray-50 active:bg-gray-100 active:scale-95 cursor-pointer ${
+        className={`fixed w-[50px] h-[50px] bg-white border-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 z-50 flex items-center justify-center hover:bg-gray-50 active:bg-gray-100 active:scale-95 cursor-pointer ${
           isMenuOpen 
             ? 'border-primary bg-primary/5 shadow-primary/20' 
             : 'border-gray-300 hover:border-gray-400'
@@ -76,7 +76,7 @@ export default function Navigation() {
         aria-label="Toggle navigation menu"
         style={{
           top: '32px', // 50px from top
-          left: '32px', // 50px from left
+          left: isMenuOpen ? '280px' : '32px', // Move right when sidebar is open to avoid overlap
           width: '50px',
           height: '50px'
         }}
@@ -108,7 +108,7 @@ export default function Navigation() {
       }`}>
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200" style={{ marginTop: '50px' }}>
+          <div className="flex items-center justify-between p-4 border-b border-gray-200" style={{ marginTop: '80px' }}>
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">S</span>
@@ -129,7 +129,7 @@ export default function Navigation() {
           </div>
 
           {/* Navigation Items */}
-          <nav className="flex-1 px-4 py-6 space-y-2" style={{ marginTop: '100px' }}>
+          <nav className="flex-1 px-4 py-6 space-y-2" style={{ marginTop: '120px' }}>
             {navigationItems.map((item) => (
               <a
                 key={item.name}
