@@ -29,7 +29,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
+  // Development bypass - set to true to skip authentication
+  const DEV_BYPASS_AUTH = process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true'
+
   useEffect(() => {
+    if (DEV_BYPASS_AUTH) {
+      // Mock user for development
+      const mockUser: User = {
+        id: 'dev-user-123',
+        email: 'dev@spoodle.com',
+        name: 'Development User',
+        role: 'ADMIN',
+        organizationId: 'dev-org-123',
+        organization: {
+          id: 'dev-org-123',
+          name: 'Development Organization',
+          type: 'VETERINARY_CLINIC',
+          status: 'VERIFIED'
+        }
+      }
+      setUser(mockUser)
+      setIsLoading(false)
+      return
+    }
+
     if (status === 'loading') {
       setIsLoading(true)
       return
@@ -51,9 +74,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     setIsLoading(false)
-  }, [session, status])
+  }, [session, status, DEV_BYPASS_AUTH])
 
   const login = async (email: string, password: string) => {
+    if (DEV_BYPASS_AUTH) {
+      // In development bypass mode, just redirect to dashboard
+      router.push('/dashboard')
+      return
+    }
+
     try {
       const result = await signIn('credentials', {
         email,
@@ -72,6 +101,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = async () => {
+    if (DEV_BYPASS_AUTH) {
+      // In development bypass mode, just redirect to home
+      router.push('/')
+      return
+    }
+
     await signOut({ redirect: false })
     router.push('/auth/signin')
   }
