@@ -1,9 +1,7 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { 
-  User, Pet, MedicalRecord, Task, Appointment, 
-  Clinic, VetProfile, Notification, generateId 
-} from '@spoodle/shared';
+import { User, Pet, MedicalRecord, Task, Appointment } from '../entities/index';
+
 
 export type TableName = 'users' | 'pets' | 'medicalRecords' | 'tasks' | 'appointments' | 'clinics' | 'vetProfiles' | 'notifications';
 

@@ -1,5 +1,5 @@
 // Export all types
-export * from './types/index.js';
+export * from '../database/entities/index.js';
 
 // Utility functions
 export const generateId = (): string => {

@@ -44,26 +44,18 @@ Full TypeScript/React/Node.js stack with AWS Lambda serverless backend and Dynam
 ## Mono-repo Structure
 
 ```
-spoodle/
-├── apps/
+Spoodle/
+├── backend/
+│   ├── api/                      # Backend API (Lambda functions)
+│   ├── database/                 # DynamoDB schemas & data access layer
+│   └── shared/                   # Shared TypeScript types & utilities
+├── frontend/
 │   ├── mobile/                   # Pet Owner Mobile App (Expo)
 │   └── web/                      # Clinic Web App (Next.js)
-├── packages/
-│   ├── api/                      # Backend API (Lambda functions)
-│   ├── shared/                   # Shared TypeScript types & utilities
-│   ├── ui-components/            # Shared React components
-│   ├── database/                 # DynamoDB schemas & data access layer
-│   ├── ai-services/              # AI/ML integration services
-│   ├── auth/                     # Authentication utilities
-│   └── notifications/            # Push notification services
 ├── infrastructure/
 │   ├── cdk/                      # AWS CDK infrastructure code
 │   ├── environments/             # Environment-specific configs
 │   └── scripts/                  # Deployment & utility scripts
-├── tools/
-│   ├── eslint-config/            # Shared ESLint configuration
-│   ├── typescript-config/        # Shared TypeScript configs
-│   └── build-tools/              # Custom build utilities
 ├── docs/
 │   ├── api/                      # API documentation
 │   ├── architecture/             # System architecture docs
