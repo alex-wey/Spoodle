@@ -1,6 +1,42 @@
-import * as fs from 'fs-extra';
+import * as fs from 'fs/promises';
 import * as path from 'path';
-import { User, Pet, MedicalRecord, Task, Appointment } from '../entities/index';
+import { User, Pet, MedicalRecord, Task, Appointment } from '../entities/index.js';
+
+// Utility function to generate unique IDs
+function generateId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+// Utility function to ensure directory exists
+async function ensureDir(dirPath: string): Promise<void> {
+  try {
+    await fs.mkdir(dirPath, { recursive: true });
+  } catch (error) {
+    // Directory might already exist, ignore error
+  }
+}
+
+// Utility function to check if path exists
+async function pathExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Utility function to read JSON file
+async function readJson(filePath: string): Promise<any> {
+  const data = await fs.readFile(filePath, 'utf-8');
+  return JSON.parse(data);
+}
+
+// Utility function to write JSON file
+async function writeJson(filePath: string, data: any, options?: { spaces?: number }): Promise<void> {
+  const jsonString = JSON.stringify(data, null, options?.spaces || 0);
+  await fs.writeFile(filePath, jsonString, 'utf-8');
+}
 
 
 export type TableName = 'users' | 'pets' | 'medicalRecords' | 'tasks' | 'appointments' | 'clinics' | 'vetProfiles' | 'notifications';
@@ -19,15 +55,15 @@ export class LocalDatabase {
   }
 
   private async initializeDataDirectory(): Promise<void> {
-    await fs.ensureDir(this.dataDir);
+    await ensureDir(this.dataDir);
     
     // Create initial table files if they don't exist
     const tables: TableName[] = ['users', 'pets', 'medicalRecords', 'tasks', 'appointments', 'clinics', 'vetProfiles', 'notifications'];
     
     for (const table of tables) {
       const filePath = path.join(this.dataDir, `${table}.json`);
-      if (!(await fs.pathExists(filePath))) {
-        await fs.writeJson(filePath, []);
+      if (!(await pathExists(filePath))) {
+        await writeJson(filePath, []);
       }
     }
   }
@@ -39,23 +75,23 @@ export class LocalDatabase {
   private async readTable<T>(tableName: TableName): Promise<T[]> {
     const cacheKey = tableName;
     if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey);
+      return this.cache.get(cacheKey) as T[];
     }
 
     const filePath = this.getFilePath(tableName);
-    const data = await fs.readJson(filePath);
+    const data = await readJson(filePath) as T[];
     this.cache.set(cacheKey, data);
     return data;
   }
 
   private async writeTable<T>(tableName: TableName, data: T[]): Promise<void> {
     const filePath = this.getFilePath(tableName);
-    await fs.writeJson(filePath, data, { spaces: 2 });
+    await writeJson(filePath, data, { spaces: 2 });
     this.cache.set(tableName, data);
   }
 
   // Generic CRUD operations
-  async create<T extends { [key: string]: any }>(tableName: TableName, item: Omit<T, 'createdAt' | 'updatedAt'>): Promise<T> {
+  async create<T extends Record<string, any>>(tableName: TableName, item: Omit<T, 'createdAt' | 'updatedAt'>): Promise<T> {
     const data = await this.readTable<T>(tableName);
     const now = new Date().toISOString();
     
@@ -63,12 +99,12 @@ export class LocalDatabase {
       ...item,
       createdAt: now,
       updatedAt: now,
-    } as T;
+    } as unknown as T;
 
     // Generate ID if not provided
     const idField = this.getIdField(tableName);
-    if (!newItem[idField]) {
-      newItem[idField] = generateId();
+    if (!(newItem as any)[idField]) {
+      (newItem as any)[idField] = generateId();
     }
 
     data.push(newItem);
@@ -76,10 +112,10 @@ export class LocalDatabase {
     return newItem;
   }
 
-  async findById<T>(tableName: TableName, id: string): Promise<T | null> {
+  async findById<T extends Record<string, any>>(tableName: TableName, id: string): Promise<T | null> {
     const data = await this.readTable<T>(tableName);
     const idField = this.getIdField(tableName);
-    return data.find(item => item[idField] === id) || null;
+    return data.find(item => (item as any)[idField] === id) || null;
   }
 
   async findAll<T>(tableName: TableName): Promise<T[]> {
@@ -91,10 +127,10 @@ export class LocalDatabase {
     return data.filter(predicate);
   }
 
-  async update<T>(tableName: TableName, id: string, updates: Partial<T>): Promise<T | null> {
+  async update<T extends Record<string, any>>(tableName: TableName, id: string, updates: Partial<T>): Promise<T | null> {
     const data = await this.readTable<T>(tableName);
     const idField = this.getIdField(tableName);
-    const index = data.findIndex(item => item[idField] === id);
+    const index = data.findIndex(item => (item as any)[idField] === id);
     
     if (index === -1) return null;
 
@@ -102,7 +138,7 @@ export class LocalDatabase {
       ...data[index],
       ...updates,
       updatedAt: new Date().toISOString(),
-    };
+    } as T;
 
     data[index] = updatedItem;
     await this.writeTable(tableName, data);
@@ -110,11 +146,11 @@ export class LocalDatabase {
   }
 
   async delete(tableName: TableName, id: string): Promise<boolean> {
-    const data = await this.readTable(tableName);
+    const data = await this.readTable<Record<string, any>>(tableName);
     const idField = this.getIdField(tableName);
     const initialLength = data.length;
     
-    const filteredData = data.filter(item => item[idField] !== id);
+    const filteredData = data.filter(item => (item as any)[idField] !== id);
     
     if (filteredData.length === initialLength) return false;
     
@@ -137,19 +173,19 @@ export class LocalDatabase {
   }
 
   // Convenient typed methods
-  async createUser(user: Omit<User, 'petOwnerId' | 'createdAt' | 'updatedAt'>): Promise<User> {
+  async createUser(user: Omit<User, 'createdAt' | 'updatedAt'>): Promise<User> {
     return await this.create<User>('users', user);
   }
 
-  async createPet(pet: Omit<Pet, 'petId' | 'createdAt' | 'updatedAt'>): Promise<Pet> {
+  async createPet(pet: Omit<Pet, 'createdAt' | 'updatedAt'>): Promise<Pet> {
     return await this.create<Pet>('pets', pet);
   }
 
-  async createTask(task: Omit<Task, 'taskId' | 'createdAt' | 'updatedAt'>): Promise<Task> {
+  async createTask(task: Omit<Task, 'createdAt' | 'updatedAt'>): Promise<Task> {
     return await this.create<Task>('tasks', task);
   }
 
-  async createAppointment(appointment: Omit<Appointment, 'appointmentId' | 'createdAt' | 'updatedAt'>): Promise<Appointment> {
+  async createAppointment(appointment: Omit<Appointment, 'createdAt' | 'updatedAt'>): Promise<Appointment> {
     return await this.create<Appointment>('appointments', appointment);
   }
 
