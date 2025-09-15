@@ -16,8 +16,8 @@
     "baseUrl": ".",
     "paths": {
       "@/shared/*": ["shared/utils/*"],
-      "@/database/*": ["database/*"],
-      "@/services/*": ["./services/*"]
+      "@/database/*": ["src/database/*"],
+      "@/services/*": ["src/services/*"]
     }
   },
   "include": [
