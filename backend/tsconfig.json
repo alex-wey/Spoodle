@@ -16,7 +16,7 @@
     "baseUrl": ".",
     "paths": {
       "@/shared/*": ["shared/utils/*"],
-      "@/database/*": ["./database/*"],
+      "@/database/*": ["database/*"],
       "@/services/*": ["./services/*"]
     }
   },
