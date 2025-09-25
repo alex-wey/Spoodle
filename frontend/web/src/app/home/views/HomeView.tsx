@@ -1,10 +1,124 @@
 'use client';
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useSessionContext } from "@/components/SessionContext";
 import UserButton from "@/components/clerk/UserButton";
+import { DashboardHeader } from "@/components/DashboardHeader";
+import { AppointmentColumn } from "@/components/AppointmentColumn";
+import { Appointment } from "@/components/AppointmentCard";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, User, Stethoscope } from "lucide-react";
+import goldenRetriever from "@/assets/pets/golden-retriever.jpg";
+import tabbycat from "@/assets/pets/tabby-cat.jpg";
+import germanShepherd from "@/assets/pets/german-shepherd.jpg";
+import borderCollie from "@/assets/pets/border-collie.jpg";
+
+// Mock data for demonstration
+const mockAppointments: Appointment[] = [
+  {
+    id: "1",
+    petName: "Max",
+    petImage: goldenRetriever.src,
+    petBreed: "Golden Retriever",
+    ownerName: "Sarah Johnson",
+    appointmentType: "Annual Checkup",
+    time: "9:00 AM",
+    isNewClient: false,
+    hasNewMessage: true,
+    veterinarian: "Chen",
+    status: "booked",
+    notes: "Vaccination due"
+  },
+  {
+    id: "2", 
+    petName: "Luna",
+    petImage: tabbycat.src,
+    petBreed: "Tabby Cat",
+    ownerName: "Michael Davis",
+    appointmentType: "Emergency Visit",
+    time: "9:30 AM",
+    isNewClient: true,
+    hasNewMessage: false,
+    veterinarian: "Chen",
+    status: "booked",
+    notes: "Limping on left front paw"
+  },
+    {
+      id: "3",
+      petName: "Rocky",
+      petImage: germanShepherd.src,
+      petBreed: "German Shepherd", 
+      ownerName: "Jennifer Wilson",
+      appointmentType: "Surgery Follow-up",
+      time: "10:15 AM",
+      isNewClient: false,
+      hasNewMessage: true,
+      veterinarian: "Martinez",
+      status: "pending",
+      notes: "Post-op examination"
+    },
+    {
+      id: "4",
+      petName: "Bella",
+      petImage: borderCollie.src,
+      petBreed: "Border Collie",
+      ownerName: "Robert Garcia",
+      appointmentType: "Dental Cleaning",
+      time: "11:00 AM", 
+      isNewClient: false,
+      hasNewMessage: false,
+      veterinarian: "Chen",
+      status: "discharged",
+      notes: "Procedure completed successfully"
+    }
+];
 
 export default function HomeView() {
-  const { user, organization, hasOrganization, isLoading } = useSessionContext();
+  const router = useRouter();
+  const { user, organization, isLoading } = useSessionContext();
+
+  const [appointments] = useState<Appointment[]>(mockAppointments);
+  const [viewType, setViewType] = useState<"clinic" | "personal">("clinic");
+  const [selectedVet, setSelectedVet] = useState<string>("all");
+  const [patientType, setPatientType] = useState<string>("all");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  
+  // Filter appointments based on selected criteria
+  const filteredAppointments = appointments.filter(apt => {
+    // Vet filter
+    if (selectedVet !== "all" && apt.veterinarian !== selectedVet) return false;
+    
+    // Patient type filter
+    if (patientType === "new" && !apt.isNewClient) return false;
+    if (patientType === "recurring" && apt.isNewClient) return false;
+    
+    // Date range filter (simplified - in real app would use proper date comparison)
+    // For now, just showing all appointments since we don't have actual dates in mock data
+    
+    return true;
+  });
+
+  const bookedAppointments = filteredAppointments.filter(apt => apt.status === "booked");
+  const pendingAppointments = filteredAppointments.filter(apt => apt.status === "pending");
+  const dischargedAppointments = filteredAppointments.filter(apt => apt.status === "discharged");
+  
+  const currentDate = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long', 
+    day: 'numeric'
+  }).format(new Date());
+
+  const handleAppointmentClick = (appointment: Appointment) => {
+    router.push(`/appointment/${appointment.id}`);
+  };
 
   if (isLoading) {
     return (
@@ -13,166 +127,154 @@ export default function HomeView() {
       </div>
     );
   }
-  
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">Spoodle</h1>
-              {hasOrganization && (
-                <div className="ml-4 pl-4 border-l border-gray-300">
-                  <span className="text-sm text-gray-500">Clinic Portal</span>
-                  <p className="text-lg font-semibold text-gray-900">{organization?.name}</p>
-                </div>
-              )}
-            </div>
-            <div className="flex items-center space-x-4">
-              <nav className="hidden md:flex space-x-6">
-                <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Dashboard</a>
-                <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Appointments</a>
-                <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Patients</a>
-                <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">Records</a>
-              </nav>
-              <UserButton afterSignOutUrl="/" />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Welcome back, {user?.firstName || user?.fullName || 'Doctor'}! 👋
-                </h2>
-                <p className="text-gray-600 mb-4">
-                  {hasOrganization 
-                    ? `Ready to manage ${organization?.name} today?`
-                    : "Ready to manage your veterinary practice today?"
-                  }
-                </p>
-                <div className="flex flex-wrap gap-4 text-sm">
-                  <div className="flex items-center text-gray-500">
-                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                    Signed in as {user?.email}
-                  </div>
-                  {hasOrganization && (
-                    <div className="flex items-center text-gray-500">
-                      <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-                      Organization: {organization?.name}
-                    </div>
-                  )}
+    <div className="flex flex-col h-screen bg-background">
+      <DashboardHeader
+        currentDate={currentDate}
+        appointmentCount={filteredAppointments.length}
+        unreadMessages={2}
+        userButton={<UserButton showName={false} />}
+        userFirstName={user?.firstName}
+        organizationName={organization?.name}
+      />
+      
+      {/* Filters Section */}
+      <div className="px-6 py-3 border-b bg-card">
+        <Card>
+          <CardContent className="pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {/* View Type Toggle */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">View Type</Label>
+                <div className="flex gap-1">
+                  <Button
+                    variant={viewType === "clinic" ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setViewType("clinic")}
+                  >
+                    Clinic
+                  </Button>
+                  <Button
+                    variant={viewType === "personal" ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setViewType("personal")}
+                  >
+                    Personal
+                  </Button>
                 </div>
               </div>
-              <div className="hidden sm:block">
-                <div className="text-right">
-                  <p className="text-sm text-gray-500">Today&apos;s Date</p>
-                  <p className="text-lg font-semibold text-gray-900">
-                    {new Date().toLocaleDateString('en-US', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
-                  </p>
-                </div>
+
+              {/* Care Professional */}
+              <div className="space-y-2">
+                <Label htmlFor="vet-select" className="text-sm font-medium flex items-center gap-1">
+                  <Stethoscope className="h-4 w-4" />
+                  Care Professional
+                </Label>
+                <Select value={selectedVet} onValueChange={setSelectedVet}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Vets" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Veterinarians</SelectItem>
+                    <SelectItem value="Chen">Dr. Chen</SelectItem>
+                    <SelectItem value="Martinez">Dr. Martinez</SelectItem>
+                    <SelectItem value="Johnson">Dr. Johnson</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Patient Type */}
+              <div className="space-y-2">
+                <Label htmlFor="patient-type" className="text-sm font-medium flex items-center gap-1">
+                  <User className="h-4 w-4" />
+                  Patient Type
+                </Label>
+                <Select value={patientType} onValueChange={setPatientType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Patients" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Patients</SelectItem>
+                    <SelectItem value="new">New Patients</SelectItem>
+                    <SelectItem value="recurring">Recurring Patients</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Date Range */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  Start Date
+                </Label>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  End Date
+                </Label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Organization Status */}
-        {!hasOrganization && (
-          <div className="mb-8">
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-yellow-800">
-                    No Organization Selected
-                  </h3>
-                  <p className="text-sm text-yellow-700 mt-1">
-                    Join or create an organization to access clinic management features.
-                  </p>
-                </div>
+            {/* Active Filters Display */}
+            {(viewType === "personal" || selectedVet !== "all" || patientType !== "all" || startDate || endDate) && (
+              <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t">
+                {viewType === "personal" && (
+                  <Badge variant="secondary">Personal View</Badge>
+                )}
+                {selectedVet !== "all" && (
+                  <Badge variant="secondary">Dr. {selectedVet}</Badge>
+                )}
+                {patientType !== "all" && (
+                  <Badge variant="secondary">
+                    {patientType === "new" ? "New Patients" : "Recurring Patients"}
+                  </Badge>
+                )}
+                {startDate && (
+                  <Badge variant="secondary">From: {startDate}</Badge>
+                )}
+                {endDate && (
+                  <Badge variant="secondary">To: {endDate}</Badge>
+                )}
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Today&apos;s Appointments</h3>
-            <p className="text-3xl font-bold text-blue-600">12</p>
-            <p className="text-sm text-gray-500">3 pending confirmations</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">New Records</h3>
-            <p className="text-3xl font-bold text-green-600">8</p>
-            <p className="text-sm text-gray-500">Shared this week</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Active Patients</h3>
-            <p className="text-3xl font-bold text-blue-600">156</p>
-            <p className="text-sm text-gray-500">This month</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Pending Tasks</h3>
-            <p className="text-3xl font-bold text-orange-600">5</p>
-            <p className="text-sm text-gray-500">Require attention</p>
-          </div>
-        </div>
-
-        {/* Key Features */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Key Features</h3>
-            <ul className="space-y-3 text-gray-600">
-              <li className="flex items-center">
-                <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
-                View shared pet medical records before appointments
-              </li>
-              <li className="flex items-center">
-                <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
-                Manage appointment requests and scheduling
-              </li>
-              <li className="flex items-center">
-                <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
-                Update patient information and treatment notes
-              </li>
-              <li className="flex items-center">
-                <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
-                Export and print pet health reports
-              </li>
-            </ul>
-          </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      
+      <main className="flex-1 p-6 overflow-hidden">
+        <div className="flex gap-6 h-full">
+          <AppointmentColumn
+            status="booked"
+            appointments={bookedAppointments}
+            onAppointmentClick={handleAppointmentClick}
+          />
           
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h3>
-            <div className="space-y-3">
-              <button className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
-                View Today&apos;s Schedule
-              </button>
-              <button className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors">
-                Search Patient Records
-              </button>
-              <button className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors">
-                Generate Reports
-              </button>
-            </div>
-          </div>
+          <AppointmentColumn
+            status="pending"
+            appointments={pendingAppointments} 
+            onAppointmentClick={handleAppointmentClick}
+          />
+          
+          <AppointmentColumn
+            status="discharged"
+            appointments={dischargedAppointments}
+            onAppointmentClick={handleAppointmentClick}
+          />
         </div>
       </main>
     </div>

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useSessionContext } from "../components/SessionContext";
+import "./page.css";
 
 export default function Home() {
   const router = useRouter();
