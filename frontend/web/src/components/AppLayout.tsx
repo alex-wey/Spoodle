@@ -1,6 +1,6 @@
 'use client';
 
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { VetSidebar } from "@/components/VetSidebar";
 
 export default function AppLayout({
