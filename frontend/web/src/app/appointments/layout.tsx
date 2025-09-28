@@ -1,6 +1,6 @@
 import AppLayout from "@/components/AppLayout";
 
-export default function HomeLayout({
+export default function AppointmentsLayout({
   children,
 }: {
   children: React.ReactNode;

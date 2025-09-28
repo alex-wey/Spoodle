@@ -1,5 +1,3 @@
-'use client';
-
 import { UserButton as ClerkUserButton } from '@clerk/nextjs';
 
 interface UserButtonProps {

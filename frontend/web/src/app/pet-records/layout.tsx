@@ -1,6 +1,6 @@
 import AppLayout from "@/components/AppLayout";
 
-export default function HomeLayout({
+export default function PetRecordsLayout({
   children,
 }: {
   children: React.ReactNode;

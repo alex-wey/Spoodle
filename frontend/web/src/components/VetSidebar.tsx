@@ -1,14 +1,18 @@
+'use client';
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   Calendar, 
+  Dog,
   Search, 
   FileText, 
   BarChart3, 
   Settings,
-  Stethoscope,
   MessageSquare,
-  Home
+  Home,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import {
   Sidebar,
@@ -20,49 +24,43 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 
 const navigationItems = [
   {
-    title: "Dashboard",
-    url: "/",
+    title: "Home",
+    url: "/home",
     icon: Home,
-    description: "Overview & Today's Schedule"
   },
   {
-    title: "Appointment Calendar",
+    title: "Appointments",
     url: "/appointments",
     icon: Calendar,
-    description: "Calendar View & Scheduling"
   },
   {
-    title: "Search Patients",
+    title: "Search",
     url: "/search",
     icon: Search,
-    description: "Find Pets & Owners"
   },
   {
-    title: "Patient Records",
-    url: "/records",
+    title: "Pet Records",
+    url: "/pet-records",
     icon: FileText,
-    description: "Medical History & Files"
   },
   {
     title: "Messages",
     url: "/messages",
     icon: MessageSquare,
-    description: "Client Communications"
   },
   {
-    title: "Reports & Metrics",
-    url: "/reports",
+    title: "Analytics",
+    url: "/analytics",
     icon: BarChart3,
-    description: "Clinic Performance"
   },
   {
     title: "Settings",
     url: "/settings",
     icon: Settings,
-    description: "Clinic & Staff Management"
   }
 ];
 
@@ -72,34 +70,54 @@ export function VetSidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar className={collapsed ? "w-16" : "w-64"}>
+    <Sidebar collapsible="icon">
       <SidebarContent className="bg-primary">
         {/* Clinic Branding */}
-        <div className="p-6 border-b border-white/20">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/20 rounded-lg">
-              <Stethoscope className="h-6 w-6 text-white" />
+        <div className="p-3 border-b border-white/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <Button
+                variant="ghost"
+                onClick={sidebar.toggleSidebar}
+                className="p-2 bg-white/20 rounded-lg flex-shrink-0 hover:bg-white/30 transition-all duration-200"
+              >
+                {collapsed ? (
+                  <ChevronRight className="h-6 w-6 text-white transition-all duration-200" />
+                ) : (
+                  <Dog className="h-6 w-6 text-white transition-all duration-200" />
+                )}
+              </Button>
+              {!collapsed && (
+                <div className="min-w-0">
+                  <h2 className="font-semibold text-white truncate">Spoodle</h2>
+                </div>
+              )}
             </div>
+            
+            {/* Toggle Button - Expanded State */}
             {!collapsed && (
-              <div>
-                <h2 className="font-semibold text-white">VetManager Pro</h2>
-                <p className="text-sm text-white/80">Clinic Dashboard</p>
-              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={sidebar.toggleSidebar}
+                className="h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white flex-shrink-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
             )}
           </div>
         </div>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-white/80 font-medium px-3">
-            {!collapsed ? "Navigation" : ""}
-          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <Link 
                     href={item.url} 
-                    className={`flex items-center gap-3 p-3 mx-2 rounded-lg transition-colors w-full ${
+                    className={`flex items-center gap-3 rounded-lg transition-colors ${
+                      collapsed ? 'p-2 mx-auto justify-center' : 'p-2 mx-2'
+                    } ${
                       pathname === item.url 
                         ? "bg-white text-primary font-medium shadow-sm" 
                         : "text-white hover:text-white hover:bg-white/20"
@@ -107,10 +125,7 @@ export function VetSidebar() {
                   >
                     <item.icon className="h-5 w-5 flex-shrink-0" />
                     {!collapsed && (
-                      <div className="flex flex-col text-left flex-1">
-                        <span className="text-sm font-medium leading-tight">{item.title}</span>
-                        <span className="text-xs opacity-80 leading-tight">{item.description}</span>
-                      </div>
+                      <span className="text-sm font-medium leading-tight">{item.title}</span>
                     )}
                   </Link>
                 </SidebarMenuItem>
@@ -120,9 +135,9 @@ export function VetSidebar() {
         </SidebarGroup>
 
         {/* User info section at bottom */}
-        <div className="mt-auto p-4 border-t border-white/20">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+        <div className="mt-auto p-3 border-t border-white/20">
+          <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
+            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-sm font-medium text-white">DR</span>
             </div>
             {!collapsed && (

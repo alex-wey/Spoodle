@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-interface PatientRecord {
+interface PetRecord {
   id: string;
   title: string;
   type: string;
@@ -37,13 +37,13 @@ interface PatientRecord {
   notes?: string[];
 }
 
-interface PatientRecordsViewerProps {
-  record: PatientRecord | null;
+interface PetRecordsViewerProps {
+  record: PetRecord | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const PatientRecordsViewer = ({ record, isOpen, onClose }: PatientRecordsViewerProps) => {
+export const PetRecordsViewer = ({ record, isOpen, onClose }: PetRecordsViewerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [activeTool, setActiveTool] = useState<"select" | "draw" | "erase" | "text" | "rectangle" | "circle">("select");
@@ -150,8 +150,8 @@ export const PatientRecordsViewer = ({ record, isOpen, onClose }: PatientRecords
   };
 
   const handleEmail = () => {
-    const subject = encodeURIComponent(`Patient Record: ${record?.petName} - ${record?.title}`);
-    const body = encodeURIComponent(`Please find attached the patient record for ${record?.petName}.`);
+    const subject = encodeURIComponent(`Pet Record: ${record?.petName} - ${record?.title}`);
+    const body = encodeURIComponent(`Please find attached the pet record for ${record?.petName}.`);
     window.open(`mailto:?subject=${subject}&body=${body}`);
   };
 

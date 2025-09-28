@@ -117,7 +117,7 @@ export default function HomeView() {
   }).format(new Date());
 
   const handleAppointmentClick = (appointment: Appointment) => {
-    router.push(`/appointment/${appointment.id}`);
+    router.push(`/appointments/${appointment.id}`);
   };
 
   if (isLoading) {

@@ -12,7 +12,7 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from "@/components/ui/dialog";
-import { MessageSquare, Send, Phone, Video, MoreVertical } from "lucide-react";
+import { MessageSquare, Send, Phone, Video } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
