@@ -22,17 +22,18 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
+// TODO: Uncomment these pages when we have the functionality
 const navigationItems = [
   {
     title: "Home",
     url: "/home",
     icon: Home,
   },
-  {
-    title: "Appointments",
-    url: "/appointments",
-    icon: Calendar,
-  },
+  // {
+  //   title: "Appointments",
+  //   url: "/appointments",
+  //   icon: Calendar,
+  // },
   {
     title: "Search",
     url: "/search",
@@ -43,16 +44,16 @@ const navigationItems = [
     url: "/pet-records",
     icon: FileText,
   },
-  {
-    title: "Messages",
-    url: "/messages",
-    icon: MessageSquare,
-  },
-  {
-    title: "Analytics",
-    url: "/analytics",
-    icon: BarChart3,
-  },
+  // {
+  //   title: "Messages",
+  //   url: "/messages",
+  //   icon: MessageSquare,
+  // },
+  // {
+  //   title: "Analytics",
+  //   url: "/analytics",
+  //   icon: BarChart3,
+  // },
   {
     title: "Settings",
     url: "/settings",

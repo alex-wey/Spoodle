@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useSessionContext } from "../components/SessionContext";
 
-export default function Home() {
+export default function EntryPage() {
   const router = useRouter();
   const { isLoading, isSignedIn } = useSessionContext();
   

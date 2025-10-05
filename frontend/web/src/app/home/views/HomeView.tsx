@@ -23,7 +23,7 @@ import borderCollie from "@/assets/pets/border-collie.jpg";
 const mockAppointments: Appointment[] = [
   {
     id: "1",
-    petName: "Max",
+    petName: "Jeff",
     petImage: goldenRetriever.src,
     petBreed: "Golden Retriever",
     ownerName: "Sarah Johnson",
