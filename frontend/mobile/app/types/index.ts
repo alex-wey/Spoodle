@@ -243,7 +243,7 @@ export const ChatMessageSchema = z.object({
   text: z.string(),
   petId: z.string().optional(),
   timestamp: z.date(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;

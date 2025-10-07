@@ -85,7 +85,9 @@ export default function SignUpScreen() {
   const updateField = (field: keyof typeof formData, value: string) => {
     setFormData({ ...formData, [field]: value });
     if (errors[field]) {
-      setErrors({ ...errors, [field]: undefined });
+      const newErrors = { ...errors };
+      delete newErrors[field];
+      setErrors(newErrors);
     }
   };
 
