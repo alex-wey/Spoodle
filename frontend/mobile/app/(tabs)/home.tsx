@@ -1,5 +1,5 @@
-import { ScrollView, View, Text, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScrollView, View, Text, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, Platform } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState, useEffect } from "react";
 import { Plus, MessageCircle, Bug, Settings, Dog } from "lucide-react-native";
 import { useRouter } from "expo-router";
@@ -14,6 +14,7 @@ export default function HomeScreen() {
   const user = useAuthStore((state) => state.user);
   const { pets, fetchPets, isLoading, error } = usePetStore();
   const [refreshing, setRefreshing] = useState(false);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     fetchPets();
@@ -130,7 +131,7 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* Floating Action Buttons */}
-      <View style={styles.fabContainer}>
+      <View style={[styles.fabContainer, { bottom: Platform.OS === "ios" ? 76 + Math.max(insets.bottom - 2, 6) : 80 }]}>
         <FAB
           icon={<Bug size={20} color="#6B7280" />}
           onPress={() => router.push("/support")}

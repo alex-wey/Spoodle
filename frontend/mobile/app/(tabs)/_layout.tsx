@@ -2,10 +2,12 @@ import { Tabs } from "expo-router";
 import { Home, Dog, Calendar, Bell, User } from "lucide-react-native";
 import { useAuthStore } from "../store/auth";
 import { Redirect } from "expo-router";
-import { View, Text } from "react-native";
+import { Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabLayout() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const insets = useSafeAreaInsets();
 
   // Redirect to auth if not authenticated
   if (!isAuthenticated) {
@@ -21,9 +23,10 @@ export default function TabLayout() {
           backgroundColor: "white",
           borderTopWidth: 1,
           borderTopColor: "#E5E7EB",
-          paddingBottom: 5,
-          paddingTop: 5,
-          height: 60,
+          // Slightly reduced padding for iPhone while respecting safe area
+          paddingBottom: Platform.OS === "ios" ? Math.max(insets.bottom - 2, 6) : 8,
+          paddingTop: 6,
+          height: Platform.OS === "ios" ? 56 + Math.max(insets.bottom - 2, 6) : 68,
         },
         headerShown: false,
         tabBarShowLabel: true,
