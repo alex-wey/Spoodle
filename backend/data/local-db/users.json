@@ -1,0 +1,82 @@
+[
+  {
+    "petOwnerId": "user-1",
+    "username": "sarah_johnson",
+    "email": "sarah.johnson@email.com",
+    "password": "$2a$12$7FIeiNVcmiJpgMnJ7xyxweduZxYHXaykJV/fBa6auguG0hy0JctmW",
+    "phoneNumber": "(555) 123-4567",
+    "address": "123 Main Street, Anytown, ST 12345",
+    "createdAt": "2025-10-14T04:14:25.080Z",
+    "updatedAt": "2025-10-14T04:14:25.080Z"
+  },
+  {
+    "petOwnerId": "user-2",
+    "username": "michael_chen",
+    "email": "michael.chen@email.com",
+    "password": "$2a$12$7FIeiNVcmiJpgMnJ7xyxweduZxYHXaykJV/fBa6auguG0hy0JctmW",
+    "phoneNumber": "(555) 234-5678",
+    "address": "456 Oak Avenue, Springfield, ST 67890",
+    "createdAt": "2025-10-14T04:14:25.081Z",
+    "updatedAt": "2025-10-14T04:14:25.081Z"
+  },
+  {
+    "petOwnerId": "user-3",
+    "username": "jennifer_wilson",
+    "email": "jennifer.wilson@email.com",
+    "password": "$2a$12$7FIeiNVcmiJpgMnJ7xyxweduZxYHXaykJV/fBa6auguG0hy0JctmW",
+    "phoneNumber": "(555) 345-6789",
+    "address": "789 Pine Road, Riverside, ST 13579",
+    "createdAt": "2025-10-14T04:14:25.081Z",
+    "updatedAt": "2025-10-14T04:14:25.081Z"
+  },
+  {
+    "petOwnerId": "user-4",
+    "username": "robert_garcia",
+    "email": "robert.garcia@email.com",
+    "password": "$2a$12$7FIeiNVcmiJpgMnJ7xyxweduZxYHXaykJV/fBa6auguG0hy0JctmW",
+    "phoneNumber": "(555) 456-7890",
+    "address": "321 Elm Street, Hillcrest, ST 24680",
+    "createdAt": "2025-10-14T04:14:25.081Z",
+    "updatedAt": "2025-10-14T04:14:25.081Z"
+  },
+  {
+    "petOwnerId": "user-1",
+    "username": "sarah_johnson",
+    "email": "sarah.johnson@email.com",
+    "password": "$2a$12$po8tojXNAQH6MzfP2zTwKOGin7zzanFC7do/9Cy365Vs1trRwE2Za",
+    "phoneNumber": "(555) 123-4567",
+    "address": "123 Main Street, Anytown, ST 12345",
+    "createdAt": "2025-10-14T04:23:34.241Z",
+    "updatedAt": "2025-10-14T04:23:34.241Z"
+  },
+  {
+    "petOwnerId": "user-2",
+    "username": "michael_chen",
+    "email": "michael.chen@email.com",
+    "password": "$2a$12$po8tojXNAQH6MzfP2zTwKOGin7zzanFC7do/9Cy365Vs1trRwE2Za",
+    "phoneNumber": "(555) 234-5678",
+    "address": "456 Oak Avenue, Springfield, ST 67890",
+    "createdAt": "2025-10-14T04:23:34.241Z",
+    "updatedAt": "2025-10-14T04:23:34.241Z"
+  },
+  {
+    "petOwnerId": "user-3",
+    "username": "jennifer_wilson",
+    "email": "jennifer.wilson@email.com",
+    "password": "$2a$12$po8tojXNAQH6MzfP2zTwKOGin7zzanFC7do/9Cy365Vs1trRwE2Za",
+    "phoneNumber": "(555) 345-6789",
+    "address": "789 Pine Road, Riverside, ST 13579",
+    "createdAt": "2025-10-14T04:23:34.241Z",
+    "updatedAt": "2025-10-14T04:23:34.241Z"
+  },
+  {
+    "petOwnerId": "user-4",
+    "username": "robert_garcia",
+    "email": "robert.garcia@email.com",
+    "password": "$2a$12$po8tojXNAQH6MzfP2zTwKOGin7zzanFC7do/9Cy365Vs1trRwE2Za",
+    "phoneNumber": "(555) 456-7890",
+    "address": "321 Elm Street, Hillcrest, ST 24680",
+    "createdAt": "2025-10-14T04:23:34.241Z",
+    "updatedAt": "2025-10-14T04:23:34.241Z"
+  }
+]

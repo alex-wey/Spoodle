@@ -48,13 +48,15 @@ export interface DatabaseConfig {
 export class LocalDatabase {
   private dataDir: string;
   private cache: Map<string, any> = new Map();
+  private initialized: boolean = false;
 
   constructor(config: DatabaseConfig) {
     this.dataDir = config.dataDir;
-    this.initializeDataDirectory();
   }
 
   private async initializeDataDirectory(): Promise<void> {
+    if (this.initialized) return;
+    
     await ensureDir(this.dataDir);
     
     // Create initial table files if they don't exist
@@ -66,6 +68,8 @@ export class LocalDatabase {
         await writeJson(filePath, []);
       }
     }
+    
+    this.initialized = true;
   }
 
   private getFilePath(tableName: TableName): string {
@@ -73,6 +77,8 @@ export class LocalDatabase {
   }
 
   private async readTable<T>(tableName: TableName): Promise<T[]> {
+    await this.initializeDataDirectory();
+    
     const cacheKey = tableName;
     if (this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey) as T[];
@@ -85,6 +91,8 @@ export class LocalDatabase {
   }
 
   private async writeTable<T>(tableName: TableName, data: T[]): Promise<void> {
+    await this.initializeDataDirectory();
+    
     const filePath = this.getFilePath(tableName);
     await writeJson(filePath, data, { spaces: 2 });
     this.cache.set(tableName, data);

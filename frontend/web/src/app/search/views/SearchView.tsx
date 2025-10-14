@@ -30,7 +30,7 @@ interface Owner {
   pets: Pet[];
 }
 
-// Mock data
+// Mock data (fallback)
 const mockOwners: Owner[] = [
   {
     id: "1",
@@ -90,11 +90,85 @@ const mockOwners: Owner[] = [
   }
 ];
 
+// API data interface
+interface ApiPetData {
+  petId: string;
+  petName: string;
+  breed: string;
+  dateOfBirth: string;
+  gender: string;
+  owner?: string;
+  age?: string;
+  weight?: string;
+}
+
+interface ApiResponse {
+  success: boolean;
+  data: {
+    table: ApiPetData[];
+    summary: any;
+  };
+}
+
 export default function SearchView() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [owners, setOwners] = useState<Owner[]>(mockOwners);
+  const [loading, setLoading] = useState(false);
+  const [useApiData, setUseApiData] = useState(false);
   const router = useRouter();
 
-  const filteredData = mockOwners.filter(owner => {
+  // Function to fetch data from API
+  const fetchApiData = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:3001/api/pet-table');
+      if (!response.ok) throw new Error('Failed to fetch');
+      
+      const result: ApiResponse = await response.json();
+      
+      if (result.success) {
+        // Transform API data to match frontend format
+        const apiOwners: Owner[] = [];
+        const ownerMap = new Map<string, Owner>();
+        
+        result.data.table.forEach(pet => {
+          const ownerName = pet.owner || 'Unknown Owner';
+          const ownerId = pet.owner || 'unknown';
+          
+          if (!ownerMap.has(ownerId)) {
+            ownerMap.set(ownerId, {
+              id: ownerId,
+              name: ownerName,
+              email: `${ownerName.toLowerCase().replace(' ', '.')}@email.com`,
+              phone: '(555) 000-0000',
+              pets: []
+            });
+          }
+          
+          const owner = ownerMap.get(ownerId)!;
+          owner.pets.push({
+            id: pet.petId,
+            name: pet.petName,
+            image: goldenRetriever.src, // Default image
+            breed: pet.breed,
+            age: pet.age || 'Unknown',
+            ownerId: ownerId
+          });
+        });
+        
+        setOwners(Array.from(ownerMap.values()));
+        setUseApiData(true);
+      }
+    } catch (error) {
+      console.error('Error fetching API data:', error);
+      setOwners(mockOwners);
+      setUseApiData(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredData = owners.filter(owner => {
     const searchTerm = searchQuery.toLowerCase();
     // Search in owner data
     const ownerMatch = owner.name.toLowerCase().includes(searchTerm) ||
@@ -139,6 +213,21 @@ export default function SearchView() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-12 bg-white/90 border-0 h-12 text-lg"
             />
+          </div>
+          
+          {/* API Toggle Button */}
+          <div className="mt-4 flex justify-center">
+            <button
+              onClick={fetchApiData}
+              disabled={loading}
+              className={`px-4 py-2 rounded-lg text-white font-medium transition-colors ${
+                useApiData 
+                  ? 'bg-green-500 hover:bg-green-600' 
+                  : 'bg-blue-500 hover:bg-blue-600'
+              } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {loading ? 'Loading...' : useApiData ? '✅ Live Data (12 pets)' : '🔄 Load Live Data from Backend'}
+            </button>
           </div>
         </div>
       </div>
