@@ -40,8 +40,8 @@ const navigationItems = [
     icon: Search,
   },
   {
-    title: "Pet Records",
-    url: "/pet-records",
+    title: "Pets",
+    url: "/pets",
     icon: FileText,
   },
   // {
