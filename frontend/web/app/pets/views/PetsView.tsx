@@ -24,8 +24,10 @@ export default function Records() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Mock patient data
-  const allPatients = [
+  // TODO: insert hook to fetch pets from the database
+
+  // Mock pet data
+  const allPets = [
     {
       petId: "1",
       petName: "Max",
@@ -68,10 +70,10 @@ export default function Records() {
     },
   ];
 
-  const filteredPatients = allPatients.filter(patient => {
-    const matchesSearch = patient.petName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         patient.ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         patient.breed.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredPets = allPets.filter(pet => {
+    const matchesSearch = pet.petName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         pet.ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         pet.breed.toLowerCase().includes(searchQuery.toLowerCase());
     
     return matchesSearch;
   });
@@ -102,10 +104,10 @@ export default function Records() {
         </CardContent>
       </Card>
 
-      {/* Patients Table */}
+      {/* Pets Table */}
       <Card>
         <CardHeader>
-          <CardTitle>All Pets ({filteredPatients.length})</CardTitle>
+          <CardTitle>All Pets ({filteredPets.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -116,33 +118,33 @@ export default function Records() {
                 <TableHead>Breed</TableHead>
                 <TableHead>Date of Birth</TableHead>
                 <TableHead>Weight</TableHead>
-                <TableHead>Discharge Reports</TableHead>
+                <TableHead>Medical Records</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredPatients.map((patient) => (
-                <TableRow key={patient.petId}>
+              {filteredPets.map((pet) => (
+                <TableRow key={pet.petId}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={patient.petImage.src} alt={patient.petName} />
-                        <AvatarFallback>{patient.petName.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={pet.petImage.src} alt={pet.petName} />
+                        <AvatarFallback>{pet.petName.charAt(0)}</AvatarFallback>
                       </Avatar>
-                      <span className="font-medium">{patient.petName}</span>
+                      <span className="font-medium">{pet.petName}</span>
                     </div>
                   </TableCell>
-                  <TableCell>{patient.ownerName}</TableCell>
-                  <TableCell>{patient.breed}</TableCell>
-                  <TableCell>{patient.dateOfBirth}</TableCell>
-                  <TableCell>{patient.weight}</TableCell>
+                  <TableCell>{pet.ownerName}</TableCell>
+                  <TableCell>{pet.breed}</TableCell>
+                  <TableCell>{pet.dateOfBirth}</TableCell>
+                  <TableCell>{pet.weight}</TableCell>
                   <TableCell>
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => router.push(`/pets/${patient.petId}`)}
+                      onClick={() => router.push(`/pets/${pet.petId}`)}
                     >
                       <FileText className="h-4 w-4 mr-2" />
-                      View Records ({patient.recordCount})
+                      View Records ({pet.recordCount})
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -150,14 +152,14 @@ export default function Records() {
             </TableBody>
           </Table>
           
-          {filteredPatients.length === 0 && (
+          {filteredPets.length === 0 && (
             <div className="text-center py-8">
               <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-lg font-medium">No pets found</p>
               <p className="text-muted-foreground">
                 {searchQuery 
                   ? "Try adjusting your search criteria"
-                  : "No patients have been added yet"
+                  : "No pets have been added yet"
                 }
               </p>
             </div>

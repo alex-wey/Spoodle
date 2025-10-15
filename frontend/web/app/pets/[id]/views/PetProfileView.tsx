@@ -26,6 +26,9 @@ export default function PetProfileView() {
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
 
+  // TODO: Insert hook to fetch pet records from the database for that pet
+  //       You take the petId from the URL and use to query the database for the records
+
   // Mock pet records data
   const petRecords = [
     {
