@@ -1,8 +1,9 @@
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { TouchableOpacity } from "react-native";
-import { ArrowLeft, ChevronRight, Bell, Lock, HelpCircle, FileText, Info } from "lucide-react-native";
+import { ArrowLeft, ChevronRight, Bell, Lock, HelpCircle, FileText, Info, CreditCard, Mail, Moon } from "lucide-react-native";
+import { useState } from "react";
 
 interface SettingsItemProps {
   icon: React.ReactNode;
@@ -20,8 +21,30 @@ const SettingsItem = ({ icon, title, onPress }: SettingsItemProps) => (
   </TouchableOpacity>
 );
 
+interface SettingsToggleItemProps {
+  icon: React.ReactNode;
+  title: string;
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+}
+
+const SettingsToggleItem = ({ icon, title, value, onValueChange }: SettingsToggleItemProps) => (
+  <View style={styles.settingsItem}>
+    <View style={styles.settingsItemLeft}>
+      {icon}
+      <Text style={styles.settingsItemText}>{title}</Text>
+    </View>
+    <Switch
+      value={value}
+      onValueChange={onValueChange}
+    />
+  </View>
+);
+
 export default function SettingsScreen() {
   const router = useRouter();
+  const [emailUpdates, setEmailUpdates] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -44,12 +67,29 @@ export default function SettingsScreen() {
                 title="Notifications"
                 onPress={() => router.push("/(tabs)/notifications")}
               />
+              <SettingsToggleItem
+                icon={<Mail size={20} color="#6B7280" />}
+                title="Email Updates"
+                value={emailUpdates}
+                onValueChange={setEmailUpdates}
+              />
+              <SettingsToggleItem
+                icon={<Moon size={20} color="#6B7280" />}
+                title="Dark Mode"
+                value={darkMode}
+                onValueChange={setDarkMode}
+              />
             </View>
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Account</Text>
             <View style={styles.settingsGroup}>
+              <SettingsItem
+                icon={<CreditCard size={20} color="#6B7280" />}
+                title="Billing & Subscriptions"
+                onPress={() => {/* TODO: Navigate to billing settings */}}
+              />
               <SettingsItem
                 icon={<Lock size={20} color="#6B7280" />}
                 title="Privacy & Security"

@@ -7,7 +7,7 @@ export default function AuthLayout() {
 
   // Redirect to main app if already authenticated
   if (isAuthenticated) {
-    return <Redirect href="/(tabs)/home" />;
+    return <Redirect href="/(tabs)/pets" />;
   }
 
   return (

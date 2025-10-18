@@ -1,8 +1,8 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthStore } from "../../store/auth";
 import { useRouter } from "expo-router";
-import { LogOut, Settings } from "lucide-react-native";
+import { LogOut, Settings, Mail, Phone, MapPin } from "lucide-react-native";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -15,38 +15,68 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Profile</Text>
-          <TouchableOpacity
-            onPress={() => router.push("/(tabs)/profile/settings")}
-            style={styles.settingsButton}
-          >
-            <Settings size={24} color="#6B7280" />
-          </TouchableOpacity>
-        </View>
-        
-        <View style={styles.userInfo}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {user?.firstName?.[0]}{user?.lastName?.[0]}
-            </Text>
-          </View>
-          <Text style={styles.userName}>
-            {user?.firstName} {user?.lastName}
-          </Text>
-          <Text style={styles.userEmail}>{user?.email}</Text>
-        </View>
-
+      <View style={styles.header}>
+        <Text style={styles.title}>Profile</Text>
         <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={handleLogout}
-          activeOpacity={0.8}
+          onPress={() => router.push("/(tabs)/profile/settings")}
+          style={styles.settingsButton}
         >
-          <LogOut size={20} color="white" />
-          <Text style={styles.logoutButtonText}>Log Out</Text>
+          <Settings size={24} color="#6B7280" />
         </TouchableOpacity>
       </View>
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          <View style={styles.userInfo}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {user?.firstName?.[0]}{user?.lastName?.[0]}
+              </Text>
+            </View>
+            <Text style={styles.userName}>
+              {user?.firstName} {user?.lastName}
+            </Text>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Contact Information</Text>
+            <View style={styles.contactCard}>
+              <View style={styles.contactItem}>
+                <Mail size={20} color="#6B7280" />
+                <View style={styles.contactTextContainer}>
+                  <Text style={styles.contactValue}>{user?.email || "alex.johnson@email.com"}</Text>
+                  <Text style={styles.contactLabel}>Email</Text>
+                </View>
+              </View>
+
+              <View style={styles.contactItem}>
+                <Phone size={20} color="#6B7280" />
+                <View style={styles.contactTextContainer}>
+                  <Text style={styles.contactValue}>+1 (555) 123-4567</Text>
+                  <Text style={styles.contactLabel}>Phone</Text>
+                </View>
+              </View>
+
+              <View style={styles.contactItem}>
+                <MapPin size={20} color="#6B7280" />
+                <View style={styles.contactTextContainer}>
+                  <Text style={styles.contactValue}>123 Pet Lane, Animal City, AC 12345</Text>
+                  <Text style={styles.contactLabel}>Address</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={handleLogout}
+            activeOpacity={0.8}
+          >
+            <LogOut size={20} color="white" />
+            <Text style={styles.logoutButtonText}>Log Out</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -56,15 +86,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F9FAFB",
   },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 32,
+    padding: 20,
+    backgroundColor: "white",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
   },
   title: {
     fontSize: 28,
@@ -74,32 +103,67 @@ const styles = StyleSheet.create({
   settingsButton: {
     padding: 8,
   },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    padding: 20,
+  },
   userInfo: {
     alignItems: "center",
     marginBottom: 32,
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: "#4F46E5",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   avatarText: {
     color: "white",
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "bold",
   },
   userName: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "600",
+    color: "#1F2937",
+  },
+  section: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#1F2937",
+    marginBottom: 16,
+  },
+  contactCard: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 20,
+    gap: 24,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  contactItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  contactTextContainer: {
+    flex: 1,
+  },
+  contactValue: {
+    fontSize: 16,
     color: "#1F2937",
     marginBottom: 4,
   },
-  userEmail: {
-    fontSize: 16,
+  contactLabel: {
+    fontSize: 14,
     color: "#6B7280",
   },
   logoutButton: {
@@ -110,7 +174,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#EF4444",
     paddingVertical: 14,
     borderRadius: 12,
-    marginTop: "auto",
+    marginTop: 20,
   },
   logoutButtonText: {
     color: "white",

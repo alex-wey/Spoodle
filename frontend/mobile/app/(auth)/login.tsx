@@ -40,7 +40,7 @@ export default function LoginScreen() {
     try {
       setIsLoading(true);
       await login(email, password);
-      router.replace("/(tabs)/home");
+      router.replace("/(tabs)/pets");
     } catch (error) {
       Alert.alert(
         "Login Failed",
