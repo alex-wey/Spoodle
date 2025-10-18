@@ -1,13 +1,13 @@
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, Platform } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState, useEffect } from "react";
-import { Plus, MessageCircle, Bug, Settings, Dog } from "lucide-react-native";
+import { Plus, MessageCircle, Bug, Bell, Dog } from "lucide-react-native";
 import { useRouter } from "expo-router";
-import { usePetStore } from "../store/pets";
-import { useAuthStore } from "../store/auth";
-import { getGreeting } from "../lib/utils";
-import { PetCard } from "../components/PetCard";
-import { FAB } from "../components/FAB";
+import { usePetStore } from "../../store/pets";
+import { useAuthStore } from "../../store/auth";
+import { getGreeting } from "../../lib/utils";
+import { PetCard } from "../../components/PetCard";
+import { FAB } from "../../components/FAB";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -71,10 +71,10 @@ export default function HomeScreen() {
               <Text style={styles.userName}>{user?.firstName || "Pet Parent"}!</Text>
             </View>
             <TouchableOpacity
-              onPress={() => router.push("/settings")}
-              style={styles.settingsButton}
+              onPress={() => router.push("/(tabs)/notifications")}
+              style={styles.notificationsButton}
             >
-              <Settings size={24} color="#6B7280" />
+              <Bell size={24} color="#6B7280" />
             </TouchableOpacity>
           </View>
           <Text style={styles.subtitle}>How are your pets doing today?</Text>
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#1F2937",
   },
-  settingsButton: {
+  notificationsButton: {
     padding: 8,
   },
   subtitle: {

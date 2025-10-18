@@ -24,7 +24,7 @@ export default function OnboardingScreen() {
         <View style={styles.content}>
           <View style={styles.header}>
             <Text style={styles.title}>Welcome to Spoodle!</Text>
-            <Text style={styles.subtitle}>Let's get you started</Text>
+            <Text style={styles.subtitle}>Let&apos;s get you started</Text>
           </View>
 
           <View style={styles.optionsContainer}>

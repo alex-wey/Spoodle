@@ -1,8 +1,8 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuthStore } from "../store/auth";
+import { useAuthStore } from "../../store/auth";
 import { useRouter } from "expo-router";
-import { LogOut } from "lucide-react-native";
+import { LogOut, Settings } from "lucide-react-native";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -18,6 +18,12 @@ export default function ProfileScreen() {
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title}>Profile</Text>
+          <TouchableOpacity
+            onPress={() => router.push("/settings")}
+            style={styles.settingsButton}
+          >
+            <Settings size={24} color="#6B7280" />
+          </TouchableOpacity>
         </View>
         
         <View style={styles.userInfo}>
@@ -55,12 +61,18 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 32,
   },
   title: {
     fontSize: 28,
     fontWeight: "bold",
     color: "#1F2937",
+  },
+  settingsButton: {
+    padding: 8,
   },
   userInfo: {
     alignItems: "center",

@@ -22,7 +22,7 @@ export default function LandingScreen() {
               <Dog size={60} color="white" />
             </View>
             <Text style={styles.title}>Spoodle</Text>
-            <Text style={styles.subtitle}>Your Pet's Health Companion</Text>
+            <Text style={styles.subtitle}>Your Pet&apos;s Health Companion</Text>
           </View>
 
           {/* Features */}
