@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Home, Dog, Calendar, User } from "lucide-react-native";
+import { Dog, BotMessageSquare, Calendar, User } from "lucide-react-native";
 import { useAuthStore } from "../store/auth";
 import { Redirect } from "expo-router";
 import { Platform } from "react-native";
@@ -33,19 +33,19 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="home/index"
-        options={{
-          title: "Home",
-          href: "/(tabs)/home",
-          tabBarIcon: ({ color, size }) => <Home size={24} color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="pets/index"
         options={{
           title: "Pets",
           href: "/(tabs)/pets",
           tabBarIcon: ({ color, size }) => <Dog size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="chat/index"
+        options={{
+          title: "Chat",
+          href: "/(tabs)/chat",
+          tabBarIcon: ({ color, size }) => <BotMessageSquare size={24} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -66,6 +66,30 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="notifications/index"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="pets/[id]/details"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="pets/[id]/health-records"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="pets/add"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="profile/settings/index"
         options={{
           href: null, // Hide from tab bar
         }}

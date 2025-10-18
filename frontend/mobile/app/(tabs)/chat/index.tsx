@@ -1,16 +1,16 @@
 import { View, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function AppointmentsScreen() {
+export default function ChatScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>Appointments</Text>
+          <Text style={styles.title}>Chat</Text>
         </View>
         
         <View style={styles.emptyState}>
-          <Text style={styles.subtitle}>Appointments coming soon...</Text>
+          <Text style={styles.subtitle}>AI chat assistant coming soon...</Text>
         </View>
       </View>
     </SafeAreaView>
@@ -44,5 +44,4 @@ const styles = StyleSheet.create({
     color: "#6B7280",
   },
 });
-
 

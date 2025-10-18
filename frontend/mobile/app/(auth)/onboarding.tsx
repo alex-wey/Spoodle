@@ -12,7 +12,7 @@ export default function OnboardingScreen() {
   };
 
   const handleSkip = () => {
-    router.replace("/(tabs)/home");
+    router.replace("/(tabs)/pets");
   };
 
   return (

@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from "rea
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { Dog, Heart, Calendar, MessageCircle } from "lucide-react-native";
+import { Dog, Heart, Calendar, Sparkles } from "lucide-react-native";
 
 const { width } = Dimensions.get("window");
 
@@ -39,7 +39,7 @@ export default function LandingScreen() {
             </View>
             <View style={styles.featureRow}>
               <View style={styles.feature}>
-                <MessageCircle size={24} color="white" />
+                <Sparkles size={24} color="white" />
                 <Text style={styles.featureText}>AI Assistant</Text>
               </View>
               <View style={styles.feature}>

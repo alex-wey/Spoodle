@@ -1,16 +1,15 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
-import { Heart, Calendar, FileText, ChevronRight } from "lucide-react-native";
-import type { Pet } from "../types";
-import { getPetAgeString, getGenderSymbol } from "../lib/utils";
+import { FileText, ChevronRight } from "lucide-react-native";
+import type { Pet } from "../../../../types";
+import { getPetAgeString, getGenderSymbol } from "../../../../lib/utils";
 
 interface PetCardProps {
   pet: Pet;
   onPress: () => void;
   onHealthRecords: () => void;
-  onAppointments: () => void;
 }
 
-export function PetCard({ pet, onPress, onHealthRecords, onAppointments }: PetCardProps) {
+export function PetCard({ pet, onPress, onHealthRecords }: PetCardProps) {
   const genderColor = pet.gender === "female" ? "#EC4899" : "#3B82F6";
   
   return (
@@ -42,31 +41,16 @@ export function PetCard({ pet, onPress, onHealthRecords, onAppointments }: PetCa
 
       <View style={styles.divider} />
 
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={(e) => {
-            e.stopPropagation();
-            onHealthRecords();
-          }}
-        >
-          <FileText size={18} color="#4F46E5" />
-          <Text style={styles.actionText}>Health Records</Text>
-        </TouchableOpacity>
-        
-        <View style={styles.actionDivider} />
-        
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={(e) => {
-            e.stopPropagation();
-            onAppointments();
-          }}
-        >
-          <Calendar size={18} color="#4F46E5" />
-          <Text style={styles.actionText}>Appointments</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity
+        style={styles.actionButton}
+        onPress={(e) => {
+          e.stopPropagation();
+          onHealthRecords();
+        }}
+      >
+        <FileText size={18} color="#4F46E5" />
+        <Text style={styles.actionText}>Health Records</Text>
+      </TouchableOpacity>
 
       {/* Quick Info Pills */}
       {(pet.allergies?.length || pet.medications?.length) ? (
@@ -158,22 +142,12 @@ const styles = StyleSheet.create({
     marginVertical: 12,
     marginHorizontal: -16,
   },
-  actions: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
   actionButton: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
     paddingVertical: 8,
-  },
-  actionDivider: {
-    width: 1,
-    height: 20,
-    backgroundColor: "#E5E7EB",
   },
   actionText: {
     color: "#4F46E5",
