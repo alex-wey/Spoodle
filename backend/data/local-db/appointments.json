@@ -11,8 +11,8 @@
     "appointmentType": "general_exam",
     "reason": "Annual checkup and vaccination",
     "notes": "Patient is due for DHPP and Rabies vaccines",
-    "createdAt": "2025-10-21T01:15:12.604Z",
-    "updatedAt": "2025-10-21T01:15:12.604Z"
+    "createdAt": "2025-10-21T01:45:11.691Z",
+    "updatedAt": "2025-10-21T01:45:11.691Z"
   },
   {
     "appointmentId": "apt-2",
@@ -26,8 +26,8 @@
     "appointmentType": "dental",
     "reason": "Teeth cleaning and dental exam",
     "notes": "First dental cleaning, may need extractions",
-    "createdAt": "2025-10-21T01:15:12.604Z",
-    "updatedAt": "2025-10-21T01:15:12.604Z"
+    "createdAt": "2025-10-21T01:45:11.691Z",
+    "updatedAt": "2025-10-21T01:45:11.691Z"
   },
   {
     "appointmentId": "apt-3",
@@ -41,7 +41,7 @@
     "appointmentType": "surgery",
     "reason": "Neutering procedure",
     "notes": "Pre-surgery blood work completed",
-    "createdAt": "2025-10-21T01:15:12.604Z",
-    "updatedAt": "2025-10-21T01:15:12.604Z"
+    "createdAt": "2025-10-21T01:45:11.691Z",
+    "updatedAt": "2025-10-21T01:45:11.691Z"
   }
 ]

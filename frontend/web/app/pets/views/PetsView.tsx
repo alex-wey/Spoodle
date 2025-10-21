@@ -16,26 +16,6 @@ import {
 } from "@/components/ui/table";
 import { FileText, Search } from "lucide-react";
 
-// API data interface
-interface ApiPetData {
-  petId: string;
-  petName: string;
-  breed: string;
-  dateOfBirth: string;
-  gender: string;
-  owner?: string;
-  age?: string;
-  weight?: string;
-}
-
-interface ApiResponse {
-  success: boolean;
-  data: {
-    table: ApiPetData[];
-    summary: Record<string, unknown>;
-  };
-}
-
 interface Pet {
   petId: string;
   petName: string;
@@ -44,7 +24,6 @@ interface Pet {
   breed: string;
   dateOfBirth: string;
   weight: string;
-  recordCount: number;
 }
 
 export default function Records() {
@@ -57,22 +36,21 @@ export default function Records() {
   useEffect(() => {
     const fetchPets = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/pet-table?includeOwner=true');
+        const response = await fetch('http://localhost:3001/api/pets/all');
         if (!response.ok) throw new Error('Failed to fetch');
         
-        const result: ApiResponse = await response.json();
+        const result = await response.json();
         
         if (result.success) {
           // Transform API data to match the table format
-          const transformedPets: Pet[] = result.data.table.map(pet => ({
+          const transformedPets: Pet[] = result.data.map((pet: any) => ({
             petId: pet.petId,
-            petName: pet.petName,
-            petImage: '', // No default image from API
-            ownerName: pet.owner || 'Unknown Owner',
-            breed: pet.breed,
-            dateOfBirth: pet.dateOfBirth,
-            weight: pet.weight || 'N/A',
-            recordCount: 0 // TODO: Get actual record count from API
+            petName: pet.name,
+            petImage: pet.profilePhoto || '',
+            ownerName: pet.owner?.name || 'Unknown Owner',
+            breed: pet.breed || 'Mixed',
+            dateOfBirth: pet.dateOfBirth ? new Date(pet.dateOfBirth).toLocaleDateString() : 'N/A',
+            weight: pet.weight ? `${pet.weight} lbs` : 'N/A'
           }));
           
           setAllPets(transformedPets);
@@ -150,7 +128,11 @@ export default function Records() {
                 </TableHeader>
                 <TableBody>
                   {filteredPets.map((pet) => (
-                    <TableRow key={pet.petId}>
+                    <TableRow 
+                      key={pet.petId}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => router.push(`/pets/${pet.petId}`)}
+                    >
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
@@ -164,14 +146,14 @@ export default function Records() {
                       <TableCell>{pet.breed}</TableCell>
                       <TableCell>{pet.dateOfBirth}</TableCell>
                       <TableCell>{pet.weight}</TableCell>
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => router.push(`/pets/${pet.petId}`)}
+                          onClick={() => router.push(`/pets/${pet.petId}?tab=records`)}
                         >
                           <FileText className="h-4 w-4 mr-2" />
-                          View Records ({pet.recordCount})
+                          View Records
                         </Button>
                       </TableCell>
                     </TableRow>

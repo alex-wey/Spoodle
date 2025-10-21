@@ -2,13 +2,140 @@ import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import Joi from 'joi';
 import db from '../database/crud/index.js';
-import { Pet, CreatePetRequest } from '../database/entities/index.js';
+import { Pet, User, CreatePetRequest } from '../database/entities/index.js';
 import { validateRequest, validationSchemas, commonSchemas } from '../middleware/validation.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, optionalAuth } from '../middleware/auth.js';
 
 const router = Router();
 
-// Apply authentication to all pet routes
+// ===== VET/CLINIC ROUTES (No Auth Required for Demo) =====
+
+// Get all pets (for vets/clinic staff)
+router.get('/all',
+  optionalAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const pets = await db.findAll<Pet>('pets');
+      const users = await db.findAll<User>('users');
+      
+      // Create user lookup map
+      const userMap = new Map(users.map(user => [user.petOwnerId, user]));
+      
+      // Enrich pets with owner information
+      const petsWithOwners = pets.map(pet => ({
+        ...pet,
+        owner: userMap.get(pet.ownerId) ? {
+          id: userMap.get(pet.ownerId)!.petOwnerId,
+          name: userMap.get(pet.ownerId)!.username,
+          email: userMap.get(pet.ownerId)!.email,
+          phone: userMap.get(pet.ownerId)!.phoneNumber,
+          address: userMap.get(pet.ownerId)!.address
+        } : null
+      }));
+      
+      res.json({
+        success: true,
+        data: petsWithOwners,
+        count: petsWithOwners.length,
+        message: 'All pets retrieved successfully'
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Server error',
+        message: 'Unable to retrieve pets'
+      });
+    }
+  }
+);
+
+// Get a specific pet by ID with owner details (for vets)
+router.get('/:id/details',
+  optionalAuth,
+  validateRequest({ params: Joi.object({ id: commonSchemas.id }) }),
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      
+      const pet = await db.findById<Pet>('pets', id);
+      
+      if (!pet) {
+        return res.status(404).json({
+          success: false,
+          error: 'Pet not found',
+          message: 'The requested pet does not exist'
+        });
+      }
+
+      // Get owner information
+      const users = await db.findAll<User>('users');
+      const owner = users.find(user => user.petOwnerId === pet.ownerId);
+      
+      const petWithOwner = {
+        ...pet,
+        owner: owner ? {
+          id: owner.petOwnerId,
+          name: owner.username,
+          email: owner.email,
+          phone: owner.phoneNumber,
+          address: owner.address
+        } : null
+      };
+      
+      res.json({
+        success: true,
+        data: petWithOwner,
+        message: 'Pet retrieved successfully'
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Server error',
+        message: 'Unable to retrieve pet'
+      });
+    }
+  }
+);
+
+// Get medical records for a specific pet (for vets)
+router.get('/:id/medical-records',
+  optionalAuth,
+  validateRequest({ params: Joi.object({ id: commonSchemas.id }) }),
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      
+      const pet = await db.findById<Pet>('pets', id);
+      
+      if (!pet) {
+        return res.status(404).json({
+          success: false,
+          error: 'Pet not found',
+          message: 'The requested pet does not exist'
+        });
+      }
+
+      const records = await db.getMedicalRecordsByPet(id);
+      
+      res.json({
+        success: true,
+        data: records,
+        count: records.length,
+        message: 'Medical records retrieved successfully'
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Server error',
+        message: 'Unable to retrieve medical records'
+      });
+    }
+  }
+);
+
+// ===== PET OWNER ROUTES (Auth Required) =====
+
+// Apply authentication to remaining pet routes
 router.use(authenticateToken);
 
 // Get all pets for the authenticated user

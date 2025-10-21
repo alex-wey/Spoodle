@@ -164,7 +164,7 @@ async function seedData() {
         weight: 65.5,
         allergies: ['Chicken', 'Dust mites'],
         dietaryRestrictions: ['Grain-free diet recommended'],
-        profilePhoto: '/assets/pets/golden-retriever.jpg',
+        profilePhoto: 'https://images.unsplash.com/photo-1633722715463-d30f4f325e24?w=400&h=400&fit=crop',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
@@ -180,7 +180,7 @@ async function seedData() {
         weight: 8.2,
         allergies: ['Fish'],
         dietaryRestrictions: ['Indoor cat formula'],
-        profilePhoto: '/assets/pets/tabby-cat.jpg',
+        profilePhoto: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400&h=400&fit=crop',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
@@ -196,7 +196,7 @@ async function seedData() {
         weight: 75.8,
         allergies: [],
         dietaryRestrictions: ['High-protein diet'],
-        profilePhoto: '/assets/pets/german-shepherd.jpg',
+        profilePhoto: 'https://images.unsplash.com/photo-1568572933382-74d440642117?w=400&h=400&fit=crop',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
@@ -212,7 +212,7 @@ async function seedData() {
         weight: 45.2,
         allergies: ['Wheat'],
         dietaryRestrictions: ['Active dog formula'],
-        profilePhoto: '/assets/pets/border-collie.jpg',
+        profilePhoto: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=400&fit=crop',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
@@ -228,7 +228,7 @@ async function seedData() {
         weight: 35.0,
         allergies: [],
         dietaryRestrictions: ['Puppy formula'],
-        profilePhoto: '/assets/pets/labrador-mix.jpg',
+        profilePhoto: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400&h=400&fit=crop',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
@@ -244,7 +244,7 @@ async function seedData() {
         weight: 10.5,
         allergies: ['Dairy'],
         dietaryRestrictions: ['Hairball control formula'],
-        profilePhoto: '/assets/pets/persian-cat.jpg',
+        profilePhoto: 'https://images.unsplash.com/photo-1595433707802-6b2626ef1c91?w=400&h=400&fit=crop',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
@@ -260,7 +260,7 @@ async function seedData() {
         weight: 120.3,
         allergies: ['Corn'],
         dietaryRestrictions: ['Large breed formula'],
-        profilePhoto: '/assets/pets/great-dane.jpg',
+        profilePhoto: 'https://images.unsplash.com/photo-1567752881298-894bb81f9379?w=400&h=400&fit=crop',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
@@ -276,7 +276,7 @@ async function seedData() {
         weight: 70.1,
         allergies: ['Beef'],
         dietaryRestrictions: ['Senior dog formula'],
-        profilePhoto: '/assets/pets/black-lab.jpg',
+        profilePhoto: 'https://images.unsplash.com/photo-1587402092301-725e37c70fd8?w=400&h=400&fit=crop',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }

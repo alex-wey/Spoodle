@@ -11,8 +11,8 @@
     "specialty": "Internal Medicine",
     "biography": "Dr. Chen has 10 years of experience in veterinary medicine with a focus on internal medicine.",
     "startDate": "2014-01-15",
-    "createdAt": "2025-10-21T01:15:12.603Z",
-    "updatedAt": "2025-10-21T01:15:12.603Z"
+    "createdAt": "2025-10-21T01:45:11.688Z",
+    "updatedAt": "2025-10-21T01:45:11.688Z"
   },
   {
     "vetId": "vet-2",
@@ -26,8 +26,8 @@
     "specialty": "Surgery",
     "biography": "Dr. Martinez specializes in surgical procedures and emergency care.",
     "startDate": "2018-06-01",
-    "createdAt": "2025-10-21T01:15:12.603Z",
-    "updatedAt": "2025-10-21T01:15:12.603Z"
+    "createdAt": "2025-10-21T01:45:11.689Z",
+    "updatedAt": "2025-10-21T01:45:11.689Z"
   },
   {
     "vetId": "vet-3",
@@ -41,7 +41,7 @@
     "specialty": "Dentistry",
     "biography": "Dr. Wilson is a board-certified veterinary dentist with extensive experience.",
     "startDate": "2012-03-10",
-    "createdAt": "2025-10-21T01:15:12.603Z",
-    "updatedAt": "2025-10-21T01:15:12.603Z"
+    "createdAt": "2025-10-21T01:45:11.689Z",
+    "updatedAt": "2025-10-21T01:45:11.689Z"
   }
 ]

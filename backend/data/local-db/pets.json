@@ -16,9 +16,9 @@
     "dietaryRestrictions": [
       "Grain-free diet recommended"
     ],
-    "profilePhoto": "/assets/pets/golden-retriever.jpg",
-    "createdAt": "2025-10-21T01:15:12.603Z",
-    "updatedAt": "2025-10-21T01:15:12.603Z"
+    "profilePhoto": "https://images.unsplash.com/photo-1633722715463-d30f4f325e24?w=400&h=400&fit=crop",
+    "createdAt": "2025-10-21T01:45:11.689Z",
+    "updatedAt": "2025-10-21T01:45:11.689Z"
   },
   {
     "petId": "pet-2",
@@ -36,9 +36,9 @@
     "dietaryRestrictions": [
       "Indoor cat formula"
     ],
-    "profilePhoto": "/assets/pets/tabby-cat.jpg",
-    "createdAt": "2025-10-21T01:15:12.603Z",
-    "updatedAt": "2025-10-21T01:15:12.603Z"
+    "profilePhoto": "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400&h=400&fit=crop",
+    "createdAt": "2025-10-21T01:45:11.689Z",
+    "updatedAt": "2025-10-21T01:45:11.689Z"
   },
   {
     "petId": "pet-3",
@@ -54,9 +54,9 @@
     "dietaryRestrictions": [
       "High-protein diet"
     ],
-    "profilePhoto": "/assets/pets/german-shepherd.jpg",
-    "createdAt": "2025-10-21T01:15:12.603Z",
-    "updatedAt": "2025-10-21T01:15:12.603Z"
+    "profilePhoto": "https://images.unsplash.com/photo-1568572933382-74d440642117?w=400&h=400&fit=crop",
+    "createdAt": "2025-10-21T01:45:11.689Z",
+    "updatedAt": "2025-10-21T01:45:11.689Z"
   },
   {
     "petId": "pet-4",
@@ -74,9 +74,9 @@
     "dietaryRestrictions": [
       "Active dog formula"
     ],
-    "profilePhoto": "/assets/pets/border-collie.jpg",
-    "createdAt": "2025-10-21T01:15:12.603Z",
-    "updatedAt": "2025-10-21T01:15:12.603Z"
+    "profilePhoto": "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=400&fit=crop",
+    "createdAt": "2025-10-21T01:45:11.690Z",
+    "updatedAt": "2025-10-21T01:45:11.690Z"
   },
   {
     "petId": "pet-5",
@@ -92,9 +92,9 @@
     "dietaryRestrictions": [
       "Puppy formula"
     ],
-    "profilePhoto": "/assets/pets/labrador-mix.jpg",
-    "createdAt": "2025-10-21T01:15:12.604Z",
-    "updatedAt": "2025-10-21T01:15:12.604Z"
+    "profilePhoto": "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400&h=400&fit=crop",
+    "createdAt": "2025-10-21T01:45:11.690Z",
+    "updatedAt": "2025-10-21T01:45:11.690Z"
   },
   {
     "petId": "pet-6",
@@ -112,9 +112,9 @@
     "dietaryRestrictions": [
       "Hairball control formula"
     ],
-    "profilePhoto": "/assets/pets/persian-cat.jpg",
-    "createdAt": "2025-10-21T01:15:12.604Z",
-    "updatedAt": "2025-10-21T01:15:12.604Z"
+    "profilePhoto": "https://images.unsplash.com/photo-1595433707802-6b2626ef1c91?w=400&h=400&fit=crop",
+    "createdAt": "2025-10-21T01:45:11.690Z",
+    "updatedAt": "2025-10-21T01:45:11.690Z"
   },
   {
     "petId": "pet-7",
@@ -132,9 +132,9 @@
     "dietaryRestrictions": [
       "Large breed formula"
     ],
-    "profilePhoto": "/assets/pets/great-dane.jpg",
-    "createdAt": "2025-10-21T01:15:12.604Z",
-    "updatedAt": "2025-10-21T01:15:12.604Z"
+    "profilePhoto": "https://images.unsplash.com/photo-1567752881298-894bb81f9379?w=400&h=400&fit=crop",
+    "createdAt": "2025-10-21T01:45:11.690Z",
+    "updatedAt": "2025-10-21T01:45:11.690Z"
   },
   {
     "petId": "pet-8",
@@ -152,8 +152,8 @@
     "dietaryRestrictions": [
       "Senior dog formula"
     ],
-    "profilePhoto": "/assets/pets/black-lab.jpg",
-    "createdAt": "2025-10-21T01:15:12.604Z",
-    "updatedAt": "2025-10-21T01:15:12.604Z"
+    "profilePhoto": "https://images.unsplash.com/photo-1587402092301-725e37c70fd8?w=400&h=400&fit=crop",
+    "createdAt": "2025-10-21T01:45:11.690Z",
+    "updatedAt": "2025-10-21T01:45:11.690Z"
   }
 ]
