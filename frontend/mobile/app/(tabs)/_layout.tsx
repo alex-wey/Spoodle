@@ -71,13 +71,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="pets/[id]/details"
+        name="pets/[id]/profile"
         options={{
           href: null, // Hide from tab bar
         }}
       />
       <Tabs.Screen
-        name="pets/[id]/health-records"
+        name="pets/[id]/records"
         options={{
           href: null, // Hide from tab bar
         }}
