@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { User } from "../types";
+import { apiClient } from "../lib/api";
 
 interface AuthState {
   user: User | null;
@@ -16,6 +17,7 @@ interface AuthState {
   logout: () => Promise<void>;
   initialize: () => Promise<void>;
   updateUser: (updates: Partial<User>) => void;
+  autoLoginAsSarah: () => Promise<void>;
 }
 
 interface SignupData {
@@ -28,6 +30,10 @@ interface SignupData {
 
 const AUTH_TOKEN_KEY = "@spoodle:auth_token";
 const USER_DATA_KEY = "@spoodle:user_data";
+
+// Sarah Johnson's credentials for auto-login
+const SARAH_EMAIL = "sarah.johnson@email.com";
+const SARAH_PASSWORD = "password123";
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -47,33 +53,47 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true });
       
-      // TODO: Replace with actual API call
-      // const response = await apiClient.login(email, password);
+      const response = await apiClient.login(email, password);
       
-      // Mock response for now
-      const mockUser: User = {
-        id: "user-1",
-        email,
-        firstName: "John",
-        lastName: "Doe",
-        role: "pet_owner",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      
-      const mockToken = "mock-jwt-token";
-      
-      // Save to storage
-      await AsyncStorage.setItem(AUTH_TOKEN_KEY, mockToken);
-      await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(mockUser));
-      
-      set({
-        user: mockUser,
-        token: mockToken,
-        isAuthenticated: true,
-        isLoading: false,
-      });
+      if (response.success) {
+        const { token, user: userData } = response.data;
+        
+        // Transform backend user to app user format
+        const user: User = {
+          id: userData.petOwnerId,
+          email: userData.email,
+          firstName: userData.username.split(' ')[0] || userData.username,
+          lastName: userData.username.split(' ')[1] || '',
+          phoneNumber: userData.phoneNumber,
+          role: "pet_owner",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        
+        // Save to storage
+        await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
+        await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(user));
+        
+        set({
+          user,
+          token,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+      }
     } catch (error) {
+      console.error("Login error:", error);
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  autoLoginAsSarah: async () => {
+    try {
+      set({ isLoading: true });
+      await get().login(SARAH_EMAIL, SARAH_PASSWORD);
+    } catch (error) {
+      console.error("Auto-login failed:", error);
       set({ isLoading: false });
       throw error;
     }
@@ -83,34 +103,41 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true });
       
-      // TODO: Replace with actual API call
-      // const response = await apiClient.signup(data);
-      
-      // Mock response for now
-      const mockUser: User = {
-        id: "user-new",
+      const response = await apiClient.signup({
+        username: `${data.firstName} ${data.lastName}`,
         email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
+        password: data.password,
         phoneNumber: data.phoneNumber,
-        role: "pet_owner",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      
-      const mockToken = "mock-jwt-token-new";
-      
-      // Save to storage
-      await AsyncStorage.setItem(AUTH_TOKEN_KEY, mockToken);
-      await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(mockUser));
-      
-      set({
-        user: mockUser,
-        token: mockToken,
-        isAuthenticated: true,
-        isLoading: false,
       });
+      
+      if (response.success) {
+        const { token, user: userData } = response.data;
+        
+        // Transform backend user to app user format
+        const user: User = {
+          id: userData.petOwnerId,
+          email: userData.email,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phoneNumber: userData.phoneNumber,
+          role: "pet_owner",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        
+        // Save to storage
+        await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
+        await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(user));
+        
+        set({
+          user,
+          token,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+      }
     } catch (error) {
+      console.error("Signup error:", error);
       set({ isLoading: false });
       throw error;
     }
@@ -148,9 +175,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (token[1] && userData[1]) {
         const user = JSON.parse(userData[1]) as User;
         
-        // TODO: Validate token with backend
-        // const isValid = await apiClient.validateToken(token[1]);
-        
         set({
           user,
           token: token[1],
@@ -158,7 +182,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isLoading: false,
         });
       } else {
-        set({ isLoading: false });
+        // Auto-login as Sarah Johnson for development
+        try {
+          await get().autoLoginAsSarah();
+        } catch (error) {
+          console.error("Auto-login failed, continuing without auth:", error);
+          set({ isLoading: false });
+        }
       }
     } catch (error) {
       console.error("Auth initialization error:", error);
@@ -180,5 +210,3 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     );
   },
 }));
-
-

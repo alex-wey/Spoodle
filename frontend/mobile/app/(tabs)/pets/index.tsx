@@ -27,11 +27,11 @@ export default function PetsScreen() {
   };
 
   const handlePetPress = (petId: string) => {
-    router.push(`/pets/${petId}/details`);
+    router.push(`/pets/${petId}/profile`);
   };
 
-  const handleHealthRecords = (petId: string) => {
-    router.push(`/pets/${petId}/health-records`);
+  const handlePetRecords = (petId: string) => {
+    router.push(`/pets/${petId}/records`);
   };
 
   if (isLoading && pets.length === 0) {
@@ -107,7 +107,7 @@ export default function PetsScreen() {
                   key={pet.id}
                   pet={pet}
                   onPress={() => handlePetPress(pet.id)}
-                  onHealthRecords={() => handleHealthRecords(pet.id)}
+                  onPetRecords={() => handlePetRecords(pet.id)}
                 />
               ))}
 

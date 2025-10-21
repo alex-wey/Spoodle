@@ -57,7 +57,7 @@ export class AuthService {
     // Find user by email
     const users = await db.findAll<User>('users');
     const user = users.find(u => u.email === credentials.email);
-    
+
     if (!user) {
       throw new Error('Invalid email or password');
     }
@@ -65,7 +65,7 @@ export class AuthService {
     // For now, we'll need to extend our User interface to include password
     // This is a temporary solution - in production, you'd have a separate auth table
     const userWithPassword = user as User & { password?: string };
-    
+
     if (!userWithPassword.password) {
       throw new Error('User account not properly configured');
     }

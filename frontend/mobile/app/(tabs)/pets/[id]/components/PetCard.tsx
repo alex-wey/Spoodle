@@ -6,10 +6,10 @@ import { getPetAgeString, getGenderSymbol } from "../../../../lib/utils";
 interface PetCardProps {
   pet: Pet;
   onPress: () => void;
-  onHealthRecords: () => void;
+  onPetRecords: () => void;
 }
 
-export function PetCard({ pet, onPress, onHealthRecords }: PetCardProps) {
+export function PetCard({ pet, onPress, onPetRecords }: PetCardProps) {
   const genderColor = pet.gender === "female" ? "#EC4899" : "#3B82F6";
   
   return (
@@ -45,11 +45,11 @@ export function PetCard({ pet, onPress, onHealthRecords }: PetCardProps) {
         style={styles.actionButton}
         onPress={(e) => {
           e.stopPropagation();
-          onHealthRecords();
+          onPetRecords();
         }}
       >
         <FileText size={18} color="#4F46E5" />
-        <Text style={styles.actionText}>Health Records</Text>
+        <Text style={styles.actionText}>Pet Records</Text>
       </TouchableOpacity>
 
       {/* Quick Info Pills */}
