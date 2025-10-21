@@ -1,0 +1,159 @@
+[
+  {
+    "petId": "pet-1",
+    "ownerId": "user-1",
+    "name": "Max",
+    "breed": "Golden Retriever",
+    "age": 3,
+    "dateOfBirth": "2021-03-15",
+    "gender": "male",
+    "spayedNeutered": true,
+    "weight": 65.5,
+    "allergies": [
+      "Chicken",
+      "Dust mites"
+    ],
+    "dietaryRestrictions": [
+      "Grain-free diet recommended"
+    ],
+    "profilePhoto": "/assets/pets/golden-retriever.jpg",
+    "createdAt": "2025-10-21T00:35:08.397Z",
+    "updatedAt": "2025-10-21T00:35:08.397Z"
+  },
+  {
+    "petId": "pet-2",
+    "ownerId": "user-2",
+    "name": "Whiskers",
+    "breed": "Tabby Cat",
+    "age": 2,
+    "dateOfBirth": "2022-07-20",
+    "gender": "female",
+    "spayedNeutered": true,
+    "weight": 8.2,
+    "allergies": [
+      "Fish"
+    ],
+    "dietaryRestrictions": [
+      "Indoor cat formula"
+    ],
+    "profilePhoto": "/assets/pets/tabby-cat.jpg",
+    "createdAt": "2025-10-21T00:35:08.397Z",
+    "updatedAt": "2025-10-21T00:35:08.397Z"
+  },
+  {
+    "petId": "pet-3",
+    "ownerId": "user-3",
+    "name": "Rocky",
+    "breed": "German Shepherd",
+    "age": 4,
+    "dateOfBirth": "2020-01-10",
+    "gender": "male",
+    "spayedNeutered": false,
+    "weight": 75.8,
+    "allergies": [],
+    "dietaryRestrictions": [
+      "High-protein diet"
+    ],
+    "profilePhoto": "/assets/pets/german-shepherd.jpg",
+    "createdAt": "2025-10-21T00:35:08.398Z",
+    "updatedAt": "2025-10-21T00:35:08.398Z"
+  },
+  {
+    "petId": "pet-4",
+    "ownerId": "user-4",
+    "name": "Bella",
+    "breed": "Border Collie",
+    "age": 5,
+    "dateOfBirth": "2019-05-12",
+    "gender": "female",
+    "spayedNeutered": true,
+    "weight": 45.2,
+    "allergies": [
+      "Wheat"
+    ],
+    "dietaryRestrictions": [
+      "Active dog formula"
+    ],
+    "profilePhoto": "/assets/pets/border-collie.jpg",
+    "createdAt": "2025-10-21T00:35:08.398Z",
+    "updatedAt": "2025-10-21T00:35:08.398Z"
+  },
+  {
+    "petId": "pet-5",
+    "ownerId": "user-1",
+    "name": "Luna",
+    "breed": "Labrador Mix",
+    "age": 1,
+    "dateOfBirth": "2023-08-05",
+    "gender": "female",
+    "spayedNeutered": false,
+    "weight": 35,
+    "allergies": [],
+    "dietaryRestrictions": [
+      "Puppy formula"
+    ],
+    "profilePhoto": "/assets/pets/labrador-mix.jpg",
+    "createdAt": "2025-10-21T00:35:08.398Z",
+    "updatedAt": "2025-10-21T00:35:08.398Z"
+  },
+  {
+    "petId": "pet-6",
+    "ownerId": "user-2",
+    "name": "Mittens",
+    "breed": "Persian Cat",
+    "age": 6,
+    "dateOfBirth": "2018-11-30",
+    "gender": "female",
+    "spayedNeutered": true,
+    "weight": 10.5,
+    "allergies": [
+      "Dairy"
+    ],
+    "dietaryRestrictions": [
+      "Hairball control formula"
+    ],
+    "profilePhoto": "/assets/pets/persian-cat.jpg",
+    "createdAt": "2025-10-21T00:35:08.398Z",
+    "updatedAt": "2025-10-21T00:35:08.398Z"
+  },
+  {
+    "petId": "pet-7",
+    "ownerId": "user-3",
+    "name": "Duke",
+    "breed": "Great Dane",
+    "age": 2,
+    "dateOfBirth": "2022-02-14",
+    "gender": "male",
+    "spayedNeutered": true,
+    "weight": 120.3,
+    "allergies": [
+      "Corn"
+    ],
+    "dietaryRestrictions": [
+      "Large breed formula"
+    ],
+    "profilePhoto": "/assets/pets/great-dane.jpg",
+    "createdAt": "2025-10-21T00:35:08.398Z",
+    "updatedAt": "2025-10-21T00:35:08.398Z"
+  },
+  {
+    "petId": "pet-8",
+    "ownerId": "user-4",
+    "name": "Shadow",
+    "breed": "Black Labrador",
+    "age": 7,
+    "dateOfBirth": "2017-09-08",
+    "gender": "male",
+    "spayedNeutered": true,
+    "weight": 70.1,
+    "allergies": [
+      "Beef"
+    ],
+    "dietaryRestrictions": [
+      "Senior dog formula"
+    ],
+    "profilePhoto": "/assets/pets/black-lab.jpg",
+    "createdAt": "2025-10-21T00:35:08.398Z",
+    "updatedAt": "2025-10-21T00:35:08.398Z"
+  }
+]

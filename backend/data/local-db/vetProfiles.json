@@ -1,0 +1,47 @@
+[
+  {
+    "vetId": "vet-1",
+    "firstName": "Dr. Sarah",
+    "lastName": "Chen",
+    "clinicId": "clinic-1",
+    "role": "veterinarian",
+    "isAdmin": true,
+    "phoneNumber": "(555) 111-2222",
+    "email": "sarah.chen@happypaws.com",
+    "specialty": "Internal Medicine",
+    "biography": "Dr. Chen has 10 years of experience in veterinary medicine with a focus on internal medicine.",
+    "startDate": "2014-01-15",
+    "createdAt": "2025-10-21T00:35:08.397Z",
+    "updatedAt": "2025-10-21T00:35:08.397Z"
+  },
+  {
+    "vetId": "vet-2",
+    "firstName": "Dr. Michael",
+    "lastName": "Martinez",
+    "clinicId": "clinic-1",
+    "role": "veterinarian",
+    "isAdmin": false,
+    "phoneNumber": "(555) 333-4444",
+    "email": "michael.martinez@happypaws.com",
+    "specialty": "Surgery",
+    "biography": "Dr. Martinez specializes in surgical procedures and emergency care.",
+    "startDate": "2018-06-01",
+    "createdAt": "2025-10-21T00:35:08.397Z",
+    "updatedAt": "2025-10-21T00:35:08.397Z"
+  },
+  {
+    "vetId": "vet-3",
+    "firstName": "Dr. Lisa",
+    "lastName": "Wilson",
+    "clinicId": "clinic-2",
+    "role": "veterinarian",
+    "isAdmin": true,
+    "phoneNumber": "(555) 555-6666",
+    "email": "lisa.wilson@animalwellness.com",
+    "specialty": "Dentistry",
+    "biography": "Dr. Wilson is a board-certified veterinary dentist with extensive experience.",
+    "startDate": "2012-03-10",
+    "createdAt": "2025-10-21T00:35:08.397Z",
+    "updatedAt": "2025-10-21T00:35:08.397Z"
+  }
+]

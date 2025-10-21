@@ -73,7 +73,9 @@ router.get('/',
       
       // Apply pagination if requested
       if (limit) {
-        pets = pets.slice(offset as number, (offset as number) + (limit as number));
+        const offsetNum = Number(offset) || 0;
+        const limitNum = Number(limit);
+        pets = pets.slice(offsetNum, offsetNum + limitNum);
       }
       
       // Transform pets data
@@ -188,10 +190,10 @@ router.get('/',
           table: tableData,
           summary: summary,
           pagination: limit ? {
-            offset: offset,
-            limit: limit,
+            offset: Number(offset) || 0,
+            limit: Number(limit),
             total: allPets.length,
-            hasMore: (offset as number) + (limit as number) < allPets.length
+            hasMore: (Number(offset) || 0) + Number(limit) < allPets.length
           } : null
         },
         message: `Retrieved ${tableData.length} pets with demographics`
@@ -237,22 +239,26 @@ router.get('/filtered',
           return false;
         }
         
-        if (spayedNeutered !== undefined && pet.spayedNeutered !== spayedNeutered) {
-          return false;
-        }
-        
-        if (hasAllergies !== undefined) {
-          const hasAllergiesValue = !!(pet.allergies && pet.allergies.length > 0);
-          if (hasAllergiesValue !== hasAllergies) {
+        if (spayedNeutered !== undefined) {
+          const spayedNeuteredBool = typeof spayedNeutered === 'boolean' ? spayedNeutered : spayedNeutered === 'true';
+          if (pet.spayedNeutered !== spayedNeuteredBool) {
             return false;
           }
         }
         
-        if (minWeight !== undefined && (pet.weight || 0) < (minWeight as number)) {
+        if (hasAllergies !== undefined) {
+          const hasAllergiesValue = !!(pet.allergies && pet.allergies.length > 0);
+          const hasAllergiesBool = typeof hasAllergies === 'boolean' ? hasAllergies : hasAllergies === 'true';
+          if (hasAllergiesValue !== hasAllergiesBool) {
+            return false;
+          }
+        }
+        
+        if (minWeight !== undefined && (pet.weight || 0) < Number(minWeight)) {
           return false;
         }
         
-        if (maxWeight !== undefined && (pet.weight || 0) > (maxWeight as number)) {
+        if (maxWeight !== undefined && (pet.weight || 0) > Number(maxWeight)) {
           return false;
         }
         
@@ -263,11 +269,11 @@ router.get('/filtered',
             const today = new Date();
             const ageInYears = (today.getTime() - birth.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
             
-            if (minAge !== undefined && ageInYears < (minAge as number)) {
+            if (minAge !== undefined && ageInYears < Number(minAge)) {
               return false;
             }
             
-            if (maxAge !== undefined && ageInYears > (maxAge as number)) {
+            if (maxAge !== undefined && ageInYears > Number(maxAge)) {
               return false;
             }
           }

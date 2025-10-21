@@ -7,7 +7,7 @@ async function addNewPets() {
 
   try {
     // Get existing users to assign pets to
-    const users = await db.findAll('users');
+    const users = await db.findAll('users') as any[];
     if (users.length === 0) {
       console.log('❌ No users found. Please run seed script first.');
       return;
@@ -17,7 +17,7 @@ async function addNewPets() {
     const newPets: Omit<Pet, 'createdAt' | 'updatedAt'>[] = [
       {
         petId: uuidv4(),
-        ownerId: users[0].petOwnerId, // Assign to first user (Sarah Johnson)
+        ownerId: (users[0] as any).petOwnerId, // Assign to first user (Sarah Johnson)
         name: 'Buddy',
         breed: 'Labrador Retriever',
         dateOfBirth: '2023-06-15',
@@ -29,7 +29,7 @@ async function addNewPets() {
       },
       {
         petId: uuidv4(),
-        ownerId: users[1]?.petOwnerId || users[0].petOwnerId, // Assign to second user or first
+        ownerId: (users[1] as any)?.petOwnerId || (users[0] as any).petOwnerId, // Assign to second user or first
         name: 'Princess',
         breed: 'Maine Coon',
         dateOfBirth: '2022-03-20',
@@ -41,7 +41,7 @@ async function addNewPets() {
       },
       {
         petId: uuidv4(),
-        ownerId: users[0].petOwnerId, // Assign to first user
+        ownerId: (users[0] as any).petOwnerId, // Assign to first user
         name: 'Charlie',
         breed: 'French Bulldog',
         dateOfBirth: '2024-01-10',
@@ -53,7 +53,7 @@ async function addNewPets() {
       },
       {
         petId: uuidv4(),
-        ownerId: users[2]?.petOwnerId || users[0].petOwnerId, // Assign to third user or first
+        ownerId: (users[2] as any)?.petOwnerId || (users[0] as any).petOwnerId, // Assign to third user or first
         name: 'Luna',
         breed: 'Siberian Husky',
         dateOfBirth: '2021-11-05',

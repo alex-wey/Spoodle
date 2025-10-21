@@ -320,13 +320,12 @@ router.post('/',
       
       const newNotification = await db.create<Notification>('notifications', {
         notificationId: uuidv4(),
-        userId: userId,
-        type: type,
-        title: title,
-        message: message,
+        userId,
+        type,
+        title,
+        message,
         isRead: false,
-        data: data,
-        createdAt: new Date().toISOString()
+        data
       });
       
       res.status(201).json({

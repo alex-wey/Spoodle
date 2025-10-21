@@ -40,7 +40,7 @@ router.get('/',
           pet.name.toLowerCase().includes(searchTerm) ||
           (pet.breed && pet.breed.toLowerCase().includes(searchTerm))
         );
-        results.pets = pets.slice(0, limit as number);
+        results.pets = pets.slice(0, Number(limit));
       }
 
       // Search appointments
@@ -51,7 +51,7 @@ router.get('/',
           (apt.reason && apt.reason.toLowerCase().includes(searchTerm)) ||
           (apt.notes && apt.notes.toLowerCase().includes(searchTerm))
         );
-        results.appointments = appointments.slice(0, limit as number);
+        results.appointments = appointments.slice(0, Number(limit));
       }
 
       // Search tasks
@@ -67,7 +67,7 @@ router.get('/',
           (task.description && task.description.toLowerCase().includes(searchTerm)) ||
           task.type.toLowerCase().includes(searchTerm)
         );
-        results.tasks = tasks.slice(0, limit as number);
+        results.tasks = tasks.slice(0, Number(limit));
       }
 
       // Search medical records
@@ -83,7 +83,7 @@ router.get('/',
           (record.description && record.description.toLowerCase().includes(searchTerm)) ||
           record.fileType.toLowerCase().includes(searchTerm)
         );
-        results.records = records.slice(0, limit as number);
+        results.records = records.slice(0, Number(limit));
       }
 
       // Calculate total results
@@ -96,7 +96,7 @@ router.get('/',
           type: type,
           results: results,
           total: totalResults,
-          hasMore: totalResults >= (limit as number)
+          hasMore: totalResults >= Number(limit)
         },
         message: `Found ${totalResults} results for "${q}"`
       });
@@ -143,7 +143,7 @@ router.get('/pets',
         filteredPets = filteredPets.filter(pet => pet.gender === gender);
       }
 
-      const results = filteredPets.slice(0, limit as number);
+      const results = filteredPets.slice(0, Number(limit));
 
       res.json({
         success: true,
@@ -208,7 +208,7 @@ router.get('/appointments',
         });
       }
 
-      const results = filteredAppointments.slice(0, limit as number);
+      const results = filteredAppointments.slice(0, Number(limit));
 
       res.json({
         success: true,
@@ -268,7 +268,8 @@ router.get('/tasks',
       }
 
       if (completed !== undefined) {
-        filteredTasks = filteredTasks.filter(task => task.completionStatus === completed);
+        const completedBool = typeof completed === 'boolean' ? completed : completed === 'true';
+        filteredTasks = filteredTasks.filter(task => task.completionStatus === completedBool);
       }
 
       if (startDate || endDate) {
@@ -280,7 +281,7 @@ router.get('/tasks',
         });
       }
 
-      const results = filteredTasks.slice(0, limit as number);
+      const results = filteredTasks.slice(0, Number(limit));
 
       res.json({
         success: true,
@@ -347,7 +348,7 @@ router.get('/records',
         });
       }
 
-      const results = filteredRecords.slice(0, limit as number);
+      const results = filteredRecords.slice(0, Number(limit));
 
       res.json({
         success: true,

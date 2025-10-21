@@ -4,13 +4,8 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
-  Calendar, 
   Dog,
-  Search, 
-  FileText, 
-  BarChart3, 
   Settings,
-  MessageSquare,
   Home,
 } from "lucide-react";
 import {
@@ -35,14 +30,9 @@ const navigationItems = [
   //   icon: Calendar,
   // },
   {
-    title: "Search",
-    url: "/search",
-    icon: Search,
-  },
-  {
     title: "Pets",
     url: "/pets",
-    icon: FileText,
+    icon: Dog,
   },
   // {
   //   title: "Messages",

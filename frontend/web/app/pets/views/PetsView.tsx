@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,60 +15,78 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { FileText, Search } from "lucide-react";
-import goldenRetriever from "@/assets/pets/golden-retriever.jpg";
-import tabbycat from "@/assets/pets/tabby-cat.jpg";
-import germanShepherd from "@/assets/pets/german-shepherd.jpg";
-import borderCollie from "@/assets/pets/border-collie.jpg";
+
+// API data interface
+interface ApiPetData {
+  petId: string;
+  petName: string;
+  breed: string;
+  dateOfBirth: string;
+  gender: string;
+  owner?: string;
+  age?: string;
+  weight?: string;
+}
+
+interface ApiResponse {
+  success: boolean;
+  data: {
+    table: ApiPetData[];
+    summary: Record<string, unknown>;
+  };
+}
+
+interface Pet {
+  petId: string;
+  petName: string;
+  petImage: string;
+  ownerName: string;
+  breed: string;
+  dateOfBirth: string;
+  weight: string;
+  recordCount: number;
+}
 
 export default function Records() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [allPets, setAllPets] = useState<Pet[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // TODO: insert hook to fetch pets from the database
+  // Fetch pets from the API
+  useEffect(() => {
+    const fetchPets = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/pet-table');
+        if (!response.ok) throw new Error('Failed to fetch');
+        
+        const result: ApiResponse = await response.json();
+        
+        if (result.success) {
+          // Transform API data to match the table format
+          const transformedPets: Pet[] = result.data.table.map(pet => ({
+            petId: pet.petId,
+            petName: pet.petName,
+            petImage: '', // No default image from API
+            ownerName: pet.owner || 'Unknown Owner',
+            breed: pet.breed,
+            dateOfBirth: pet.dateOfBirth,
+            weight: pet.weight || 'N/A',
+            recordCount: 0 // TODO: Get actual record count from API
+          }));
+          
+          setAllPets(transformedPets);
+        }
+      } catch (error) {
+        console.error('Error fetching pets:', error);
+        setAllPets([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Mock pet data
-  const allPets = [
-    {
-      petId: "1",
-      petName: "Max",
-      petImage: goldenRetriever,
-      ownerName: "Sarah Johnson",
-      breed: "Golden Retriever",
-      dateOfBirth: "2019-03-15",
-      weight: "32 kg",
-      recordCount: 3
-    },
-    {
-      petId: "2",
-      petName: "Whiskers",
-      petImage: tabbycat,
-      ownerName: "Michael Chen",
-      breed: "Tabby Cat",
-      dateOfBirth: "2020-07-22",
-      weight: "4.5 kg",
-      recordCount: 1
-    },
-    {
-      petId: "3",
-      petName: "Buddy",
-      petImage: germanShepherd,
-      ownerName: "Emma Wilson",
-      breed: "German Shepherd",
-      dateOfBirth: "2018-11-08",
-      weight: "38 kg",
-      recordCount: 1
-    },
-    {
-      petId: "4",
-      petName: "Luna",
-      petImage: borderCollie,
-      ownerName: "David Brown",
-      breed: "Border Collie",
-      dateOfBirth: "2021-01-30",
-      weight: "18 kg",
-      recordCount: 1
-    },
-  ];
+    fetchPets();
+  }, []);
 
   const filteredPets = allPets.filter(pet => {
     const matchesSearch = pet.petName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -107,62 +125,73 @@ export default function Records() {
       {/* Pets Table */}
       <Card>
         <CardHeader>
-          <CardTitle>All Pets ({filteredPets.length})</CardTitle>
+          <CardTitle>All Pets ({loading ? '...' : filteredPets.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Pet Name</TableHead>
-                <TableHead>Owner</TableHead>
-                <TableHead>Breed</TableHead>
-                <TableHead>Date of Birth</TableHead>
-                <TableHead>Weight</TableHead>
-                <TableHead>Medical Records</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredPets.map((pet) => (
-                <TableRow key={pet.petId}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={pet.petImage.src} alt={pet.petName} />
-                        <AvatarFallback>{pet.petName.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">{pet.petName}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{pet.ownerName}</TableCell>
-                  <TableCell>{pet.breed}</TableCell>
-                  <TableCell>{pet.dateOfBirth}</TableCell>
-                  <TableCell>{pet.weight}</TableCell>
-                  <TableCell>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => router.push(`/pets/${pet.petId}`)}
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      View Records ({pet.recordCount})
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          
-          {filteredPets.length === 0 && (
-            <div className="text-center py-8">
-              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-lg font-medium">No pets found</p>
-              <p className="text-muted-foreground">
-                {searchQuery 
-                  ? "Try adjusting your search criteria"
-                  : "No pets have been added yet"
-                }
-              </p>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading pets...</p>
+              </div>
             </div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Pet Name</TableHead>
+                    <TableHead>Owner</TableHead>
+                    <TableHead>Breed</TableHead>
+                    <TableHead>Date of Birth</TableHead>
+                    <TableHead>Weight</TableHead>
+                    <TableHead>Medical Records</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPets.map((pet) => (
+                    <TableRow key={pet.petId}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={pet.petImage} alt={pet.petName} />
+                            <AvatarFallback>{pet.petName.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{pet.petName}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{pet.ownerName}</TableCell>
+                      <TableCell>{pet.breed}</TableCell>
+                      <TableCell>{pet.dateOfBirth}</TableCell>
+                      <TableCell>{pet.weight}</TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => router.push(`/pets/${pet.petId}`)}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          View Records ({pet.recordCount})
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              
+              {filteredPets.length === 0 && (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-lg font-medium">No pets found</p>
+                  <p className="text-muted-foreground">
+                    {searchQuery 
+                      ? "Try adjusting your search criteria"
+                      : "No pets have been added yet"
+                    }
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

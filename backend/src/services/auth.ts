@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../database/crud/index.js';
 import { User, RegisterRequest, LoginRequest, AuthResponse, AuthUser } from '../database/entities/index.js';
@@ -131,7 +131,7 @@ export class AuthService {
 
   private static generateAccessToken(user: AuthUser): string {
     const secret = process.env.JWT_SECRET;
-    const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+    const options: SignOptions = { expiresIn: Number(process.env.JWT_EXPIRES_IN) || '7d' };
     
     if (!secret) {
       throw new Error('JWT secret not configured');
@@ -144,13 +144,13 @@ export class AuthService {
         username: user.username
       },
       secret,
-      { expiresIn }
+      options
     );
   }
 
   private static generateRefreshToken(user: AuthUser): string {
     const secret = process.env.REFRESH_TOKEN_SECRET;
-    const expiresIn = process.env.REFRESH_TOKEN_EXPIRES_IN || '30d';
+    const options: SignOptions = { expiresIn: Number(process.env.JWT_EXPIRES_IN) || '7d' };
     
     if (!secret) {
       throw new Error('Refresh token secret not configured');
@@ -163,7 +163,7 @@ export class AuthService {
         username: user.username
       },
       secret,
-      { expiresIn }
+      options
     );
   }
 
