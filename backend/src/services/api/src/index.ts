@@ -13,7 +13,6 @@ import medicalRecordsRoutes from '../../../routes/medicalRecords.js';
 import searchRoutes from '../../../routes/search.js';
 import notificationsRoutes from '../../../routes/notifications.js';
 import uploadsRoutes from '../../../routes/uploads.js';
-import petTableRoutes from '../../../routes/petTable.js';
 
 // Load environment variables
 dotenv.config();
@@ -62,7 +61,6 @@ app.use('/api/tasks', tasksRoutes);
 app.use('/api/medical-records', medicalRecordsRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/notifications', notificationsRoutes);
-app.use('/api/pet-table', petTableRoutes);
 app.use('/uploads', uploadsRoutes);
 
 // API documentation endpoint (basic)
@@ -78,7 +76,6 @@ app.get('/api', (req: Request, res: Response) => {
       medicalRecords: '/api/medical-records',
       search: '/api/search',
       notifications: '/api/notifications',
-      petTable: '/api/pet-table',
       uploads: '/uploads'
     },
     documentation: 'https://github.com/your-repo/spoodle-backend'
@@ -99,7 +96,6 @@ app.use('/api/*', (req: Request, res: Response) => {
       '/api/medical-records',
       '/api/search',
       '/api/notifications',
-      '/api/pet-table',
       '/uploads'
     ]
   });
