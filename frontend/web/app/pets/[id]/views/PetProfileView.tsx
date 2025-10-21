@@ -1,20 +1,12 @@
 'use client';
 
 import { useParams, useRouter } from "next/navigation";
-import { User, Calendar, Phone, Mail, Plus, Filter } from "lucide-react";
+import { User, Phone, Mail, MapPin, Cake, Weight, Heart, Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../../components/ui/card";
 import { Button } from "../../../../components/ui/button";
 import { Badge } from "../../../../components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "../../../../components/ui/avatar";
-import { Input } from "../../../../components/ui/input";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "../../../../components/ui/table";
+import { Separator } from "../../../../components/ui/separator";
 import { useState, useEffect } from "react";
 
 interface PetProfileViewProps {
@@ -68,42 +60,16 @@ export default function PetProfileView({ onViewRecords }: PetProfileViewProps = 
     }
   }, [petId]);
 
-  // Mock appointments data - TODO: fetch from API
-  const appointments = [
-    {
-      id: "1",
-      date: "2024-09-10",
-      reason: "Annual Checkup",
-      status: "Completed",
-      veterinarian: "Dr. Chen"
-    },
-    {
-      id: "2",
-      date: "2024-08-15",
-      reason: "Vaccination Update",
-      status: "Completed",
-      veterinarian: "Dr. Martinez"
-    },
-    {
-      id: "3",
-      date: "2024-07-20",
-      reason: "Limping Examination",
-      status: "Completed",
-      veterinarian: "Dr. Chen"
-    }
-  ];
-
-  const handleOwnerClick = () => {
-    if (pet?.owner?.id) {
-      router.push(`/pet-owners/${pet.owner.id}`);
-    }
-  };
-
   // Calculate age from date of birth
   const calculateAge = (dateOfBirth: string) => {
     const birth = new Date(dateOfBirth);
     const today = new Date();
     const ageInYears = Math.floor((today.getTime() - birth.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+    const ageInMonths = Math.floor((today.getTime() - birth.getTime()) / (30.44 * 24 * 60 * 60 * 1000));
+    
+    if (ageInYears < 1) {
+      return `${ageInMonths} month${ageInMonths !== 1 ? 's' : ''}`;
+    }
     return `${ageInYears} year${ageInYears !== 1 ? 's' : ''}`;
   };
 
@@ -112,7 +78,7 @@ export default function PetProfileView({ onViewRecords }: PetProfileViewProps = 
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading pet details...</p>
+          <p className="text-muted-foreground">Loading pet profile...</p>
         </div>
       </div>
     );
@@ -129,159 +95,162 @@ export default function PetProfileView({ onViewRecords }: PetProfileViewProps = 
 
   return (
     <div className="w-full">
-      <div className="max-w-7xl mx-auto">
-        {/* Pet Header Info */}
-        <div className="flex items-center gap-4 mb-6">
-          <Avatar className="h-20 w-20">
-            <AvatarImage src={pet.profilePhoto} alt={pet.name} />
-            <AvatarFallback>{pet.name.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <div>
-            <h1 className="text-3xl font-bold text-primary">{pet.name}</h1>
-            <p className="text-lg text-muted-foreground">{pet.breed}</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Pet Information */}
-          <div className="lg:col-span-1 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Pet Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <label className="font-medium text-muted-foreground">Age</label>
-                    <p>{calculateAge(pet.dateOfBirth)}</p>
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Hero Section with Pet Photo and Basic Info */}
+        <Card className="overflow-hidden">
+          <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background p-8">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+              {/* Pet Avatar */}
+              <Avatar className="h-32 w-32 border-4 border-background shadow-xl">
+                <AvatarImage src={pet.profilePhoto} alt={pet.name} className="object-cover" />
+                <AvatarFallback className="text-4xl bg-primary/20">{pet.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              
+              {/* Pet Basic Info */}
+              <div className="flex-1 text-center md:text-left">
+                <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
+                  <h1 className="text-4xl font-bold text-primary">{pet.name}</h1>
+                  <Badge variant="secondary" className="text-sm w-fit mx-auto md:mx-0">
+                    <Activity className="h-3 w-3 mr-1" />
+                    {pet.breed}
+                  </Badge>
+                </div>
+                <p className="text-lg text-muted-foreground mb-4">
+                  {calculateAge(pet.dateOfBirth)} old • {pet.gender.charAt(0).toUpperCase() + pet.gender.slice(1)}
+                </p>
+                
+                {/* Quick Stats */}
+                <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Cake className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Birthday</p>
+                      <p className="font-medium">{new Date(pet.dateOfBirth).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="font-medium text-muted-foreground">Gender</label>
-                    <p className="capitalize">{pet.gender}</p>
+                  
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Weight className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Weight</p>
+                      <p className="font-medium">{pet.weight} lbs</p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="font-medium text-muted-foreground">Birth Date</label>
-                    <p>{new Date(pet.dateOfBirth).toLocaleDateString()}</p>
-                  </div>
-                  <div>
-                    <label className="font-medium text-muted-foreground">Weight</label>
-                    <p>{pet.weight} lbs</p>
-                  </div>
-                  <div className="col-span-2">
-                    <label className="font-medium text-muted-foreground">Spay/Neuter Status</label>
-                    <p>{pet.spayedNeutered ? 'Yes' : 'No'}</p>
+                  
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Heart className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Spayed/Neutered</p>
+                      <p className="font-medium">{pet.spayedNeutered ? 'Yes' : 'No'}</p>
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
+          </div>
+        </Card>
 
-            {/* Owner Information */}
-            {pet.owner && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Pet Owner
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start h-auto p-4"
-                    onClick={handleOwnerClick}
-                  >
-                    <div className="flex items-center gap-3 w-full">
-                      <Avatar>
-                        <AvatarFallback className="bg-primary text-primary-foreground">
-                          {pet.owner.name.split(' ').map(n => n.charAt(0)).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="text-left">
-                        <p className="font-medium">{pet.owner.name}</p>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Mail className="h-3 w-3" />
-                          {pet.owner.email}
+        {/* Owner Information and Additional Information Cards - Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Owner Information Card */}
+          {pet.owner && (
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle>Pet Owner</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col items-start gap-4">
+                  <Avatar className="h-16 w-16">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+                      {pet.owner.name.split(' ').map(n => n.charAt(0)).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  
+                  <div className="w-full space-y-3">
+                    <div>
+                      <h3 className="text-xl font-semibold">{pet.owner.name}</h3>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
                         </div>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Phone className="h-3 w-3" />
-                          {pet.owner.phone}
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted-foreground">Email</p>
+                          <p className="font-medium truncate">{pet.owner.email}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted-foreground">Phone</p>
+                          <p className="font-medium">{pet.owner.phone}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted-foreground">Address</p>
+                          <p className="font-medium">{pet.owner.address}</p>
                         </div>
                       </div>
                     </div>
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Appointment History */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    Appointment History
-                  </CardTitle>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <Filter className="h-4 w-4 mr-2" />
-                      Filter
-                    </Button>
-                    <Button size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Appointment
-                    </Button>
                   </div>
                 </div>
-                <div className="flex gap-2 mt-4">
-                  <Input placeholder="Search appointments..." className="max-w-sm" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Pet</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Reason</TableHead>
-                      <TableHead>Veterinarian</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {appointments.map((appointment) => (
-                      <TableRow key={appointment.id} className="cursor-pointer hover:bg-muted/50">
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={pet.profilePhoto} alt={pet.name} />
-                              <AvatarFallback>{pet.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            {pet.name}
-                          </div>
-                        </TableCell>
-                        <TableCell>{appointment.date}</TableCell>
-                        <TableCell>{appointment.reason}</TableCell>
-                        <TableCell>{appointment.veterinarian}</TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={appointment.status === 'Completed' ? 'default' : 'secondary'}
-                            className={appointment.status === 'Completed' ? 'bg-secondary' : ''}
-                          >
-                            {appointment.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
               </CardContent>
             </Card>
-          </div>
+          )}
+
+          {/* Additional Information Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Additional Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Activity className="h-4 w-4" />
+                    <span>Breed</span>
+                  </div>
+                  <p className="text-lg font-semibold">{pet.breed}</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <User className="h-4 w-4" />
+                    <span>Gender</span>
+                  </div>
+                  <p className="text-lg font-semibold capitalize">{pet.gender}</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Heart className="h-4 w-4" />
+                    <span>Status</span>
+                  </div>
+                  <Badge variant={pet.spayedNeutered ? "default" : "secondary"} className="text-sm">
+                    {pet.spayedNeutered ? 'Spayed/Neutered' : 'Not Spayed/Neutered'}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
