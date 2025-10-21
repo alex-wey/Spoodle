@@ -28,14 +28,14 @@ const navigationItems = [
     icon: Home,
   },
   {
-    title: "Appointments",
-    url: "/appointments",
-    icon: Calendar,
-  },
-  {
     title: "Pets",
     url: "/pets",
     icon: Dog,
+  },
+  {
+    title: "Appointments",
+    url: "/appointments",
+    icon: Calendar,
   },
   {
     title: "Messages",

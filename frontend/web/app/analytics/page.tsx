@@ -27,7 +27,7 @@ export default function AnalyticsPage() {
 
         {/* Description */}
         <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          Gain valuable insights into your clinic's performance with comprehensive analytics and reporting tools to help you make data-driven decisions.
+          Gain valuable insights into your clinic&apos;s performance with comprehensive analytics and reporting tools to help you make data-driven decisions.
         </p>
 
         {/* Feature Cards */}

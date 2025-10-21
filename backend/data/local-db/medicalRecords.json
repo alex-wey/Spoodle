@@ -10,8 +10,8 @@
     "description": "Annual vaccination record including DHPP and Rabies",
     "clinicId": "clinic-1",
     "vetId": "vet-1",
-    "createdAt": "2025-10-21T00:35:08.400Z",
-    "updatedAt": "2025-10-21T00:35:08.400Z"
+    "createdAt": "2025-10-21T01:15:12.605Z",
+    "updatedAt": "2025-10-21T01:15:12.605Z"
   },
   {
     "recordId": "record-2",
@@ -24,8 +24,8 @@
     "description": "Complete medical history and previous treatments",
     "clinicId": "clinic-1",
     "vetId": "vet-1",
-    "createdAt": "2025-10-21T00:35:08.400Z",
-    "updatedAt": "2025-10-21T00:35:08.400Z"
+    "createdAt": "2025-10-21T01:15:12.605Z",
+    "updatedAt": "2025-10-21T01:15:12.605Z"
   },
   {
     "recordId": "record-3",
@@ -38,7 +38,7 @@
     "description": "Pre-surgery blood work results",
     "clinicId": "clinic-2",
     "vetId": "vet-3",
-    "createdAt": "2025-10-21T00:35:08.400Z",
-    "updatedAt": "2025-10-21T00:35:08.400Z"
+    "createdAt": "2025-10-21T01:15:12.605Z",
+    "updatedAt": "2025-10-21T01:15:12.605Z"
   }
 ]

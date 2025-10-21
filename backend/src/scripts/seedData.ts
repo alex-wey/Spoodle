@@ -12,7 +12,7 @@ async function seedData() {
     const users: User[] = [
       {
         petOwnerId: 'user-1',
-        username: 'sarah_johnson',
+        username: 'Sarah Johnson',
         email: 'sarah.johnson@email.com',
         password: hashedPassword,
         phoneNumber: '(555) 123-4567',
@@ -22,7 +22,7 @@ async function seedData() {
       },
       {
         petOwnerId: 'user-2',
-        username: 'michael_chen',
+        username: 'Michael Chen',
         email: 'michael.chen@email.com',
         password: hashedPassword,
         phoneNumber: '(555) 234-5678',
@@ -32,21 +32,11 @@ async function seedData() {
       },
       {
         petOwnerId: 'user-3',
-        username: 'jennifer_wilson',
-        email: 'jennifer.wilson@email.com',
+        username: 'Emma Wilson',
+        email: 'emma.wilson@email.com',
         password: hashedPassword,
         phoneNumber: '(555) 345-6789',
         address: '789 Pine Road, Riverside, ST 13579',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        petOwnerId: 'user-4',
-        username: 'robert_garcia',
-        email: 'robert.garcia@email.com',
-        password: hashedPassword,
-        phoneNumber: '(555) 456-7890',
-        address: '321 Elm Street, Hillcrest, ST 24680',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
@@ -160,10 +150,11 @@ async function seedData() {
     console.log('✅ Created vet profiles');
 
     // Create sample pets with comprehensive demographics
+    // Distributed across 3 owners: Sarah Johnson (3 pets), Michael Chen (3 pets), Emma Wilson (2 pets)
     const pets: Pet[] = [
       {
         petId: 'pet-1',
-        ownerId: 'user-1',
+        ownerId: 'user-1', // Sarah Johnson
         name: 'Max',
         breed: 'Golden Retriever',
         age: 3,
@@ -179,7 +170,7 @@ async function seedData() {
       },
       {
         petId: 'pet-2',
-        ownerId: 'user-2',
+        ownerId: 'user-2', // Michael Chen
         name: 'Whiskers',
         breed: 'Tabby Cat',
         age: 2,
@@ -195,7 +186,7 @@ async function seedData() {
       },
       {
         petId: 'pet-3',
-        ownerId: 'user-3',
+        ownerId: 'user-3', // Emma Wilson
         name: 'Rocky',
         breed: 'German Shepherd',
         age: 4,
@@ -211,7 +202,7 @@ async function seedData() {
       },
       {
         petId: 'pet-4',
-        ownerId: 'user-4',
+        ownerId: 'user-1', // Sarah Johnson
         name: 'Bella',
         breed: 'Border Collie',
         age: 5,
@@ -227,7 +218,7 @@ async function seedData() {
       },
       {
         petId: 'pet-5',
-        ownerId: 'user-1',
+        ownerId: 'user-2', // Michael Chen
         name: 'Luna',
         breed: 'Labrador Mix',
         age: 1,
@@ -243,7 +234,7 @@ async function seedData() {
       },
       {
         petId: 'pet-6',
-        ownerId: 'user-2',
+        ownerId: 'user-3', // Emma Wilson
         name: 'Mittens',
         breed: 'Persian Cat',
         age: 6,
@@ -259,7 +250,7 @@ async function seedData() {
       },
       {
         petId: 'pet-7',
-        ownerId: 'user-3',
+        ownerId: 'user-1', // Sarah Johnson
         name: 'Duke',
         breed: 'Great Dane',
         age: 2,
@@ -275,7 +266,7 @@ async function seedData() {
       },
       {
         petId: 'pet-8',
-        ownerId: 'user-4',
+        ownerId: 'user-2', // Michael Chen
         name: 'Shadow',
         breed: 'Black Labrador',
         age: 7,
@@ -460,6 +451,10 @@ async function seedData() {
     console.log(`📅 Appointments: ${appointments.length}`);
     console.log(`📋 Tasks: ${tasks.length}`);
     console.log(`📄 Medical Records: ${medicalRecords.length}`);
+    console.log('\n👥 Pet Owners:');
+    console.log(`- Sarah Johnson: 3 pets (Max, Bella, Duke)`);
+    console.log(`- Michael Chen: 3 pets (Whiskers, Luna, Shadow)`);
+    console.log(`- Emma Wilson: 2 pets (Rocky, Mittens)`);
 
   } catch (error) {
     console.error('❌ Error seeding database:', error);

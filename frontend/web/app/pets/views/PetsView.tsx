@@ -57,7 +57,7 @@ export default function Records() {
   useEffect(() => {
     const fetchPets = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/pet-table');
+        const response = await fetch('http://localhost:3001/api/pet-table?includeOwner=true');
         if (!response.ok) throw new Error('Failed to fetch');
         
         const result: ApiResponse = await response.json();

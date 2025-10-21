@@ -17,8 +17,8 @@
       "Grain-free diet recommended"
     ],
     "profilePhoto": "/assets/pets/golden-retriever.jpg",
-    "createdAt": "2025-10-21T00:35:08.397Z",
-    "updatedAt": "2025-10-21T00:35:08.397Z"
+    "createdAt": "2025-10-21T01:15:12.603Z",
+    "updatedAt": "2025-10-21T01:15:12.603Z"
   },
   {
     "petId": "pet-2",
@@ -37,8 +37,8 @@
       "Indoor cat formula"
     ],
     "profilePhoto": "/assets/pets/tabby-cat.jpg",
-    "createdAt": "2025-10-21T00:35:08.397Z",
-    "updatedAt": "2025-10-21T00:35:08.397Z"
+    "createdAt": "2025-10-21T01:15:12.603Z",
+    "updatedAt": "2025-10-21T01:15:12.603Z"
   },
   {
     "petId": "pet-3",
@@ -55,12 +55,12 @@
       "High-protein diet"
     ],
     "profilePhoto": "/assets/pets/german-shepherd.jpg",
-    "createdAt": "2025-10-21T00:35:08.398Z",
-    "updatedAt": "2025-10-21T00:35:08.398Z"
+    "createdAt": "2025-10-21T01:15:12.603Z",
+    "updatedAt": "2025-10-21T01:15:12.603Z"
   },
   {
     "petId": "pet-4",
-    "ownerId": "user-4",
+    "ownerId": "user-1",
     "name": "Bella",
     "breed": "Border Collie",
     "age": 5,
@@ -75,12 +75,12 @@
       "Active dog formula"
     ],
     "profilePhoto": "/assets/pets/border-collie.jpg",
-    "createdAt": "2025-10-21T00:35:08.398Z",
-    "updatedAt": "2025-10-21T00:35:08.398Z"
+    "createdAt": "2025-10-21T01:15:12.603Z",
+    "updatedAt": "2025-10-21T01:15:12.603Z"
   },
   {
     "petId": "pet-5",
-    "ownerId": "user-1",
+    "ownerId": "user-2",
     "name": "Luna",
     "breed": "Labrador Mix",
     "age": 1,
@@ -93,12 +93,12 @@
       "Puppy formula"
     ],
     "profilePhoto": "/assets/pets/labrador-mix.jpg",
-    "createdAt": "2025-10-21T00:35:08.398Z",
-    "updatedAt": "2025-10-21T00:35:08.398Z"
+    "createdAt": "2025-10-21T01:15:12.604Z",
+    "updatedAt": "2025-10-21T01:15:12.604Z"
   },
   {
     "petId": "pet-6",
-    "ownerId": "user-2",
+    "ownerId": "user-3",
     "name": "Mittens",
     "breed": "Persian Cat",
     "age": 6,
@@ -113,12 +113,12 @@
       "Hairball control formula"
     ],
     "profilePhoto": "/assets/pets/persian-cat.jpg",
-    "createdAt": "2025-10-21T00:35:08.398Z",
-    "updatedAt": "2025-10-21T00:35:08.398Z"
+    "createdAt": "2025-10-21T01:15:12.604Z",
+    "updatedAt": "2025-10-21T01:15:12.604Z"
   },
   {
     "petId": "pet-7",
-    "ownerId": "user-3",
+    "ownerId": "user-1",
     "name": "Duke",
     "breed": "Great Dane",
     "age": 2,
@@ -133,12 +133,12 @@
       "Large breed formula"
     ],
     "profilePhoto": "/assets/pets/great-dane.jpg",
-    "createdAt": "2025-10-21T00:35:08.398Z",
-    "updatedAt": "2025-10-21T00:35:08.398Z"
+    "createdAt": "2025-10-21T01:15:12.604Z",
+    "updatedAt": "2025-10-21T01:15:12.604Z"
   },
   {
     "petId": "pet-8",
-    "ownerId": "user-4",
+    "ownerId": "user-2",
     "name": "Shadow",
     "breed": "Black Labrador",
     "age": 7,
@@ -153,7 +153,7 @@
       "Senior dog formula"
     ],
     "profilePhoto": "/assets/pets/black-lab.jpg",
-    "createdAt": "2025-10-21T00:35:08.398Z",
-    "updatedAt": "2025-10-21T00:35:08.398Z"
+    "createdAt": "2025-10-21T01:15:12.604Z",
+    "updatedAt": "2025-10-21T01:15:12.604Z"
   }
 ]

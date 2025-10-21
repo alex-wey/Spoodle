@@ -27,7 +27,7 @@ export default function AppointmentsPage() {
 
         {/* Description */}
         <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          We're building a comprehensive appointment management system to help you schedule, track, and manage all your veterinary appointments in one place.
+          We&apos;re building a comprehensive appointment management system to help you schedule, track, and manage all your veterinary appointments in one place.
         </p>
 
         {/* Feature Cards */}
