@@ -4,6 +4,7 @@ export interface User {
   petOwnerId: string;
   username: string;
   email: string;
+  password: string; // Hashed password
   phoneNumber?: string;
   address?: string;
   createdAt: string;
