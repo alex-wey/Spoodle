@@ -163,18 +163,12 @@ export default function PetRecordsView() {
                     <TableCell>{new Date(record.uploadDate).toLocaleDateString()}</TableCell>
                     <TableCell className="max-w-xs truncate">{record.description || 'No description'}</TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" asChild>
-                          <a href={record.fileUrl} download>
-                            <Download className="h-4 w-4 mr-2" />
-                            Download
-                          </a>
-                        </Button>
-                        <Button variant="secondary" size="sm">
-                          <FileText className="h-4 w-4 mr-2" />
-                          View
-                        </Button>
-                      </div>
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={record.fileUrl} download>
+                          <Download className="h-4 w-4 mr-2" />
+                          Download
+                        </a>
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

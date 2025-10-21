@@ -43,7 +43,15 @@ export default function Records() {
         
         if (result.success) {
           // Transform API data to match the table format
-          const transformedPets: Pet[] = result.data.map((pet: any) => ({
+          const transformedPets: Pet[] = result.data.map((pet: {
+            petId: string;
+            name: string;
+            profilePhoto?: string;
+            owner?: { name: string };
+            breed?: string;
+            dateOfBirth?: string;
+            weight?: number;
+          }) => ({
             petId: pet.petId,
             petName: pet.name,
             petImage: pet.profilePhoto || '',

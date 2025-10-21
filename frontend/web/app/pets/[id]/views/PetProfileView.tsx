@@ -9,10 +9,6 @@ import { Avatar, AvatarImage, AvatarFallback } from "../../../../components/ui/a
 import { Separator } from "../../../../components/ui/separator";
 import { useState, useEffect } from "react";
 
-interface PetProfileViewProps {
-  onViewRecords?: () => void;
-}
-
 interface PetData {
   petId: string;
   name: string;
@@ -31,7 +27,7 @@ interface PetData {
   };
 }
 
-export default function PetProfileView({ onViewRecords }: PetProfileViewProps = {}) {
+export default function PetProfileView() {
   const { id: petId } = useParams();
   const router = useRouter();
   const [pet, setPet] = useState<PetData | null>(null);

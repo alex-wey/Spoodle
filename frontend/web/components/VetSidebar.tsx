@@ -8,7 +8,7 @@ import {
   Settings,
   Home,
   Calendar,
-  BotMessageSquare,
+  MessageSquare,
   BarChart3,
 } from "lucide-react";
 import {
@@ -40,7 +40,7 @@ const navigationItems = [
   {
     title: "Messages",
     url: "/messages",
-    icon: BotMessageSquare,
+    icon: MessageSquare,
   },
   {
     title: "Analytics",

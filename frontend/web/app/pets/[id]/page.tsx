@@ -1,15 +1,14 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PetProfileView from "./views/PetProfileView";
 import PetRecordsView from "./views/PetRecordsView";
 
 export default function PetPage() {
-  const { id: petId } = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("profile");
@@ -78,7 +77,7 @@ export default function PetPage() {
       {/* Tab Content */}
       <div className="w-full">
         {activeTab === "profile" && (
-          <PetProfileView onViewRecords={() => setActiveTab("records")} />
+          <PetProfileView />
         )}
         {activeTab === "records" && (
           <PetRecordsView />
