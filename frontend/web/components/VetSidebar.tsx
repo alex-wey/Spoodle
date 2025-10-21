@@ -7,6 +7,9 @@ import {
   Dog,
   Settings,
   Home,
+  Calendar,
+  BotMessageSquare,
+  BarChart3,
 } from "lucide-react";
 import {
   Sidebar,
@@ -24,26 +27,26 @@ const navigationItems = [
     url: "/home",
     icon: Home,
   },
-  // {
-  //   title: "Appointments",
-  //   url: "/appointments",
-  //   icon: Calendar,
-  // },
+  {
+    title: "Appointments",
+    url: "/appointments",
+    icon: Calendar,
+  },
   {
     title: "Pets",
     url: "/pets",
     icon: Dog,
   },
-  // {
-  //   title: "Messages",
-  //   url: "/messages",
-  //   icon: MessageSquare,
-  // },
-  // {
-  //   title: "Analytics",
-  //   url: "/analytics",
-  //   icon: BarChart3,
-  // },
+  {
+    title: "Messages",
+    url: "/messages",
+    icon: BotMessageSquare,
+  },
+  {
+    title: "Analytics",
+    url: "/analytics",
+    icon: BarChart3,
+  },
   {
     title: "Settings",
     url: "/settings",
