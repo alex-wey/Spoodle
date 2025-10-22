@@ -48,6 +48,7 @@ interface DocumentState {
   fetchDocuments: () => Promise<void>;
   fetchDocumentsByCategory: (category: string) => Promise<Document[]>;
   clearError: () => void;
+  clearDocuments: () => void;
 }
 
 export const useDocumentStore = create<DocumentState>((set, get) => ({
@@ -150,5 +151,13 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
 
   clearError: () => {
     set({ error: null });
+  },
+
+  clearDocuments: () => {
+    set({ 
+      documents: [], 
+      selectedCategory: null,
+      error: null 
+    });
   },
 }));

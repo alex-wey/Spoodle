@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { ChevronRight, Plus, Settings, Heart, Calendar, FileText, MessageCircle, Bug } from 'lucide-react-native';
-import { useTestAuthStore } from './test-store';
+import { useAuthStore } from '../store/auth';
+import { usePetStore } from '../store/pets';
 import PetSelectionModal from '../components/PetSelectionModal';
 import ChatbotIntroModal from '../components/ChatbotIntroModal';
 import ChatInterfaceModal from '../components/ChatInterfaceModal';
@@ -22,11 +23,10 @@ export default function HomeScreen() {
   const [showPetSelection, setShowPetSelection] = useState(false);
   const [showChatbotIntro, setShowChatbotIntro] = useState(false);
   const [showChatInterface, setShowChatInterface] = useState(false);
-  const [user, setUser] = useState(null);
-  const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const { isAuthenticated } = useTestAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const { pets, fetchPets } = usePetStore();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -34,14 +34,10 @@ export default function HomeScreen() {
     }
   }, [isAuthenticated]);
 
-
   const fetchUserData = async () => {
     try {
       setLoading(true);
-      // Fetch user data from your API
-      // const userData = await authAPI.getProfile();
-      // setUser(userData);
-      setUser({ name: 'John Doe', email: 'john@example.com' }); // Placeholder
+      await fetchPets();
     } catch (error) {
       console.error('Error fetching user data:', error);
     } finally {
@@ -92,7 +88,7 @@ export default function HomeScreen() {
       title: 'Documents',
       icon: FileText,
       color: '#E75325',
-      onPress: () => router.push('/docs-files'),
+      onPress: () => router.push('/(tabs)/docs'),
     },
     {
       id: 'chat',
@@ -238,10 +234,10 @@ export default function HomeScreen() {
       {/* Bug Report FAB */}
       <View style={styles.fabContainer}>
         <FAB
-          icon={<Bug size={20} color="#6B7280" />}
+          icon={<Bug size={24} color="#FFFFFF" />}
           onPress={() => router.push("/support")}
-          style={styles.fabSecondary}
-          size="small"
+          style={styles.fabBug}
+          size="large"
         />
       </View>
     </SafeAreaView>
@@ -453,5 +449,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  fabBug: {
+    backgroundColor: '#DC2626',
+    borderWidth: 1,
+    borderColor: '#DC2626',
+    shadowColor: '#DC2626',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    width: 64,
+    height: 64,
   },
 });

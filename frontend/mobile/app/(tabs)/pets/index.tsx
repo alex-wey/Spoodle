@@ -1,10 +1,12 @@
-import { ScrollView, View, Text, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, Platform } from "react-native";
+import { ScrollView, View, Text, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, Platform, Alert } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState, useEffect } from "react";
-import { Plus, Bug, Bell, Dog } from "lucide-react-native";
+import { Plus, Bug, LogOut, Dog } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { usePetStore } from "../../store/pets";
 import { useAuthStore } from "../../store/auth";
+import { useTaskStore } from "../../store/tasks";
+import { useDocumentStore } from "../../store/documents";
 import { getGreeting } from "../../lib/utils";
 import { PetCard } from "./[id]/components/PetCard";
 import { FAB } from "../../components/FAB";
@@ -12,7 +14,10 @@ import { FAB } from "../../components/FAB";
 export default function PetsScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
-  const { pets, fetchPets, isLoading, error } = usePetStore();
+  const { logout } = useAuthStore();
+  const { pets, fetchPets, isLoading, error, clearPets } = usePetStore();
+  const { clearTasks } = useTaskStore();
+  const { clearDocuments } = useDocumentStore();
   const [refreshing, setRefreshing] = useState(false);
   const insets = useSafeAreaInsets();
 
@@ -31,7 +36,43 @@ export default function PetsScreen() {
   };
 
   const handlePetRecords = (petId: string) => {
-    router.push(`/pets/${petId}/records`);
+    // Navigate to docs page (medical records)
+    router.push(`/(tabs)/docs`);
+  };
+
+  const handleEditPet = (petId: string) => {
+    // Navigate to add pet page in edit mode
+    router.push(`/pets/add?editId=${petId}`);
+  };
+
+  const handleLogout = () => {
+    console.log('🔴 LOGOUT BUTTON CLICKED - handleLogout function called');
+    
+    // For testing - direct logout without confirmation
+    console.log('🚪 Starting direct logout process...');
+    
+    // Clear all stores first
+    clearPets();
+    clearTasks();
+    clearDocuments();
+    console.log('✅ All stores cleared');
+    
+    // Clear auth data
+    logout().then(() => {
+      console.log('✅ Auth logout completed');
+      // Force redirect to landing page
+      console.log('🚪 Redirecting to landing page...');
+      // Try multiple redirect methods to ensure it works
+      setTimeout(() => {
+        router.replace("/(auth)/landing");
+      }, 100);
+    }).catch((error) => {
+      console.error('❌ Logout error:', error);
+      // Even if logout fails, force redirect
+      setTimeout(() => {
+        router.replace("/(auth)/landing");
+      }, 100);
+    });
   };
 
   if (isLoading && pets.length === 0) {
@@ -66,10 +107,14 @@ export default function PetsScreen() {
               <Text style={styles.userName}>{user?.firstName || "Pet Parent"}!</Text>
             </View>
             <TouchableOpacity
-              onPress={() => router.push("/(tabs)/notifications")}
-              style={styles.notificationsButton}
+              onPress={() => {
+                console.log('🔴 LOGOUT TOUCHABLE OPACITY PRESSED');
+                handleLogout();
+              }}
+              style={styles.logoutButton}
+              activeOpacity={0.5}
             >
-              <Bell size={24} color="#6B7280" />
+              <LogOut size={24} color="#6B7280" />
             </TouchableOpacity>
           </View>
           <Text style={styles.subtitle}>How are your pets doing today?</Text>
@@ -108,6 +153,7 @@ export default function PetsScreen() {
                   pet={pet}
                   onPress={() => handlePetPress(pet.id)}
                   onPetRecords={() => handlePetRecords(pet.id)}
+                  onEditPet={() => handleEditPet(pet.id)}
                 />
               ))}
 
@@ -127,10 +173,10 @@ export default function PetsScreen() {
       {/* Floating Action Button */}
       <View style={[styles.fabContainer, { bottom: Platform.OS === "ios" ? 76 + Math.max(insets.bottom - 2, 6) : 80 }]}>
         <FAB
-          icon={<Bug size={20} color="#6B7280" />}
+          icon={<Bug size={24} color="#FFFFFF" />}
           onPress={() => router.push("/support")}
-          style={styles.fabSecondary}
-          size="small"
+          style={styles.fabBug}
+          size="large"
         />
       </View>
     </SafeAreaView>
@@ -171,8 +217,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#4559A7",
   },
-  notificationsButton: {
-    padding: 8,
+  logoutButton: {
+    padding: 12,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   subtitle: {
     fontSize: 14,
@@ -257,5 +307,17 @@ const styles = StyleSheet.create({
   },
   fabSecondary: {
     backgroundColor: "white",
+  },
+  fabBug: {
+    backgroundColor: '#DC2626',
+    borderWidth: 1,
+    borderColor: '#DC2626',
+    shadowColor: '#DC2626',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    width: 64,
+    height: 64,
   },
 });

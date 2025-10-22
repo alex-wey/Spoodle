@@ -245,6 +245,56 @@ router.put('/me', authenticateToken, async (req: Request, res: Response) => {
   }
 });
 
+// Delete account endpoint
+router.delete('/me', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required',
+        message: 'Please log in to delete your account'
+      });
+    }
+
+    // Delete all user-related data in the correct order to respect foreign key constraints
+    // 1. Delete documents
+    await prisma.document.deleteMany({
+      where: { ownerId: req.user.id }
+    });
+
+    // 2. Delete tasks (these are related to pets)
+    await prisma.task.deleteMany({
+      where: { 
+        pet: {
+          ownerId: req.user.id
+        }
+      }
+    });
+
+    // 3. Delete pets
+    await prisma.pet.deleteMany({
+      where: { ownerId: req.user.id }
+    });
+
+    // 4. Delete user
+    await prisma.user.delete({
+      where: { id: req.user.id }
+    });
+    
+    res.json({
+      success: true,
+      message: 'Account deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error',
+      message: 'Unable to delete account'
+    });
+  }
+});
+
 // Logout endpoint (client-side token removal)
 router.post('/logout', authenticateToken, async (req: Request, res: Response) => {
   // In a more sophisticated setup, you'd maintain a blacklist of tokens

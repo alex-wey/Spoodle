@@ -36,20 +36,22 @@ export const validationSchemas = {
     weight: z.number().positive().optional(),
     microchipId: z.string().optional(),
     allergies: z.array(z.string()).optional(),
-    dietaryRestrictions: z.array(z.string()).optional()
+    dietaryRestrictions: z.array(z.string()).optional(),
+    imageUrl: z.string().optional()
   }),
   
   updatePet: z.object({
     name: commonSchemas.name.optional(),
     species: z.string().min(1, 'Species is required').optional(),
     breed: z.string().optional(),
-    dateOfBirth: commonSchemas.date,
+    dateOfBirth: z.string().optional(),
     gender: z.string().optional(),
     spayedNeutered: z.boolean().optional(),
     weight: z.number().positive().optional(),
     microchipId: z.string().optional(),
     allergies: z.array(z.string()).optional(),
-    dietaryRestrictions: z.array(z.string()).optional()
+    dietaryRestrictions: z.array(z.string()).optional(),
+    imageUrl: z.string().optional()
   }),
   
   createTask: z.object({
@@ -73,7 +75,7 @@ export const validationSchemas = {
 };
 
 // Validation middleware
-export const validateRequest = (schema: { body?: z.ZodSchema; params?: z.ZodSchema; query?: z.ZodSchema }) => {
+export const validateRequest = (schema: { body?: z.ZodSchema; params?: z.ZodSchema | Record<string, z.ZodSchema>; query?: z.ZodSchema }) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       // Validate body
@@ -83,7 +85,11 @@ export const validateRequest = (schema: { body?: z.ZodSchema; params?: z.ZodSche
       
       // Validate params
       if (schema.params) {
-        req.params = schema.params.parse(req.params);
+        // If params is a plain object of schemas, convert it to a z.object schema
+        const paramsSchema = schema.params instanceof z.ZodSchema 
+          ? schema.params 
+          : z.object(schema.params);
+        req.params = paramsSchema.parse(req.params);
       }
       
       // Validate query

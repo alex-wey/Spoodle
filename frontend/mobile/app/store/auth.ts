@@ -15,6 +15,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   signup: (data: SignupData) => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   initialize: () => Promise<void>;
   updateUser: (updates: Partial<User>) => void;
   autoLoginAsSarah: () => Promise<void>;
@@ -65,6 +66,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           firstName: userData.firstName,
           lastName: userData.lastName,
           phoneNumber: userData.phone,
+          address: userData.address,
           role: "pet_owner",
           createdAt: new Date(userData.createdAt),
           updatedAt: new Date(userData.updatedAt),
@@ -121,6 +123,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           firstName: userData.firstName,
           lastName: userData.lastName,
           phoneNumber: userData.phone,
+          address: userData.address,
           role: "pet_owner",
           createdAt: new Date(userData.createdAt),
           updatedAt: new Date(userData.updatedAt),
@@ -145,24 +148,52 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
+    console.log("🚪 Auth store: Starting logout process...");
+    
+    // Clear state immediately
+    set({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      isLoading: false,
+    });
+    
+    console.log("✅ Auth store: State cleared immediately");
+    
+    // Clear storage in background
     try {
+      await AsyncStorage.multiRemove([AUTH_TOKEN_KEY, USER_DATA_KEY]);
+      console.log("✅ Auth store: Storage cleared");
+    } catch (error) {
+      console.error("❌ Auth store: Storage clear error:", error);
+      // Don't throw error - state is already cleared
+    }
+    
+    console.log("✅ Auth store: Logout completed");
+  },
+
+  deleteAccount: async () => {
+    try {
+      console.log("🗑️ Auth store: Starting account deletion...");
+      
+      // Call the delete account API
+      await apiClient.deleteAccount();
+      
+      // Clear state immediately
+      set({
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
+      
       // Clear storage
       await AsyncStorage.multiRemove([AUTH_TOKEN_KEY, USER_DATA_KEY]);
       
-      // Clear state
-      set({
-        user: null,
-        token: null,
-        isAuthenticated: false,
-      });
+      console.log("✅ Auth store: Account deleted successfully");
     } catch (error) {
-      console.error("Logout error:", error);
-      // Force clear state even if storage fails
-      set({
-        user: null,
-        token: null,
-        isAuthenticated: false,
-      });
+      console.error("❌ Auth store: Account deletion error:", error);
+      throw error;
     }
   },
 
@@ -183,13 +214,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isLoading: false,
         });
       } else {
-        // Auto-login as Sarah Johnson for development
-        try {
-          await get().autoLoginAsSarah();
-        } catch (error) {
-          console.error("Auto-login failed, continuing without auth:", error);
-          set({ isLoading: false });
-        }
+        // No stored auth data - user is not authenticated
+        console.log("🔍 Auth store: No stored auth data, setting isAuthenticated to false");
+        set({ 
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          isLoading: false 
+        });
       }
     } catch (error) {
       console.error("Auth initialization error:", error);

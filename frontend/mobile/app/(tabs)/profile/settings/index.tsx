@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, ScrollView, Switch } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Switch, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { TouchableOpacity } from "react-native";
-import { ArrowLeft, ChevronRight, Bell, Lock, HelpCircle, FileText, Info, CreditCard, Mail, Moon } from "lucide-react-native";
+import { ArrowLeft, ChevronRight, Bell, Lock, HelpCircle, FileText, Info, CreditCard, Mail, Moon, Trash2 } from "lucide-react-native";
 import { useState } from "react";
+import { useAuthStore } from "../../../store/auth";
 
 interface SettingsItemProps {
   icon: React.ReactNode;
@@ -15,7 +16,7 @@ const SettingsItem = ({ icon, title, onPress }: SettingsItemProps) => (
   <TouchableOpacity style={styles.settingsItem} onPress={onPress} activeOpacity={0.7}>
     <View style={styles.settingsItemLeft}>
       {icon}
-      <Text style={styles.settingsItemText}>{title}</Text>
+      <Text style={title === "Delete Account" ? styles.settingsItemTextDanger : styles.settingsItemText}>{title}</Text>
     </View>
     <ChevronRight size={20} color="#9CA3AF" />
   </TouchableOpacity>
@@ -43,8 +44,56 @@ const SettingsToggleItem = ({ icon, title, value, onValueChange }: SettingsToggl
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { deleteAccount } = useAuthStore();
   const [emailUpdates, setEmailUpdates] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account",
+      "Are you sure you want to permanently delete your account? This action cannot be undone and you will lose all your data including pets, documents, and tasks.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Delete Account",
+          style: "destructive",
+          onPress: () => {
+            // Show confirmation dialog
+            Alert.alert(
+              "Final Confirmation",
+              "This will permanently delete your account and all associated data. Are you absolutely sure?",
+              [
+                {
+                  text: "Cancel",
+                  style: "cancel"
+                },
+                {
+                  text: "Yes, Delete Forever",
+                  style: "destructive",
+                  onPress: async () => {
+                    try {
+                      await deleteAccount();
+                      // Navigate to landing page after successful deletion
+                      router.replace("/(auth)/landing");
+                    } catch (error) {
+                      console.error("Error deleting account:", error);
+                      Alert.alert(
+                        "Error",
+                        "Failed to delete account. Please try again."
+                      );
+                    }
+                  }
+                }
+              ]
+            );
+          }
+        }
+      ]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -94,6 +143,11 @@ export default function SettingsScreen() {
                 icon={<Lock size={20} color="#6B7280" />}
                 title="Privacy & Security"
                 onPress={() => {/* TODO: Navigate to privacy settings */}}
+              />
+              <SettingsItem
+                icon={<Trash2 size={20} color="#DC2626" />}
+                title="Delete Account"
+                onPress={handleDeleteAccount}
               />
             </View>
           </View>
@@ -185,6 +239,11 @@ const styles = StyleSheet.create({
   settingsItemText: {
     fontSize: 16,
     color: "#1F2937",
+    fontWeight: "500",
+  },
+  settingsItemTextDanger: {
+    fontSize: 16,
+    color: "#DC2626",
     fontWeight: "500",
   },
 });

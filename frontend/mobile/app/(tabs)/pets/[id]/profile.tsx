@@ -6,6 +6,7 @@ import { ArrowLeft, Calendar, Weight, Syringe, AlertCircle, Heart, Edit } from "
 import { useEffect, useState } from "react";
 import { apiClient } from "../../../lib/api";
 import { getPetAgeString, getGenderSymbol } from "../../../lib/utils";
+import { getSafeImageSource } from "../../../lib/imageUtils";
 
 interface PetProfile {
   petId: string;
@@ -20,6 +21,7 @@ interface PetProfile {
   allergies?: string[];
   dietaryRestrictions?: string[];
   profilePhoto?: string;
+  imageUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -101,10 +103,11 @@ export default function PetProfileScreen() {
         {/* Pet Profile Card */}
         <View style={styles.profileCard}>
           <Image
-            source={{ 
-              uri: pet.profilePhoto || `https://ui-avatars.com/api/?name=${pet.name}&background=4F46E5&color=fff&size=200` 
-            }}
+            source={getSafeImageSource(pet.imageUrl || pet.profilePhoto, pet.name)}
             style={styles.profileImage}
+            onError={(error) => {
+              console.log('Image load error:', error);
+            }}
           />
           <View style={styles.nameContainer}>
             <Text style={styles.petName}>{pet.name}</Text>

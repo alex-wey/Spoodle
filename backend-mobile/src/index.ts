@@ -13,6 +13,7 @@ import documentsRoutes from './routes/documents.js';
 import dashboardRoutes from './routes/dashboard.js';
 import setupRoutes from './routes/setup.js';
 import bugReportRoutes from './routes/bug-report.js';
+import chatbotRoutes from './routes/chatbot.js';
 
 // Load environment variables
 dotenv.config();
@@ -20,8 +21,15 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3002;
 
-// Initialize Prisma client
-export const prisma = new PrismaClient();
+// Initialize Prisma client with SSL configuration for AWS RDS
+export const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.MOBILE_DATABASE_URL
+    }
+  },
+  log: ['query', 'info', 'warn', 'error']
+});
 
 // Security middleware
 app.use(helmet());
@@ -30,7 +38,8 @@ app.use(helmet());
 const corsOptions = {
   origin: [
     'http://localhost:8081',
-    'http://localhost:8082', 
+    'http://localhost:8082',
+    'http://localhost:8083', 
     'http://localhost:19006',
     'http://localhost:19000',
     'exp://localhost:19000',
@@ -69,6 +78,7 @@ app.use('/api/documents', documentsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/setup', setupRoutes);
 app.use('/api/bug-report', bugReportRoutes);
+app.use('/api/chatbot', chatbotRoutes);
 
 // API documentation endpoint
 app.get('/api', (req: Request, res: Response) => {
@@ -81,7 +91,8 @@ app.get('/api', (req: Request, res: Response) => {
       tasks: '/api/tasks',
       documents: '/api/documents',
       dashboard: '/api/dashboard',
-      bugReport: '/api/bug-report'
+      bugReport: '/api/bug-report',
+      chatbot: '/api/chatbot'
     },
     documentation: 'Mobile API for Spoodle pet management app'
   });

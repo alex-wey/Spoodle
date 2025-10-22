@@ -1,25 +1,28 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
-import { FileText, ChevronRight } from "lucide-react-native";
+import { FileText, ChevronRight, Settings } from "lucide-react-native";
 import type { Pet } from "../../../../types";
 import { getPetAgeString, getGenderSymbol } from "../../../../lib/utils";
+import { getSafeImageSource } from "../../../../lib/imageUtils";
 
 interface PetCardProps {
   pet: Pet;
   onPress: () => void;
   onPetRecords: () => void;
+  onEditPet: () => void;
 }
 
-export function PetCard({ pet, onPress, onPetRecords }: PetCardProps) {
+export function PetCard({ pet, onPress, onPetRecords, onEditPet }: PetCardProps) {
   const genderColor = pet.gender === "female" ? "#EC4899" : "#3B82F6";
   
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.container}>
       <View style={styles.header}>
         <Image
-          source={{ 
-            uri: pet.imageUrl || `https://ui-avatars.com/api/?name=${pet.name}&background=4F46E5&color=fff&size=200` 
-          }}
+          source={getSafeImageSource(pet.imageUrl, pet.name)}
           style={styles.image}
+          onError={(error) => {
+            console.log('PetCard image load error:', error);
+          }}
         />
         <View style={styles.info}>
           <View style={styles.nameRow}>
@@ -36,7 +39,18 @@ export function PetCard({ pet, onPress, onPetRecords }: PetCardProps) {
             <Text style={styles.weight}>{pet.weight} lbs</Text>
           )}
         </View>
-        <ChevronRight size={20} color="#9CA3AF" />
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={(e) => {
+              e.stopPropagation();
+              onEditPet();
+            }}
+          >
+            <Settings size={18} color="#4559A7" />
+          </TouchableOpacity>
+          <ChevronRight size={20} color="#9CA3AF" />
+        </View>
       </View>
 
       <View style={styles.divider} />
@@ -102,6 +116,16 @@ const styles = StyleSheet.create({
   },
   info: {
     flex: 1,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  settingsButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: "#F3F4F6",
   },
   nameRow: {
     flexDirection: "row",

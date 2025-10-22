@@ -10,95 +10,348 @@ datasource db {
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
+  password  String
   firstName String
   lastName  String
-  password  String
   phone     String?
   address   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-  // Relations
-  pets      Pet[]
-  documents Document[]
-  
+
   @@map("users")
 }
 
 model Pet {
-  id                  String   @id @default(uuid())
+  id                  String            @id @default(uuid())
   name                String
   species             String
   breed               String?
   gender              String?
   weight              Float?
   dateOfBirth         DateTime?
-  spayedNeutered      Boolean  @default(false)
+  spayedNeutered      Boolean           @default(false)
   microchipId         String?
   allergies           String[]
   dietaryRestrictions String[]
   profilePhoto        String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-  
-  // Relations
-  ownerId   String
-  owner     User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  tasks     Task[]
-  documents Document[]
-  
+  imageUrl            String?
+  ownerId             String
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  appointments        appointments[]
+  medical_records     medical_records[]
+  tasks               Task[]
+
+  @@index([ownerId])
   @@map("pets")
 }
 
 model Task {
   id        String   @id @default(uuid())
   petId     String
-  taskType  String   // walk, feed, medicate, groom, training, checkup, other
+  taskType  TaskType
   date      DateTime
   times     String[]
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-  // Relations
-  pet   Pet   @relation(fields: [petId], references: [id], onDelete: Cascade)
-  
+  pet       Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@index([date])
+  @@index([petId])
+  @@index([taskType])
   @@map("tasks")
 }
 
 model Document {
-  id              String   @id @default(uuid())
-  category        String   // past_appointments, x_ray_documents, diagnostic_reports, blood_test_reports, vaccination_history
-  hospitalName    String
-  fileName        String
+  id               String   @id @default(uuid())
+  category         String
+  hospitalName     String
+  fileName         String
   originalFileName String
-  filePath        String
-  fileSize        Int
-  mimeType        String
-  date            DateTime
-  notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  // Relations
-  petId   String
-  pet     Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
-  ownerId String
-  owner   User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  
+  filePath         String
+  fileSize         Int
+  mimeType         String
+  date             DateTime
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  petId            String
+  ownerId          String
+
   @@map("documents")
 }
 
 model BugReport {
-  id          String   @id @default(uuid())
+  id          String     @id @default(uuid())
+  petOwnerId  String
   title       String
   description String
-  severity    String   // low, medium, high, critical
-  status      String   @default("open") // open, in_progress, resolved, closed
-  reporterId  String?
-  reporterEmail String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  severity    String
+  category    String
+  deviceInfo  String?
+  appVersion  String?
+  status      String     @default("pending")
+  priority    String     @default("medium")
+  assignedTo  String?
+  resolution  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  pet_owners  pet_owners @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
+
+  @@index([category])
+  @@index([petOwnerId])
+  @@index([severity])
+  @@index([status])
   @@map("bug_reports")
+}
+
+model app_notifications {
+  id         String     @id
+  petOwnerId String
+  title      String
+  message    String
+  type       String
+  isRead     Boolean    @default(false)
+  data       Json?
+  createdAt  DateTime   @default(now())
+  readAt     DateTime?
+  pet_owners pet_owners @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([isRead])
+  @@index([petOwnerId])
+}
+
+model appointments {
+  id                String            @id
+  petId             String
+  vetId             String
+  clinicId          String
+  scheduledTime     DateTime
+  scheduledDuration Int?
+  status            AppointmentStatus @default(SCHEDULED)
+  appointmentType   AppointmentType
+  reason            String?
+  notes             String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime
+  clinics           clinics           @relation(fields: [clinicId], references: [id])
+  pets              Pet               @relation(fields: [petId], references: [id], onDelete: Cascade)
+  vets              vets              @relation(fields: [vetId], references: [id])
+
+  @@index([clinicId])
+  @@index([petId])
+  @@index([scheduledTime])
+  @@index([vetId])
+}
+
+model busy_times {
+  id        String   @id
+  clinicId  String
+  date      DateTime
+  startTime String
+  endTime   String
+  reason    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  clinics   clinics  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId])
+  @@index([date])
+}
+
+model chat_messages {
+  id          String     @id
+  petOwnerId  String
+  message     String
+  isFromUser  Boolean
+  messageType String     @default("text")
+  metadata    Json?
+  createdAt   DateTime   @default(now())
+  pet_owners  pet_owners @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([petOwnerId])
+}
+
+model clinics {
+  id           String         @id
+  name         String
+  address      String
+  phone        String?
+  email        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime
+  appointments appointments[]
+  busy_times   busy_times[]
+  days_off     days_off[]
+  invitations  invitations[]
+  vets         vets[]
+}
+
+model days_off {
+  id        String   @id
+  clinicId  String
+  date      DateTime
+  reason    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  clinics   clinics  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId])
+  @@index([date])
+}
+
+model invitations {
+  id        String   @id
+  email     String
+  role      VetRole
+  token     String   @unique
+  clinicId  String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  clinics   clinics  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId])
+  @@index([token])
+}
+
+model medical_records {
+  id          String     @id
+  petId       String
+  fileType    RecordType
+  fileName    String
+  fileUrl     String?
+  uploadDate  DateTime   @default(now())
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime
+  ownerId     String
+  pet_owners  pet_owners @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  pets        Pet        @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([petId])
+}
+
+model pet_owners {
+  id                String              @id
+  username          String?             @unique
+  name              String?
+  email             String              @unique
+  password          String
+  phone             String?
+  address           String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
+  firstName         String?
+  lastName          String?
+  app_notifications app_notifications[]
+  bug_reports       BugReport[]
+  chat_messages     chat_messages[]
+  medical_records   medical_records[]
+  user_files        user_files[]
+  user_preferences  user_preferences?
+}
+
+model user_files {
+  id          String     @id
+  petOwnerId  String
+  fileName    String
+  filePath    String
+  fileType    String
+  fileSize    Int
+  category    String
+  description String?
+  isDeleted   Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime
+  pet_owners  pet_owners @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
+
+  @@index([category])
+  @@index([isDeleted])
+  @@index([petOwnerId])
+}
+
+model user_preferences {
+  id            String     @id
+  petOwnerId    String     @unique
+  theme         String     @default("light")
+  language      String     @default("en")
+  notifications Boolean    @default(true)
+  biometricAuth Boolean    @default(false)
+  autoBackup    Boolean    @default(true)
+  settings      Json?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime
+  pet_owners    pet_owners @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
+}
+
+model vets {
+  id                String         @id
+  email             String         @unique
+  phone             String?
+  specialization    String?
+  clinicId          String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime
+  address           String?
+  firstName         String
+  lastName          String
+  biography         String?
+  practiceStartDate DateTime?
+  isActive          Boolean        @default(false)
+  password          String?
+  role              VetRole        @default(VET)
+  clerkUserId       String?        @unique
+  appointments      appointments[]
+  clinics           clinics?       @relation(fields: [clinicId], references: [id])
+
+  @@index([clerkUserId])
+  @@index([clinicId])
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  IN_PROGRESS
+}
+
+enum AppointmentType {
+  GENERAL_EXAM
+  VACCINATION
+  DENTAL
+  SURGERY
+  EMERGENCY
+  FOLLOW_UP
+}
+
+enum RecordType {
+  MEDICAL_HISTORY
+  VACCINATION
+  MEDICATION
+  SURGICAL
+  DIAGNOSTIC
+  BLOOD_WORK
+  X_RAY
+}
+
+enum TaskType {
+  WALK_EXERCISE
+  MEAL
+  TREAT
+  MEDICINE
+  TRAINING
+  URINATE
+  BOWEL_MOVEMENT
+}
+
+enum VetRole {
+  VET
+  VET_NURSE
+  ADMIN
 }

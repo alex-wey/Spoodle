@@ -68,7 +68,7 @@ The app includes:
    ```bash
    npm run dev
    # or
-   npm start
+   npm startewhich
    ```
 
 4. **Run on Specific Platform**

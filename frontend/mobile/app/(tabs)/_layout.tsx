@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Dog, FileText, Calendar, User } from "lucide-react-native";
+import { Dog, MessageCircle, Calendar, User } from "lucide-react-native";
 import { useAuthStore } from "../store/auth";
 import { Redirect } from "expo-router";
 import { Platform } from "react-native";
@@ -41,11 +41,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="docs/index"
+        name="chat/index"
         options={{
-          title: "Docs",
-          href: "/(tabs)/docs",
-          tabBarIcon: ({ color, size }) => <FileText size={24} color={color} />,
+          title: "Chatbot",
+          href: "/(tabs)/chat",
+          tabBarIcon: ({ color, size }) => <MessageCircle size={24} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -105,6 +105,24 @@ export default function TabLayout() {
         name="docs/[category]"
         options={{
           href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="docs/index"
+        options={{
+          href: null, // Hide from tab bar - accessible from pet records
+        }}
+      />
+      <Tabs.Screen
+        name="index"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="profile/edit"
+        options={{
+          href: null, // Hide from tab bar - accessible only via pen icon
         }}
       />
     </Tabs>

@@ -8,8 +8,10 @@ import {
   TextInput,
   ScrollView,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import { X, Send, User } from 'lucide-react-native';
+import { useAuthStore } from '../store/auth';
 
 interface Pet {
   id: string;
@@ -27,46 +29,80 @@ interface Message {
 interface ChatInterfaceModalProps {
   visible: boolean;
   onClose: () => void;
-  pet: Pet;
+  petName: string;
+  petId: string;
 }
 
 export default function ChatInterfaceModal({
   visible,
   onClose,
-  pet,
+  petName,
+  petId,
 }: ChatInterfaceModalProps) {
+  const token = useAuthStore((state) => state.token);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: `Hello! I'm Spoodle, your AI assistant for ${pet.name}. How can I help you today?`,
+      text: `Hello! I'm Spoodle, your AI assistant for ${petName}. How can I help you today?`,
       isUser: false,
       timestamp: new Date(),
     },
   ]);
   const [inputText, setInputText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSendMessage = () => {
-    if (inputText.trim()) {
-      const newMessage: Message = {
+  const handleSendMessage = async () => {
+    if (inputText.trim() && !isLoading) {
+      const userMessage: Message = {
         id: Date.now().toString(),
         text: inputText.trim(),
         isUser: true,
         timestamp: new Date(),
       };
       
-      setMessages(prev => [...prev, newMessage]);
+      setMessages(prev => [...prev, userMessage]);
       setInputText('');
+      setIsLoading(true);
       
-      // Simulate AI response
-      setTimeout(() => {
-        const aiResponse: Message = {
+      try {
+        // Send message to chatbot API
+        const response = await fetch('http://localhost:3002/api/chatbot/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            message: userMessage.text,
+            petId: petId,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          const aiResponse: Message = {
+            id: (Date.now() + 1).toString(),
+            text: data.data.response,
+            isUser: false,
+            timestamp: new Date(),
+          };
+          setMessages(prev => [...prev, aiResponse]);
+        } else {
+          throw new Error(data.message || 'Failed to get response from chatbot');
+        }
+      } catch (error) {
+        console.error('Chatbot error:', error);
+        const errorResponse: Message = {
           id: (Date.now() + 1).toString(),
-          text: "That's a great question! I'm here to help with any concerns about " + pet.name + ". Can you tell me more about what you're experiencing?",
+          text: "I'm sorry, I'm having trouble responding right now. Please try again later.",
           isUser: false,
           timestamp: new Date(),
         };
-        setMessages(prev => [...prev, aiResponse]);
-      }, 1000);
+        setMessages(prev => [...prev, errorResponse]);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -140,8 +176,12 @@ export default function ChatInterfaceModal({
               multiline
               maxLength={500}
             />
-            <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage}>
-              <Send size={20} color="#FFFFFF" />
+            <TouchableOpacity 
+              style={[styles.sendButton, isLoading && styles.sendButtonDisabled]} 
+              onPress={handleSendMessage}
+              disabled={isLoading}
+            >
+              <Send size={20} color={isLoading ? "#9CA3AF" : "#FFFFFF"} />
             </TouchableOpacity>
           </View>
         </View>
@@ -265,5 +305,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#3BB272',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#E5E7EB',
   },
 });

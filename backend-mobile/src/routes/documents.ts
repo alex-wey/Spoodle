@@ -93,9 +93,9 @@ router.get('/', async (req: Request, res: Response) => {
 // Get documents by category
 router.get('/category/:category',
   validateRequest({ 
-    params: { 
+    params: z.object({ 
       category: z.enum(['past_appointments', 'x_ray_documents', 'diagnostic_reports', 'blood_test_reports', 'vaccination_history'])
-    }
+    })
   }),
   async (req: Request, res: Response) => {
     try {
@@ -142,9 +142,79 @@ router.get('/category/:category',
   }
 );
 
+// Get documents by pet and category
+router.get('/pet/:petId/category/:category',
+  validateRequest({ 
+    params: z.object({ 
+      petId: commonSchemas.id,
+      category: z.enum(['past_appointments', 'x_ray_documents', 'diagnostic_reports', 'blood_test_reports', 'vaccination_history'])
+    })
+  }),
+  async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          message: 'Please log in to view documents'
+        });
+      }
+
+      const { petId, category } = req.params;
+      
+      // Verify pet belongs to the authenticated user
+      const pet = await prisma.pet.findFirst({
+        where: { 
+          id: petId,
+          ownerId: req.user.id
+        }
+      });
+      
+      if (!pet) {
+        return res.status(404).json({
+          success: false,
+          error: 'Pet not found',
+          message: 'The requested pet does not exist or you do not have permission to view its documents'
+        });
+      }
+      
+      const documents = await prisma.document.findMany({
+        where: { 
+          petId,
+          ownerId: req.user.id,
+          category
+        },
+        include: {
+          pet: {
+            select: {
+              id: true,
+              name: true,
+              breed: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      
+      res.json({
+        success: true,
+        data: documents,
+        message: 'Documents retrieved successfully'
+      });
+    } catch (error) {
+      console.error('Get documents by pet and category error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Server error',
+        message: 'Unable to retrieve documents'
+      });
+    }
+  }
+);
+
 // Get documents for a specific pet
 router.get('/pet/:petId',
-  validateRequest({ params: { petId: commonSchemas.id } }),
+  validateRequest({ params: z.object({ petId: commonSchemas.id }) }),
   async (req: Request, res: Response) => {
     try {
       const { petId } = req.params;
@@ -191,7 +261,7 @@ router.get('/pet/:petId',
 
 // Get a specific document by ID
 router.get('/:id',
-  validateRequest({ params: commonSchemas.id }),
+  validateRequest({ params: z.object({ id: commonSchemas.id }) }),
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
@@ -237,14 +307,19 @@ router.get('/:id',
 );
 
 // Upload a new document
-router.post('/',
-  upload.single('file'),
-  validateRequest({ 
-    body: validationSchemas.createDocument
-  }),
+router.post('/upload',
+  upload.single('document'),
   async (req: Request, res: Response) => {
     try {
+      console.log('📤 Upload request received');
+      console.log('  User:', req.user?.id);
+      console.log('  File:', req.file ? req.file.originalname : 'NO FILE');
+      console.log('  File details:', req.file);
+      console.log('  Body:', req.body);
+      console.log('  Headers:', req.headers);
+      
       if (!req.user) {
+        console.log('❌ No user authenticated');
         return res.status(401).json({
           success: false,
           error: 'Authentication required',
@@ -252,6 +327,7 @@ router.post('/',
         });
       }
 
+      // Check if file was uploaded
       if (!req.file) {
         return res.status(400).json({
           success: false,
@@ -261,6 +337,12 @@ router.post('/',
       }
 
       const { category, petId, hospitalName, fileName, date, notes } = req.body;
+      console.log('  Category:', category);
+      console.log('  PetId:', petId);
+      console.log('  Hospital:', hospitalName);
+      console.log('  FileName:', fileName);
+      console.log('  File details:', req.file);
+      console.log('  File path:', req.file.path);
       
       // If petId is provided, verify pet belongs to the user
       let selectedPetId = petId;
@@ -297,21 +379,25 @@ router.post('/',
         }
       }
       
+      const documentData = {
+        id: uuidv4(),
+        petId: selectedPetId,
+        ownerId: req.user.id,
+        category,
+        hospitalName,
+        fileName: req.file.filename,
+        originalFileName: req.file.originalname,
+        filePath: path.join(process.env.UPLOAD_DIR || './uploads', 'documents', req.file.filename),
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+        date: date ? new Date(date) : new Date(),
+        notes: notes || ''
+      };
+      
+      console.log('📝 Creating document with data:', documentData);
+      
       const newDocument = await prisma.document.create({
-        data: {
-          id: uuidv4(),
-          petId: selectedPetId,
-          ownerId: req.user.id,
-          category,
-          hospitalName,
-          fileName,
-          originalFileName: req.file.originalname,
-          filePath: req.file.path,
-          fileSize: req.file.size,
-          mimeType: req.file.mimetype,
-          date: date ? new Date(date) : new Date(),
-          notes: notes || ''
-        },
+        data: documentData,
         include: {
           pet: {
             select: {
@@ -322,6 +408,9 @@ router.post('/',
           }
         }
       });
+      
+      console.log('✅ Document created successfully:', newDocument.id);
+      console.log('✅ Document data:', newDocument);
       
       res.status(201).json({
         success: true,
@@ -351,14 +440,14 @@ router.post('/',
 // Update a document
 router.put('/:id',
   validateRequest({ 
-    params: commonSchemas.id,
-    body: {
+    params: z.object({ id: commonSchemas.id }),
+    body: z.object({
       category: z.enum(['past_appointments', 'x_ray_documents', 'diagnostic_reports', 'blood_test_reports', 'vaccination_history']).optional(),
       hospitalName: z.string().min(1).optional(),
       fileName: z.string().min(1).optional(),
       date: z.string().datetime().optional(),
       notes: z.string().max(1000).optional()
-    }
+    })
   }),
   async (req: Request, res: Response) => {
     try {
@@ -415,9 +504,64 @@ router.put('/:id',
   }
 );
 
+// Download a document
+router.get('/download/:id',
+  validateRequest({ params: z.object({ id: commonSchemas.id }) }),
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      
+      // Check if document exists and belongs to user
+      const document = await prisma.document.findFirst({
+        where: { 
+          id,
+          ownerId: req.user!.id
+        }
+      });
+      
+      if (!document) {
+        return res.status(404).json({
+          success: false,
+          error: 'Document not found',
+          message: 'The requested document does not exist or you do not have permission to access it'
+        });
+      }
+
+      // Check if file exists
+      try {
+        await fs.access(document.filePath);
+        
+        // Set appropriate headers for file download
+        res.setHeader('Content-Type', document.mimeType);
+        res.setHeader('Content-Disposition', `inline; filename="${document.originalFileName}"`);
+        res.setHeader('Content-Length', document.fileSize.toString());
+        
+        // Stream the file
+        const fileStream = await fs.readFile(document.filePath);
+        res.send(fileStream);
+        
+      } catch (error) {
+        console.error('File not found:', document.filePath);
+        res.status(404).json({
+          success: false,
+          error: 'File not found',
+          message: 'The document file could not be found on the server'
+        });
+      }
+    } catch (error) {
+      console.error('Download document error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Server error',
+        message: 'Unable to retrieve document download info'
+      });
+    }
+  }
+);
+
 // Delete a document
 router.delete('/:id',
-  validateRequest({ params: commonSchemas.id }),
+  validateRequest({ params: z.object({ id: commonSchemas.id }) }),
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;

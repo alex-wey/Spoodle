@@ -139,6 +139,56 @@ class ApiClient {
     });
   }
 
+  // User profile endpoints
+  async getProfile() {
+    return this.request<{
+      success: boolean;
+      data: {
+        id: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        phone: string;
+        address: string;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }>("/auth/me");
+  }
+
+  async updateProfile(data: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    address?: string;
+  }) {
+    return this.request<{
+      success: boolean;
+      data: {
+        id: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        phone: string;
+        address: string;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }>("/auth/me", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteAccount() {
+    return this.request<{
+      success: boolean;
+      message: string;
+    }>("/auth/me", {
+      method: "DELETE",
+    });
+  }
+
   // Pet endpoints
   async getPets() {
     return this.request<{

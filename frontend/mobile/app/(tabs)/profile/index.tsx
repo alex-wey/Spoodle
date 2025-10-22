@@ -15,12 +15,14 @@ import {
   MapPin, 
   Heart, 
   Calendar,
-  Settings,
   LogOut,
-  Edit3
+  Edit3,
+  Trash2
 } from 'lucide-react-native';
 import { useAuthStore } from '../../store/auth';
 import { usePetStore } from '../../store/pets';
+import { useTaskStore } from '../../store/tasks';
+import { useDocumentStore } from '../../store/documents';
 import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
@@ -36,14 +38,16 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(false);
 
   const { user, logout } = useAuthStore();
-  const { pets: petsFromStore } = usePetStore();
+  const { pets: petsFromStore, clearPets } = usePetStore();
+  const { clearTasks } = useTaskStore();
+  const { clearDocuments } = useDocumentStore();
 
   useEffect(() => {
     fetchProfileData();
     if (petsFromStore) {
       setPets(petsFromStore);
     }
-  }, [petsFromStore]);
+  }, [petsFromStore, user]);
 
   const fetchProfileData = async () => {
     try {
@@ -53,8 +57,8 @@ export default function ProfileScreen() {
         setProfile({
           name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Pet Owner',
           email: user.email || 'user@example.com',
-          phone: null,
-          address: null,
+          phone: user.phoneNumber || null,
+          address: user.address || null,
           createdAt: new Date(user.createdAt || '2024-01-15'),
         });
       }
@@ -66,15 +70,99 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => {
+    console.log('🔴 LOGOUT BUTTON CLICKED - handleLogout function called');
     Alert.alert(
       'Logout',
       'Are you sure you want to logout?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', onPress: async () => {
-          await logout();
-          router.replace("/(auth)/landing");
+        { text: 'Logout', onPress: () => {
+          console.log('🚪 Starting logout process...');
+          
+          // Clear all stores first
+          clearPets();
+          clearTasks();
+          clearDocuments();
+          console.log('✅ All stores cleared');
+          
+          // Clear auth data
+          logout().then(() => {
+            console.log('✅ Auth logout completed');
+            // Force redirect to landing page
+            console.log('🚪 Redirecting to landing page...');
+            router.replace("/(auth)/landing");
+          }).catch((error) => {
+            console.error('❌ Logout error:', error);
+            // Even if logout fails, force redirect
+            router.replace("/(auth)/landing");
+          });
         }},
+      ]
+    );
+  };
+
+  const handleDeleteAccount = async () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to permanently delete your account? This action cannot be undone and will remove all your data including pets, documents, and tasks.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete Account', 
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Final Confirmation',
+              'This is your last chance to cancel. Are you absolutely sure you want to delete your account?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Yes, Delete Forever',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      setLoading(true);
+                      console.log('🗑️ Starting account deletion process...');
+                      
+                      // Call the delete account API
+                      const response = await fetch('http://localhost:3002/api/auth/me', {
+                        method: 'DELETE',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${user?.token || ''}`,
+                        },
+                      });
+
+                      if (response.ok) {
+                        console.log('✅ Account deleted successfully');
+                        
+                        // Clear all stores
+                        clearPets();
+                        clearTasks();
+                        clearDocuments();
+                        
+                        // Clear auth data
+                        logout().then(() => {
+                          console.log('✅ Auth cleared after account deletion');
+                          router.replace("/(auth)/landing");
+                        });
+                      } else {
+                        const errorData = await response.json();
+                        console.error('❌ Account deletion failed:', errorData);
+                        Alert.alert('Error', errorData.message || 'Failed to delete account. Please try again.');
+                      }
+                    } catch (error) {
+                      console.error('❌ Account deletion error:', error);
+                      Alert.alert('Error', 'Failed to delete account. Please check your connection and try again.');
+                    } finally {
+                      setLoading(false);
+                    }
+                  }
+                }
+              ]
+            );
+          }
+        }
       ]
     );
   };
@@ -94,7 +182,7 @@ export default function ProfileScreen() {
           <Text style={styles.title}>Profile</Text>
           <TouchableOpacity 
             style={styles.editButton}
-            onPress={() => Alert.alert('Edit Profile', 'Edit profile functionality coming soon!')}
+            onPress={() => router.push("/(tabs)/profile/edit")}
           >
             <Edit3 size={20} color="#4559A7" />
           </TouchableOpacity>
@@ -235,23 +323,28 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Settings Actions */}
+        {/* Account Actions */}
         <View style={styles.actionsCard}>
           <TouchableOpacity 
-            style={styles.actionItem}
-            onPress={() => router.push("/(tabs)/profile/settings")}
+            style={[styles.actionItem, { backgroundColor: '#F8F9FA', borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB' }]} 
+            onPress={handleLogout}
+            activeOpacity={0.5}
           >
-            <View style={styles.actionIconContainer}>
-              <Settings size={20} color="#4559A7" />
+            <View style={[styles.actionIconContainer, { backgroundColor: '#6B7280' }]}>
+              <LogOut size={20} color="#FFFFFF" />
             </View>
-            <Text style={styles.actionText}>Settings</Text>
+            <Text style={[styles.actionText, { color: '#374151', fontWeight: '500' }]}>Logout</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionItem} onPress={handleLogout}>
-            <View style={[styles.actionIconContainer, { backgroundColor: '#FEE2E2' }]}>
-              <LogOut size={20} color="#DC2626" />
+          <TouchableOpacity 
+            style={[styles.actionItem, { backgroundColor: '#FEF7F7', borderRadius: 8, marginTop: 8, borderWidth: 1, borderColor: '#FED7D7' }]} 
+            onPress={handleDeleteAccount}
+            activeOpacity={0.5}
+          >
+            <View style={[styles.actionIconContainer, { backgroundColor: '#F56565' }]}>
+              <Trash2 size={20} color="#FFFFFF" />
             </View>
-            <Text style={[styles.actionText, { color: '#DC2626' }]}>Logout</Text>
+            <Text style={[styles.actionText, { color: '#C53030', fontWeight: '500' }]}>Delete Account</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

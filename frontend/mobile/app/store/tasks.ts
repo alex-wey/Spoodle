@@ -48,6 +48,7 @@ interface TaskState {
   completeTask: (id: string, notes?: string, completedBy?: string) => Promise<void>;
   fetchTasks: (date?: string) => Promise<void>;
   clearError: () => void;
+  clearTasks: () => void;
 }
 
 export const useTaskStore = create<TaskState>((set, get) => ({
@@ -184,5 +185,13 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
   clearError: () => {
     set({ error: null });
+  },
+
+  clearTasks: () => {
+    set({ 
+      tasks: [], 
+      selectedDate: null,
+      error: null 
+    });
   },
 }));

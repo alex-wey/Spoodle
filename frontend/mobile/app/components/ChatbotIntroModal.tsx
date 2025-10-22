@@ -7,25 +7,20 @@ import {
   TouchableOpacity,
   SafeAreaView,
 } from 'react-native';
-import { X, MessageCircle, Phone, Mail } from 'lucide-react-native';
+import { X, MessageCircle } from 'lucide-react-native';
 
-interface Pet {
-  id: string;
-  name: string;
-  species: string;
-}
 
 interface ChatbotIntroModalProps {
   visible: boolean;
   onClose: () => void;
-  pet: Pet;
+  petName: string;
   onStartChat: () => void;
 }
 
 export default function ChatbotIntroModal({
   visible,
   onClose,
-  pet,
+  petName,
   onStartChat,
 }: ChatbotIntroModalProps) {
   return (
@@ -50,26 +45,13 @@ export default function ChatbotIntroModal({
             </View>
             <Text style={styles.greeting}>Hi there! 👋</Text>
             <Text style={styles.description}>
-              I'm Spoodle, your AI assistant for {pet.name}. I'm here to help you with questions about your pet's health, care, and any concerns you might have.
+              I'm Spoodle, your AI assistant for {petName}. I'm here to help you with questions about your pet's health, care, and any concerns you might have.
             </Text>
             <Text style={styles.description}>
               Feel free to ask me anything - from feeding schedules to behavioral questions!
             </Text>
           </View>
 
-          <View style={styles.contactSection}>
-            <Text style={styles.contactTitle}>Need more help?</Text>
-            <View style={styles.contactOptions}>
-              <TouchableOpacity style={styles.contactOption}>
-                <Phone size={20} color="#4559A7" />
-                <Text style={styles.contactOptionText}>Call Vet</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.contactOption}>
-                <Mail size={20} color="#4559A7" />
-                <Text style={styles.contactOptionText}>Email Support</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
 
           <TouchableOpacity style={styles.contactButton} onPress={onStartChat}>
             <MessageCircle size={20} color="#FFFFFF" />
@@ -116,15 +98,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   introSection: {
-    flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 40,
+    paddingTop: 30,
     alignItems: 'center',
     backgroundColor: '#4559A7',
     marginHorizontal: 20,
     marginTop: 20,
     borderRadius: 16,
-    paddingVertical: 40,
+    paddingVertical: 30,
   },
   spoodAvatar: {
     width: 80,
@@ -156,38 +137,6 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: 16,
     paddingHorizontal: 20,
-  },
-  contactSection: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-  },
-  contactTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  contactOptions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 20,
-  },
-  contactOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  contactOptionText: {
-    fontSize: 14,
-    color: '#4559A7',
-    marginLeft: 8,
-    fontWeight: '500',
   },
   contactButton: {
     flexDirection: 'row',

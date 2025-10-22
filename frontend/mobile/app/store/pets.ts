@@ -18,6 +18,7 @@ interface PetState {
   selectPet: (petId: string | null) => void;
   fetchPets: () => Promise<void>;
   clearError: () => void;
+  clearPets: () => void;
 }
 
 const SELECTED_PET_KEY = "@spoodle:selected_pet";
@@ -49,9 +50,11 @@ export const usePetStore = create<PetState>((set, get) => ({
         gender: petData.gender || "male",
         weight: petData.weight || 0,
         spayedNeutered: petData.spayedNeutered || false,
+        microchipId: petData.microchipId,
         allergies: petData.allergies,
         dietaryRestrictions: petData.dietaryRestrictions,
-        profilePhoto: petData.profilePhoto,
+        notes: petData.notes,
+        imageUrl: petData.imageUrl,
       });
       
       if (response.success) {
@@ -63,15 +66,15 @@ export const usePetStore = create<PetState>((set, get) => ({
           name: backendPet.name,
           species: backendPet.species || petData.species || "dog",
           breed: backendPet.breed,
-          age: petData.dateOfBirth ? Math.floor((new Date().getTime() - new Date(petData.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : 0,
+          dateOfBirth: new Date(backendPet.dateOfBirth),
           gender: backendPet.gender as "male" | "female",
           weight: backendPet.weight,
-          dateOfBirth: new Date(backendPet.dateOfBirth),
           spayedNeutered: backendPet.spayedNeutered,
-          ownerId: backendPet.ownerId,
+          microchipId: backendPet.microchipId,
           allergies: backendPet.allergies,
           dietaryRestrictions: backendPet.dietaryRestrictions,
-          profilePhoto: undefined, // Not in backend schema
+          notes: backendPet.notes,
+          imageUrl: backendPet.imageUrl || petData.imageUrl,
           createdAt: new Date(backendPet.createdAt),
           updatedAt: new Date(backendPet.updatedAt),
         };
@@ -108,14 +111,21 @@ export const usePetStore = create<PetState>((set, get) => ({
       
       const response = await apiClient.updatePet(id, {
         name: updates.name,
+        species: updates.species,
         breed: updates.breed,
-        dateOfBirth: updates.dateOfBirth?.toISOString(),
+        dateOfBirth: updates.dateOfBirth 
+          ? (updates.dateOfBirth instanceof Date 
+              ? updates.dateOfBirth.toISOString() 
+              : updates.dateOfBirth)
+          : undefined,
         gender: updates.gender,
         weight: updates.weight,
         spayedNeutered: updates.spayedNeutered,
+        microchipId: updates.microchipId,
         allergies: updates.allergies,
         dietaryRestrictions: updates.dietaryRestrictions,
-        profilePhoto: updates.profilePhoto,
+        notes: updates.notes,
+        imageUrl: updates.imageUrl,
       });
       
       if (response.success) {
@@ -125,17 +135,17 @@ export const usePetStore = create<PetState>((set, get) => ({
         const updatedPet: Pet = {
           id: backendPet.id,
           name: backendPet.name,
-          species: get().pets.find(p => p.id === id)?.species || "dog",
+          species: backendPet.species || get().pets.find(p => p.id === id)?.species || "dog",
           breed: backendPet.breed,
-          age: backendPet.dateOfBirth ? Math.floor((new Date().getTime() - new Date(backendPet.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : 0,
+          dateOfBirth: new Date(backendPet.dateOfBirth),
           gender: backendPet.gender as "male" | "female",
           weight: backendPet.weight,
-          dateOfBirth: new Date(backendPet.dateOfBirth),
           spayedNeutered: backendPet.spayedNeutered,
-          ownerId: backendPet.ownerId,
+          microchipId: backendPet.microchipId,
           allergies: backendPet.allergies,
           dietaryRestrictions: backendPet.dietaryRestrictions,
-          profilePhoto: undefined, // Not in backend schema
+          notes: backendPet.notes,
+          imageUrl: backendPet.imageUrl || updates.imageUrl,
           createdAt: new Date(backendPet.createdAt),
           updatedAt: new Date(backendPet.updatedAt),
         };
@@ -222,15 +232,15 @@ export const usePetStore = create<PetState>((set, get) => ({
           name: backendPet.name,
           species: backendPet.species || "dog",
           breed: backendPet.breed,
-          age: backendPet.dateOfBirth ? Math.floor((new Date().getTime() - new Date(backendPet.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : 0,
+          dateOfBirth: new Date(backendPet.dateOfBirth),
           gender: backendPet.gender as "male" | "female",
           weight: backendPet.weight,
-          dateOfBirth: new Date(backendPet.dateOfBirth),
           spayedNeutered: backendPet.spayedNeutered,
-          ownerId: backendPet.ownerId,
+          microchipId: backendPet.microchipId,
           allergies: backendPet.allergies,
           dietaryRestrictions: backendPet.dietaryRestrictions,
-          profilePhoto: undefined, // Not in backend schema
+          notes: backendPet.notes,
+          imageUrl: backendPet.imageUrl,
           createdAt: new Date(backendPet.createdAt),
           updatedAt: new Date(backendPet.updatedAt),
         }));
@@ -259,5 +269,18 @@ export const usePetStore = create<PetState>((set, get) => ({
 
   clearError: () => {
     set({ error: null });
+  },
+
+  clearPets: () => {
+    set({ 
+      pets: [], 
+      selectedPetId: null, 
+      selectedPet: null, 
+      error: null 
+    });
+    // Clear selected pet from storage
+    AsyncStorage.removeItem(SELECTED_PET_KEY).catch(
+      (error) => console.error("Failed to clear selected pet:", error)
+    );
   },
 }));
