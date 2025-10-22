@@ -39,6 +39,7 @@ export const usePetStore = create<PetState>((set, get) => ({
       
       const response = await apiClient.createPet({
         name: petData.name,
+        species: petData.species || "Dog",
         breed: petData.breed || "Mixed Breed",
         dateOfBirth: petData.dateOfBirth 
           ? (petData.dateOfBirth instanceof Date 
@@ -58,11 +59,11 @@ export const usePetStore = create<PetState>((set, get) => ({
         
         // Transform backend pet to app pet format
         const newPet: Pet = {
-          id: backendPet.petId,
+          id: backendPet.id,
           name: backendPet.name,
-          species: petData.species || "dog",
+          species: backendPet.species || petData.species || "dog",
           breed: backendPet.breed,
-          age: backendPet.age,
+          age: petData.dateOfBirth ? Math.floor((new Date().getTime() - new Date(petData.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : 0,
           gender: backendPet.gender as "male" | "female",
           weight: backendPet.weight,
           dateOfBirth: new Date(backendPet.dateOfBirth),
@@ -70,7 +71,7 @@ export const usePetStore = create<PetState>((set, get) => ({
           ownerId: backendPet.ownerId,
           allergies: backendPet.allergies,
           dietaryRestrictions: backendPet.dietaryRestrictions,
-          profilePhoto: backendPet.profilePhoto,
+          profilePhoto: undefined, // Not in backend schema
           createdAt: new Date(backendPet.createdAt),
           updatedAt: new Date(backendPet.updatedAt),
         };
@@ -122,11 +123,11 @@ export const usePetStore = create<PetState>((set, get) => ({
         
         // Transform backend pet to app pet format
         const updatedPet: Pet = {
-          id: backendPet.petId,
+          id: backendPet.id,
           name: backendPet.name,
           species: get().pets.find(p => p.id === id)?.species || "dog",
           breed: backendPet.breed,
-          age: backendPet.age,
+          age: backendPet.dateOfBirth ? Math.floor((new Date().getTime() - new Date(backendPet.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : 0,
           gender: backendPet.gender as "male" | "female",
           weight: backendPet.weight,
           dateOfBirth: new Date(backendPet.dateOfBirth),
@@ -134,7 +135,7 @@ export const usePetStore = create<PetState>((set, get) => ({
           ownerId: backendPet.ownerId,
           allergies: backendPet.allergies,
           dietaryRestrictions: backendPet.dietaryRestrictions,
-          profilePhoto: backendPet.profilePhoto,
+          profilePhoto: undefined, // Not in backend schema
           createdAt: new Date(backendPet.createdAt),
           updatedAt: new Date(backendPet.updatedAt),
         };
@@ -217,11 +218,11 @@ export const usePetStore = create<PetState>((set, get) => ({
       if (response.success) {
         // Transform backend pets to app pet format
         const pets: Pet[] = response.data.map((backendPet) => ({
-          id: backendPet.petId,
+          id: backendPet.id,
           name: backendPet.name,
-          species: "dog", // Default to dog, could be enhanced later
+          species: backendPet.species || "dog",
           breed: backendPet.breed,
-          age: backendPet.age,
+          age: backendPet.dateOfBirth ? Math.floor((new Date().getTime() - new Date(backendPet.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : 0,
           gender: backendPet.gender as "male" | "female",
           weight: backendPet.weight,
           dateOfBirth: new Date(backendPet.dateOfBirth),
@@ -229,7 +230,7 @@ export const usePetStore = create<PetState>((set, get) => ({
           ownerId: backendPet.ownerId,
           allergies: backendPet.allergies,
           dietaryRestrictions: backendPet.dietaryRestrictions,
-          profilePhoto: backendPet.profilePhoto,
+          profilePhoto: undefined, // Not in backend schema
           createdAt: new Date(backendPet.createdAt),
           updatedAt: new Date(backendPet.updatedAt),
         }));

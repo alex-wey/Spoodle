@@ -60,14 +60,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         
         // Transform backend user to app user format
         const user: User = {
-          id: userData.petOwnerId,
+          id: userData.id,
           email: userData.email,
-          firstName: userData.username.split(' ')[0] || userData.username,
-          lastName: userData.username.split(' ')[1] || '',
-          phoneNumber: userData.phoneNumber,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          phoneNumber: userData.phone,
           role: "pet_owner",
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: new Date(userData.createdAt),
+          updatedAt: new Date(userData.updatedAt),
         };
         
         // Save to storage
@@ -104,10 +104,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: true });
       
       const response = await apiClient.signup({
-        username: `${data.firstName} ${data.lastName}`,
+        firstName: data.firstName,
+        lastName: data.lastName,
         email: data.email,
         password: data.password,
-        phoneNumber: data.phoneNumber,
+        phone: data.phoneNumber,
       });
       
       if (response.success) {
@@ -115,14 +116,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         
         // Transform backend user to app user format
         const user: User = {
-          id: userData.petOwnerId,
+          id: userData.id,
           email: userData.email,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          phoneNumber: userData.phoneNumber,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          phoneNumber: userData.phone,
           role: "pet_owner",
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: new Date(userData.createdAt),
+          updatedAt: new Date(userData.updatedAt),
         };
         
         // Save to storage

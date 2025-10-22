@@ -12,10 +12,10 @@ const getApiBaseUrl = () => {
     
     if (Platform.OS === "android") {
       // Android emulator
-      return "http://10.0.2.2:3001/api";
+      return "http://10.0.2.2:3002/api";
     } else {
       // iOS simulator
-      return "http://localhost:3001/api";
+      return "http://localhost:3002/api";
     }
   }
   // Production URL
@@ -92,14 +92,17 @@ class ApiClient {
     return this.request<{
       success: boolean;
       data: {
-        token: string;
         user: {
-          petOwnerId: string;
-          username: string;
+          id: string;
           email: string;
-          phoneNumber: string;
+          firstName: string;
+          lastName: string;
+          phone: string;
           address: string;
+          createdAt: string;
+          updatedAt: string;
         };
+        token: string;
       };
     }>("/auth/login", {
       method: "POST",
@@ -108,23 +111,27 @@ class ApiClient {
   }
 
   async signup(data: {
-    username: string;
+    firstName: string;
+    lastName: string;
     email: string;
     password: string;
-    phoneNumber?: string;
+    phone?: string;
     address?: string;
   }) {
     return this.request<{
       success: boolean;
       data: {
-        token: string;
         user: {
-          petOwnerId: string;
-          username: string;
+          id: string;
           email: string;
-          phoneNumber: string;
+          firstName: string;
+          lastName: string;
+          phone: string;
           address: string;
+          createdAt: string;
+          updatedAt: string;
         };
+        token: string;
       };
     }>("/auth/register", {
       method: "POST",
@@ -137,18 +144,17 @@ class ApiClient {
     return this.request<{
       success: boolean;
       data: Array<{
-        petId: string;
+        id: string;
         ownerId: string;
         name: string;
+        species: string;
         breed: string;
-        age: number;
         dateOfBirth: string;
         gender: string;
         weight: number;
         spayedNeutered: boolean;
-        allergies?: string[];
-        dietaryRestrictions?: string[];
-        profilePhoto?: string;
+        allergies: string[];
+        dietaryRestrictions: string[];
         createdAt: string;
         updatedAt: string;
       }>;
@@ -159,18 +165,17 @@ class ApiClient {
     return this.request<{
       success: boolean;
       data: {
-        petId: string;
+        id: string;
         ownerId: string;
         name: string;
+        species: string;
         breed: string;
-        age: number;
         dateOfBirth: string;
         gender: string;
         weight: number;
         spayedNeutered: boolean;
-        allergies?: string[];
-        dietaryRestrictions?: string[];
-        profilePhoto?: string;
+        allergies: string[];
+        dietaryRestrictions: string[];
         createdAt: string;
         updatedAt: string;
       };
@@ -184,30 +189,29 @@ class ApiClient {
 
   async createPet(data: {
     name: string;
-    breed: string;
-    dateOfBirth: string;
-    gender: string;
-    weight: number;
-    spayedNeutered: boolean;
+    species: string;
+    breed?: string;
+    dateOfBirth?: string;
+    gender?: string;
+    weight?: number;
+    spayedNeutered?: boolean;
     allergies?: string[];
     dietaryRestrictions?: string[];
-    profilePhoto?: string;
   }) {
     return this.request<{
       success: boolean;
       data: {
-        petId: string;
+        id: string;
         ownerId: string;
         name: string;
+        species: string;
         breed: string;
-        age: number;
         dateOfBirth: string;
         gender: string;
         weight: number;
         spayedNeutered: boolean;
-        allergies?: string[];
-        dietaryRestrictions?: string[];
-        profilePhoto?: string;
+        allergies: string[];
+        dietaryRestrictions: string[];
         createdAt: string;
         updatedAt: string;
       };
@@ -228,24 +232,21 @@ class ApiClient {
       spayedNeutered?: boolean;
       allergies?: string[];
       dietaryRestrictions?: string[];
-      profilePhoto?: string;
     }
   ) {
     return this.request<{
       success: boolean;
       data: {
-        petId: string;
+        id: string;
         ownerId: string;
         name: string;
         breed: string;
-        age: number;
         dateOfBirth: string;
         gender: string;
         weight: number;
         spayedNeutered: boolean;
-        allergies?: string[];
-        dietaryRestrictions?: string[];
-        profilePhoto?: string;
+        allergies: string[];
+        dietaryRestrictions: string[];
         createdAt: string;
         updatedAt: string;
       };
@@ -299,25 +300,183 @@ class ApiClient {
     }>(`/pets/${petId}/tasks`);
   }
 
-  // Appointment endpoints
-  async getAppointments() {
+  // Task endpoints
+  async getTasks(date?: string) {
+    const url = date ? `/tasks?date=${date}` : '/tasks';
     return this.request<{
       success: boolean;
       data: Array<{
-        appointmentId: string;
-        petOwnerId: string;
+        id: string;
         petId: string;
-        clinicId: string;
-        vetId: string;
+        ownerId: string;
+        type: string;
+        title: string;
+        description: string;
         scheduledTime: string;
-        duration: number;
-        status: string;
-        reason: string;
-        notes?: string;
+        completionStatus: boolean;
+        completedAt: string;
+        completedBy: string;
+        recurring: boolean;
+        recurrencePattern: string;
+        notes: string;
         createdAt: string;
         updatedAt: string;
+        pet: {
+          id: string;
+          name: string;
+          breed: string;
+        };
       }>;
-    }>("/appointments");
+    }>(url);
+  }
+
+  async createTask(data: {
+    petId: string;
+    type: string;
+    title: string;
+    description?: string;
+    scheduledTime: string;
+    recurring?: boolean;
+    recurrencePattern?: string;
+  }) {
+    return this.request<{
+      success: boolean;
+      data: {
+        id: string;
+        petId: string;
+        ownerId: string;
+        type: string;
+        title: string;
+        description: string;
+        scheduledTime: string;
+        completionStatus: boolean;
+        completedAt: string;
+        completedBy: string;
+        recurring: boolean;
+        recurrencePattern: string;
+        notes: string;
+        createdAt: string;
+        updatedAt: string;
+        pet: {
+          id: string;
+          name: string;
+          breed: string;
+        };
+      };
+    }>("/tasks", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async completeTask(taskId: string, notes?: string, completedBy?: string) {
+    return this.request<{
+      success: boolean;
+      data: {
+        id: string;
+        petId: string;
+        ownerId: string;
+        type: string;
+        title: string;
+        description: string;
+        scheduledTime: string;
+        completionStatus: boolean;
+        completedAt: string;
+        completedBy: string;
+        recurring: boolean;
+        recurrencePattern: string;
+        notes: string;
+        createdAt: string;
+        updatedAt: string;
+        pet: {
+          id: string;
+          name: string;
+          breed: string;
+        };
+      };
+    }>(`/tasks/${taskId}/complete`, {
+      method: "PATCH",
+      body: JSON.stringify({ notes, completedBy }),
+    });
+  }
+
+  // Document endpoints
+  async getDocuments() {
+    return this.request<{
+      success: boolean;
+      data: Array<{
+        id: string;
+        petId: string;
+        ownerId: string;
+        category: string;
+        hospitalName: string;
+        fileName: string;
+        originalFileName: string;
+        filePath: string;
+        fileSize: number;
+        mimeType: string;
+        date: string;
+        notes: string;
+        createdAt: string;
+        updatedAt: string;
+        pet: {
+          id: string;
+          name: string;
+          breed: string;
+        };
+      }>;
+    }>("/documents");
+  }
+
+  async getDocumentsByCategory(category: string) {
+    return this.request<{
+      success: boolean;
+      data: Array<{
+        id: string;
+        petId: string;
+        ownerId: string;
+        category: string;
+        hospitalName: string;
+        fileName: string;
+        originalFileName: string;
+        filePath: string;
+        fileSize: number;
+        mimeType: string;
+        date: string;
+        notes: string;
+        createdAt: string;
+        updatedAt: string;
+        pet: {
+          id: string;
+          name: string;
+          breed: string;
+        };
+      }>;
+    }>(`/documents/category/${category}`);
+  }
+
+  async uploadDocument(formData: FormData) {
+    const token = await this.getAuthToken();
+    
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${this.baseUrl}/documents`, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({
+        message: "An error occurred",
+      }));
+      throw new Error(error.message || `HTTP ${response.status}`);
+    }
+
+    return response.json();
   }
 }
 

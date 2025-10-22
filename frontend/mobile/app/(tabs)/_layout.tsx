@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Dog, BotMessageSquare, Calendar, User } from "lucide-react-native";
+import { Dog, FileText, Calendar, User } from "lucide-react-native";
 import { useAuthStore } from "../store/auth";
 import { Redirect } from "expo-router";
 import { Platform } from "react-native";
@@ -17,12 +17,12 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#4F46E5",
-        tabBarInactiveTintColor: "#9CA3AF",
+        tabBarActiveTintColor: "#4559A7",
+        tabBarInactiveTintColor: "#ADD7EB",
         tabBarStyle: {
           backgroundColor: "white",
           borderTopWidth: 1,
-          borderTopColor: "#E5E7EB",
+          borderTopColor: "#ADD7EB",
           // Slightly reduced padding for iPhone while respecting safe area
           paddingBottom: Platform.OS === "ios" ? Math.max(insets.bottom - 2, 6) : 8,
           paddingTop: 6,
@@ -41,11 +41,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="chat/index"
+        name="docs/index"
         options={{
-          title: "Chat",
-          href: "/(tabs)/chat",
-          tabBarIcon: ({ color, size }) => <BotMessageSquare size={24} color={color} />,
+          title: "Docs",
+          href: "/(tabs)/docs",
+          tabBarIcon: ({ color, size }) => <FileText size={24} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -90,6 +90,19 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="profile/settings/index"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="docs/upload"
+        options={{
+          href: null, // Hide from tab bar
+          presentation: 'modal',
+        }}
+      />
+      <Tabs.Screen
+        name="docs/[category]"
         options={{
           href: null, // Hide from tab bar
         }}

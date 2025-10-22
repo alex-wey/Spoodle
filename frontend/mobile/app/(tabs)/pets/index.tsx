@@ -140,7 +140,7 @@ export default function PetsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#FFFFFF",
   },
   loadingContainer: {
     flex: 1,
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: "#6B7280",
+    color: "#4559A7",
   },
   header: {
     padding: 20,
@@ -164,19 +164,19 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 16,
-    color: "#6B7280",
+    color: "#4559A7",
   },
   userName: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#1F2937",
+    color: "#4559A7",
   },
   notificationsButton: {
     padding: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: "#9CA3AF",
+    color: "#4559A7",
     marginTop: 4,
   },
   content: {
@@ -184,13 +184,13 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   errorContainer: {
-    backgroundColor: "#FEE2E2",
+    backgroundColor: "#ADD7EB",
     padding: 12,
     borderRadius: 8,
     marginBottom: 16,
   },
   errorText: {
-    color: "#DC2626",
+    color: "#4559A7",
     fontSize: 14,
   },
   emptyState: {
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "#ADD7EB",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 24,
@@ -209,12 +209,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: "600",
-    color: "#1F2937",
+    color: "#4559A7",
     marginBottom: 8,
   },
   emptyDescription: {
     fontSize: 14,
-    color: "#6B7280",
+    color: "#4559A7",
     textAlign: "center",
     marginBottom: 24,
     paddingHorizontal: 40,
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#4F46E5",
+    backgroundColor: "#4559A7",
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 12,
@@ -242,12 +242,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: "#E5E7EB",
+    borderColor: "#ADD7EB",
     borderStyle: "dashed",
   },
   addButtonText: {
     fontSize: 16,
-    color: "#4F46E5",
+    color: "#4559A7",
     fontWeight: "600",
   },
   fabContainer: {

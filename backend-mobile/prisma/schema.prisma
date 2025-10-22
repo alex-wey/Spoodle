@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("MOBILE_DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  firstName String
+  lastName  String
+  password  String
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  pets      Pet[]
+  documents Document[]
+  
+  @@map("users")
+}
+
+model Pet {
+  id                  String   @id @default(uuid())
+  name                String
+  species             String
+  breed               String?
+  gender              String?
+  weight              Float?
+  dateOfBirth         DateTime?
+  spayedNeutered      Boolean  @default(false)
+  microchipId         String?
+  allergies           String[]
+  dietaryRestrictions String[]
+  profilePhoto        String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  // Relations
+  ownerId   String
+  owner     User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+  documents Document[]
+  
+  @@map("pets")
+}
+
+model Task {
+  id        String   @id @default(uuid())
+  petId     String
+  taskType  String   // walk, feed, medicate, groom, training, checkup, other
+  date      DateTime
+  times     String[]
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  pet   Pet   @relation(fields: [petId], references: [id], onDelete: Cascade)
+  
+  @@map("tasks")
+}
+
+model Document {
+  id              String   @id @default(uuid())
+  category        String   // past_appointments, x_ray_documents, diagnostic_reports, blood_test_reports, vaccination_history
+  hospitalName    String
+  fileName        String
+  originalFileName String
+  filePath        String
+  fileSize        Int
+  mimeType        String
+  date            DateTime
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  petId   String
+  pet     Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  ownerId String
+  owner   User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  
+  @@map("documents")
+}
+
+model BugReport {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  severity    String   // low, medium, high, critical
+  status      String   @default("open") // open, in_progress, resolved, closed
+  reporterId  String?
+  reporterEmail String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("bug_reports")
+}
