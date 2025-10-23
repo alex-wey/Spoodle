@@ -3,8 +3,8 @@ import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
-import { validateRequest } from '../middleware/validation';
-import { emailService } from '../services/email';
+import { validateRequest } from '../middleware/validation.js';
+import { emailService } from '../services/email.js';
 
 const router = Router();
 const prisma = new PrismaClient();
