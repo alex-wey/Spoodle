@@ -11,6 +11,7 @@ import {
   Modal,
   Image,
   Linking,
+  Platform,
 } from 'react-native';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { ArrowLeft, FileText, Calendar, MapPin, Download, Eye, Plus, X, ExternalLink, Shield, Activity, Stethoscope, Zap, Microscope, Heart, Pill } from 'lucide-react-native';
@@ -301,16 +302,8 @@ export default function CategoryDocumentsScreen() {
                     style={styles.actionButton}
                     onPress={() => handleViewDocument(document)}
                   >
-                    <Eye size={16} color="#4559A7" />
+                    <Eye size={20} color="#4559A7" />
                     <Text style={styles.actionText}>View</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() => handleDownloadDocument(document)}
-                  >
-                    <Download size={16} color="#4559A7" />
-                    <Text style={styles.actionText}>Download</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -443,42 +436,78 @@ export default function CategoryDocumentsScreen() {
           {/* Modal Actions */}
           <View style={styles.modalActions}>
             <TouchableOpacity
-              style={styles.downloadButton}
-              onPress={() => {
-                setViewerVisible(false);
-                handleDownloadDocument(selectedDocument);
-              }}
-            >
-              <Download size={20} color="#FFFFFF" />
-              <Text style={styles.downloadButtonText}>Download</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.downloadButton, { backgroundColor: '#4559A7', marginTop: 12 }]}
+              style={styles.viewButton}
               onPress={async () => {
                 try {
-                  const response = await fetch(`http://localhost:3002/api/documents/download/${selectedDocument.id}`, {
-                    headers: {
-                      'Authorization': `Bearer ${token}`,
-                    },
-                  });
+                  // Close the modal first
+                  setViewerVisible(false);
                   
-                  if (response.ok) {
-                    const blob = await response.blob();
-                    const url = URL.createObjectURL(blob);
-                    await Linking.openURL(url);
-                    setViewerVisible(false);
+                  if (Platform.OS === 'web') {
+                    // For web, download and open in new tab
+                    const response = await fetch(`http://localhost:3002/api/documents/download/${selectedDocument.id}`, {
+                      headers: {
+                        'Authorization': `Bearer ${token}`,
+                      },
+                    });
+                    
+                    if (response.ok) {
+                      const blob = await response.blob();
+                      const url = URL.createObjectURL(blob);
+                      window.open(url, '_blank');
+                    } else {
+                      Alert.alert('Error', 'Failed to open document');
+                    }
                   } else {
-                    Alert.alert('Error', 'Failed to open document');
+                    // For mobile, try to open the file URL directly
+                    const fileUrl = selectedDocument.fileUrl || `http://localhost:3002/api/documents/download/${selectedDocument.id}`;
+                    
+                    // Check if we can open this URL
+                    const canOpen = await Linking.canOpenURL(fileUrl);
+                    
+                    if (canOpen) {
+                      await Linking.openURL(fileUrl);
+                    } else {
+                      // If direct URL doesn't work, try downloading first
+                      Alert.alert(
+                        'Open Document',
+                        'Would you like to download and open this document?',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          { 
+                            text: 'Download & Open', 
+                            onPress: async () => {
+                              try {
+                                const response = await fetch(`http://localhost:3002/api/documents/download/${selectedDocument.id}`, {
+                                  headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                  },
+                                });
+                                
+                                if (response.ok) {
+                                  const blob = await response.blob();
+                                  const url = URL.createObjectURL(blob);
+                                  await Linking.openURL(url);
+                                } else {
+                                  Alert.alert('Error', 'Failed to download document');
+                                }
+                              } catch (error) {
+                                console.error('Error downloading document:', error);
+                                Alert.alert('Error', 'Failed to download document');
+                              }
+                            }
+                          }
+                        ]
+                      );
+                    }
                   }
                 } catch (error) {
-                  console.error('Error opening document externally:', error);
+                  console.error('Error opening document:', error);
                   Alert.alert('Error', 'Failed to open document');
                 }
               }}
             >
-              <ExternalLink size={20} color="#FFFFFF" />
-              <Text style={styles.downloadButtonText}>Open Externally</Text>
+              <Eye size={24} color="#FFFFFF" />
+              <Text style={styles.viewButtonText}>View Record</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -619,7 +648,7 @@ const styles = StyleSheet.create({
   },
   documentActions: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#ADD7EB',
@@ -627,16 +656,17 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
     backgroundColor: '#ADD7EB',
+    minWidth: 120,
   },
   actionText: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#4559A7',
-    marginLeft: 6,
-    fontWeight: '500',
+    marginLeft: 8,
+    fontWeight: '600',
   },
   fab: {
     position: 'absolute',
@@ -779,20 +809,23 @@ const styles = StyleSheet.create({
     padding: 20,
     borderTopWidth: 1,
     borderTopColor: '#ADD7EB',
+    alignItems: 'center',
   },
-  downloadButton: {
+  viewButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#3BB272',
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
+    backgroundColor: '#4559A7',
+    paddingVertical: 20,
+    paddingHorizontal: 40,
+    borderRadius: 16,
+    gap: 12,
+    minWidth: 200,
   },
-  downloadButtonText: {
+  viewButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
   },
   imagePreviewContainer: {
     alignItems: 'center',

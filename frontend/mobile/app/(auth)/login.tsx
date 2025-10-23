@@ -1,10 +1,9 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ArrowLeft, Eye, EyeOff, Mail, Lock } from "lucide-react-native";
 import { useAuthStore } from "../store/auth";
-import { LinearGradient } from "expo-linear-gradient";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -52,9 +51,8 @@ export default function LoginScreen() {
   };
 
   return (
-    <LinearGradient
-      colors={["#4F46E5", "#7C3AED"]}
-      style={styles.gradient}
+    <View
+      style={[styles.container, { backgroundColor: "#4559A7" }]}
     >
       <SafeAreaView style={styles.container}>
         <KeyboardAvoidingView
@@ -74,6 +72,7 @@ export default function LoginScreen() {
               >
                 <ArrowLeft size={24} color="white" />
               </TouchableOpacity>
+              
               <View style={styles.titleContainer}>
                 <Text style={styles.title}>Welcome Back</Text>
                 <Text style={styles.subtitle}>Sign in to continue</Text>
@@ -162,39 +161,14 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-
-            {/* Test Credentials */}
-            <View style={styles.testCredentials}>
-              <Text style={styles.testCredentialsTitle}>Test Account</Text>
-              <View style={styles.credentialRow}>
-                <Text style={styles.credentialLabel}>Email:</Text>
-                <Text style={styles.credentialValue}>sarah.johnson@email.com</Text>
-              </View>
-              <View style={styles.credentialRow}>
-                <Text style={styles.credentialLabel}>Password:</Text>
-                <Text style={styles.credentialValue}>password123</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.quickFillButton}
-                onPress={() => {
-                  setEmail("sarah.johnson@email.com");
-                  setPassword("password123");
-                }}
-              >
-                <Text style={styles.quickFillText}>Quick Fill</Text>
-              </TouchableOpacity>
-            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradient: {
-    flex: 1,
-  },
   container: {
     flex: 1,
   },
@@ -273,12 +247,12 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   forgotPasswordText: {
-    color: "#4F46E5",
+    color: "#4559A7",
     fontSize: 14,
     fontWeight: "500",
   },
   loginButton: {
-    backgroundColor: "#4F46E5",
+    backgroundColor: "#ADD7EB",
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",
@@ -302,52 +276,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   signupLink: {
-    color: "#4F46E5",
+    color: "#4559A7",
     fontSize: 14,
-    fontWeight: "600",
-  },
-  testCredentials: {
-    marginTop: 24,
-    padding: 16,
-    backgroundColor: "#F9FAFB",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  testCredentialsTitle: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#6B7280",
-    marginBottom: 8,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  credentialRow: {
-    flexDirection: "row",
-    marginBottom: 4,
-  },
-  credentialLabel: {
-    fontSize: 13,
-    color: "#6B7280",
-    fontWeight: "500",
-    width: 70,
-  },
-  credentialValue: {
-    fontSize: 13,
-    color: "#1F2937",
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
-  },
-  quickFillButton: {
-    marginTop: 8,
-    backgroundColor: "#4F46E5",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignSelf: "flex-start",
-  },
-  quickFillText: {
-    color: "white",
-    fontSize: 12,
     fontWeight: "600",
   },
 });

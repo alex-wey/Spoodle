@@ -78,7 +78,7 @@ export default function HomeScreen() {
   const quickActions = [
     {
       id: 'appointments',
-      title: 'Appointments',
+      title: 'Task Calendar',
       icon: Calendar,
       color: '#4559A7',
       onPress: () => router.push('/(tabs)/appointments'),

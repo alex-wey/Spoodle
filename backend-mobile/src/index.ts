@@ -110,7 +110,8 @@ app.use('/api/*', (req: Request, res: Response) => {
       '/api/tasks',
       '/api/documents',
       '/api/dashboard',
-      '/api/bug-report'
+      '/api/bug-report',
+      '/api/chatbot'
     ]
   });
 });
@@ -185,5 +186,6 @@ app.listen(PORT, () => {
   console.log(`  - Documents: http://localhost:${PORT}/api/documents/*`);
   console.log(`  - Tasks: http://localhost:${PORT}/api/tasks/*`);
   console.log(`  - Bug Reports: http://localhost:${PORT}/api/bug-report/*`);
+  console.log(`  - Chatbot: http://localhost:${PORT}/api/chatbot/*`);
   console.log(`🔒 This backend is COMPLETELY SEPARATE from web backend`);
 });

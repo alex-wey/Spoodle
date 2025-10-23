@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TouchableOpacity, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, FileText, Syringe, Stethoscope, Scissors, Activity, TestTube, X, Plus, Download } from "lucide-react-native";
+import { ArrowLeft, FileText, Syringe, Stethoscope, Scissors, Activity, TestTube, X, Plus } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../../lib/api";
 
@@ -195,12 +195,6 @@ export default function PetRecordsScreen() {
                           day: 'numeric'
                         })}
                       </Text>
-                      {record.fileUrl && (
-                        <View style={styles.downloadIndicator}>
-                          <Download size={14} color="#6B7280" />
-                          <Text style={styles.downloadText}>View</Text>
-                        </View>
-                      )}
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -338,15 +332,5 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 13,
     color: "#9CA3AF",
-  },
-  downloadIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  downloadText: {
-    fontSize: 13,
-    color: "#6B7280",
-    fontWeight: "500",
   },
 });

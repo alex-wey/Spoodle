@@ -51,8 +51,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="appointments/index"
         options={{
-          title: "Appointments",
-          href: "/(tabs)/appointments",
+          title: "Task Calendar",
+          href: null, // Temporarily hidden from tab bar
           tabBarIcon: ({ color, size }) => <Calendar size={24} color={color} />,
         }}
       />
@@ -123,6 +123,13 @@ export default function TabLayout() {
         name="profile/edit"
         options={{
           href: null, // Hide from tab bar - accessible only via pen icon
+        }}
+      />
+      <Tabs.Screen
+        name="appointments/add"
+        options={{
+          href: null, // Hide from tab bar - accessible only via plus button
+          presentation: 'modal',
         }}
       />
     </Tabs>

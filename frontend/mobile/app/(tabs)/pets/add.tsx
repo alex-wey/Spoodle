@@ -18,6 +18,7 @@ export default function AddPetScreen() {
     name: '',
     species: '',
     breed: '',
+    gender: '',
     dateOfBirth: '',
     weight: '',
     microchipId: '',
@@ -36,6 +37,7 @@ export default function AddPetScreen() {
         name: existingPet.name || '',
         species: existingPet.species || '',
         breed: existingPet.breed || '',
+        gender: existingPet.gender || '',
         dateOfBirth: existingPet.dateOfBirth ? (typeof existingPet.dateOfBirth === 'string' ? existingPet.dateOfBirth.split('T')[0] : existingPet.dateOfBirth.toISOString().split('T')[0]) : '',
         weight: existingPet.weight ? existingPet.weight.toString() : '',
         microchipId: existingPet.microchipId || '',
@@ -107,6 +109,11 @@ export default function AddPetScreen() {
 
     if (!formData.species.trim()) {
       Alert.alert('Error', 'Please select your pet\'s species');
+      return;
+    }
+
+    if (!formData.gender.trim()) {
+      Alert.alert('Error', 'Please select your pet\'s gender');
       return;
     }
 
@@ -241,6 +248,32 @@ export default function AddPetScreen() {
                 placeholder="Enter breed"
                 placeholderTextColor="#9CA3AF"
               />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Gender *</Text>
+              <View style={styles.speciesContainer}>
+                {[
+                  { value: 'male', label: 'Male ♂', icon: '♂' },
+                  { value: 'female', label: 'Female ♀', icon: '♀' }
+                ].map((gender) => (
+                  <TouchableOpacity
+                    key={gender.value}
+                    style={[
+                      styles.speciesButton,
+                      formData.gender === gender.value && styles.speciesButtonSelected
+                    ]}
+                    onPress={() => setFormData({ ...formData, gender: gender.value })}
+                  >
+                    <Text style={[
+                      styles.speciesButtonText,
+                      formData.gender === gender.value && styles.speciesButtonTextSelected
+                    ]}>
+                      {gender.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
 
             <View style={styles.inputGroup}>

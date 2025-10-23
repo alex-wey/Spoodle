@@ -1,4 +1,4 @@
-import { ScrollView, View, Text, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, Platform, Alert } from "react-native";
+import { ScrollView, View, Text, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, Platform, Alert, Image } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState, useEffect } from "react";
 import { Plus, Bug, LogOut, Dog } from "lucide-react-native";
@@ -101,6 +101,15 @@ export default function PetsScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
+          {/* Spoodle Logo */}
+          <View style={styles.logoContainer}>
+            <Image
+              source={require("../../../assets/images/Spoodle Logo Variations Transparent Backgrounds-02.png")}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+          
           <View style={styles.headerTop}>
             <View>
               <Text style={styles.greeting}>{getGreeting()},</Text>
@@ -199,8 +208,17 @@ const styles = StyleSheet.create({
     color: "#4559A7",
   },
   header: {
-    padding: 20,
-    paddingBottom: 10,
+    paddingTop: 0,
+    paddingHorizontal: 20,
+    paddingBottom: 5,
+  },
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  logo: {
+    width: 120,
+    height: 60,
   },
   headerTop: {
     flexDirection: "row",

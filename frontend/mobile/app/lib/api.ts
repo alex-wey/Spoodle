@@ -528,6 +528,74 @@ class ApiClient {
 
     return response.json();
   }
+
+  // Task endpoints
+  async createTask(data: {
+    petId: string;
+    type: string;
+    title: string;
+    description?: string;
+    scheduledTime: string;
+    recurring?: boolean;
+    recurrencePattern?: string;
+    notes?: string;
+  }) {
+    return this.request<{
+      success: boolean;
+      data?: any;
+      message: string;
+    }>('/tasks', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getTasks(date?: string) {
+    const query = date ? `?date=${date}` : '';
+    return this.request<{
+      success: boolean;
+      data: Array<{
+        id: string;
+        petId: string;
+        ownerId: string;
+        type: string;
+        title: string;
+        description: string;
+        scheduledTime: string;
+        completionStatus: boolean;
+        recurring: boolean;
+        recurrencePattern: string;
+        notes: string;
+        createdAt: string;
+        updatedAt: string;
+        pet: {
+          id: string;
+          name: string;
+          breed: string;
+        };
+      }>;
+      message: string;
+    }>(`/tasks${query}`);
+  }
+
+  // Bug report endpoints
+  async submitBugReport(data: {
+    title: string;
+    description: string;
+    severity: string;
+    category: string;
+    deviceInfo?: string;
+    appVersion?: string;
+  }) {
+    return this.request<{
+      success: boolean;
+      data?: any;
+      message: string;
+    }>('/bug-report', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);

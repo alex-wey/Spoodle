@@ -8,18 +8,21 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
-import { ChevronLeft, ChevronRight, Plus, Calendar, Clock, MapPin, Bug } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Plus, Calendar, Clock, MapPin, Bug, CheckCircle, Trash2, Edit3 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { FAB } from '../../components/FAB';
+import { useAuthStore } from '../../store/auth';
+import { apiClient } from '../../lib/api';
 export default function AppointmentsScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentWeek, setCurrentWeek] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [showTaskModal, setShowTaskModal] = useState(false);
 
-  // For now, we'll use a placeholder token since auth store has issues
-  const token = "placeholder-token";
+  const { token, user } = useAuthStore();
 
   useEffect(() => {
     generateWeekDays();
@@ -73,11 +76,18 @@ export default function AppointmentsScreen() {
   };
 
   const fetchTasksForDate = async (date) => {
+    if (!token) return;
+    
     setLoading(true);
     try {
-      // For now, just show empty tasks since we don't have proper auth
-      // In the future, this will fetch from the API
-      setTasks([]);
+      const dateString = date.toISOString().split('T')[0];
+      const response = await apiClient.getTasks(dateString);
+      
+      if (response.success) {
+        setTasks(response.data || []);
+      } else {
+        setTasks([]);
+      }
     } catch (error) {
       console.error('Error fetching tasks:', error);
       setTasks([]);
@@ -87,50 +97,77 @@ export default function AppointmentsScreen() {
   };
 
   const addNewTask = () => {
-    // For now, add a task for the current hour
-    const currentHour = new Date().getHours();
-    addTaskForHour(currentHour);
+    router.push('/(tabs)/appointments/add');
   };
 
-  const addTaskForHour = (hour) => {
-    const timeString = hour === 0 ? '12:00 AM' : 
-                      hour < 12 ? `${hour}:00 AM` : 
-                      hour === 12 ? '12:00 PM' : 
-                      `${hour - 12}:00 PM`;
-    
+  const handleTaskPress = (task) => {
+    setSelectedTask(task);
+    setShowTaskModal(true);
+  };
+
+  const markTaskComplete = async (taskId) => {
+    try {
+      // TODO: Implement API call to mark task as complete
+      setTasks(prev => prev.map(task => 
+        task.id === taskId ? { ...task, completionStatus: true } : task
+      ));
+      setShowTaskModal(false);
+      Alert.alert('Success', 'Task marked as complete!');
+    } catch (error) {
+      console.error('Error marking task complete:', error);
+      Alert.alert('Error', 'Failed to mark task as complete');
+    }
+  };
+
+  const deleteTask = async (taskId) => {
     Alert.alert(
-      'Add Task',
-      `Add a new task for ${timeString}`,
+      'Delete Task',
+      'Are you sure you want to delete this task?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Add Task', onPress: () => createTaskForHour(hour) },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // TODO: Implement API call to delete task
+              setTasks(prev => prev.filter(task => task.id !== taskId));
+              setShowTaskModal(false);
+              Alert.alert('Success', 'Task deleted successfully!');
+            } catch (error) {
+              console.error('Error deleting task:', error);
+              Alert.alert('Error', 'Failed to delete task');
+            }
+          }
+        }
       ]
     );
   };
 
-  const createTaskForHour = async (hour) => {
-    try {
-      // Create a task for the selected hour
-      const taskDateTime = new Date(selectedDate);
-      taskDateTime.setHours(hour, 0, 0, 0);
-      
-      // For now, create a mock task since we don't have proper auth
-      const newTask = {
-        id: Date.now().toString(),
-        title: 'New Task',
-        description: 'Task description',
-        dueTime: taskDateTime.toISOString(),
-        status: 'pending',
-        taskType: 'other'
-      };
-
-      // Add the task to the local state
-      setTasks(prev => [...prev, newTask]);
-      Alert.alert('Success', `Task added for ${hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`}!`);
-    } catch (error) {
-      console.error('Error creating task:', error);
-      Alert.alert('Error', 'Failed to add task. Please try again.');
-    }
+  const addNotesToTask = (taskId) => {
+    Alert.prompt(
+      'Add Notes',
+      'Enter notes for this task:',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Save', 
+          onPress: async (notes) => {
+            try {
+              // TODO: Implement API call to update task notes
+              setTasks(prev => prev.map(task => 
+                task.id === taskId ? { ...task, notes: notes } : task
+              ));
+              Alert.alert('Success', 'Notes added successfully!');
+            } catch (error) {
+              console.error('Error adding notes:', error);
+              Alert.alert('Error', 'Failed to add notes');
+            }
+          }
+        }
+      ],
+      'plain-text'
+    );
   };
 
   const formatTime = (timeString) => {
@@ -150,6 +187,25 @@ export default function AppointmentsScreen() {
         return '#F59E0B';
       case 'pending':
         return '#6B7280';
+      default:
+        return '#6B7280';
+    }
+  };
+
+  const getTaskTypeColor = (type) => {
+    switch (type) {
+      case 'walk':
+        return '#3BB272';
+      case 'feed':
+        return '#E75325';
+      case 'medicate':
+        return '#4559A7';
+      case 'groom':
+        return '#F59E0B';
+      case 'training':
+        return '#8B5CF6';
+      case 'checkup':
+        return '#EF4444';
       default:
         return '#6B7280';
     }
@@ -263,8 +319,8 @@ export default function AppointmentsScreen() {
               {Array.from({ length: 24 }, (_, hour) => {
                 const timeSlot = `${hour.toString().padStart(2, '0')}:00`;
                 const tasksForHour = tasks.filter(task => {
-                  if (task.dueTime) {
-                    const taskHour = new Date(task.dueTime).getHours();
+                  if (task.scheduledTime) {
+                    const taskHour = new Date(task.scheduledTime).getHours();
                     return taskHour === hour;
                   }
                   return false;
@@ -282,7 +338,7 @@ export default function AppointmentsScreen() {
                       isCurrentHour && styles.currentTimeBlock,
                       tasksForHour.length > 0 && styles.blockWithTasks
                     ]}
-                    onPress={() => addTaskForHour(hour)}
+                    onPress={() => tasksForHour.length > 0 ? handleTaskPress(tasksForHour[0]) : addNewTask()}
                     activeOpacity={0.7}
                   >
                     <View style={styles.timeBlockHeader}>
@@ -306,15 +362,24 @@ export default function AppointmentsScreen() {
                       {tasksForHour.length > 0 ? (
                         <View style={styles.tasksInBlock}>
                           {tasksForHour.slice(0, 2).map((task, taskIndex) => (
-                            <View key={task.id || taskIndex} style={styles.miniTaskCard}>
-                              <Text style={styles.miniTaskTitle} numberOfLines={1}>
+                            <TouchableOpacity
+                              key={task.id || taskIndex} 
+                              style={[
+                                styles.taskBlock,
+                                { backgroundColor: getTaskTypeColor(task.type) }
+                              ]}
+                              onPress={() => handleTaskPress(task)}
+                            >
+                              <Text style={styles.taskBlockTitle} numberOfLines={1}>
                                 {task.title || 'Untitled Task'}
                               </Text>
-                              <View style={[
-                                styles.miniStatusDot,
-                                { backgroundColor: getTaskStatusColor(task.status) }
-                              ]} />
-                            </View>
+                              <Text style={styles.taskBlockPet} numberOfLines={1}>
+                                {task.pet?.name || 'Pet'}
+                              </Text>
+                              {task.completionStatus && (
+                                <CheckCircle size={16} color="#FFFFFF" style={styles.completeIcon} />
+                              )}
+                            </TouchableOpacity>
                           ))}
                           {tasksForHour.length > 2 && (
                             <Text style={styles.moreTasksText}>
@@ -348,6 +413,60 @@ export default function AppointmentsScreen() {
           size="large"
         />
       </View>
+
+      {/* Task Detail Modal */}
+      {showTaskModal && selectedTask && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{selectedTask.title}</Text>
+              <TouchableOpacity onPress={() => setShowTaskModal(false)}>
+                <X size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.modalBody}>
+              <View style={styles.taskInfo}>
+                <Text style={styles.taskDescription}>{selectedTask.description}</Text>
+                <Text style={styles.taskPet}>Pet: {selectedTask.pet?.name || 'Unknown'}</Text>
+                <Text style={styles.taskTime}>
+                  Time: {formatTime(selectedTask.scheduledTime)}
+                </Text>
+                <Text style={styles.taskType}>Type: {selectedTask.type}</Text>
+                {selectedTask.notes && (
+                  <Text style={styles.taskNotes}>Notes: {selectedTask.notes}</Text>
+                )}
+              </View>
+              
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.completeButton]}
+                  onPress={() => markTaskComplete(selectedTask.id)}
+                >
+                  <CheckCircle size={20} color="#FFFFFF" />
+                  <Text style={styles.actionButtonText}>Mark Complete</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.notesButton]}
+                  onPress={() => addNotesToTask(selectedTask.id)}
+                >
+                  <Edit3 size={20} color="#FFFFFF" />
+                  <Text style={styles.actionButtonText}>Add Notes</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.deleteButton]}
+                  onPress={() => deleteTask(selectedTask.id)}
+                >
+                  <Trash2 size={20} color="#FFFFFF" />
+                  <Text style={styles.actionButtonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -682,6 +801,118 @@ const styles = StyleSheet.create({
     elevation: 8,
     width: 64,
     height: 64,
+  },
+  // Task block styles
+  taskBlock: {
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 4,
+    position: 'relative',
+  },
+  taskBlockTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  taskBlockPet: {
+    fontSize: 10,
+    color: '#FFFFFF',
+    opacity: 0.9,
+  },
+  completeIcon: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+  },
+  // Modal styles
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    margin: 20,
+    maxHeight: '80%',
+    width: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#4559A7',
+    flex: 1,
+  },
+  modalBody: {
+    flex: 1,
+  },
+  taskInfo: {
+    marginBottom: 20,
+  },
+  taskDescription: {
+    fontSize: 16,
+    color: '#374151',
+    marginBottom: 8,
+  },
+  taskPet: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  taskTime: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  taskType: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  taskNotes: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontStyle: 'italic',
+  },
+  modalActions: {
+    gap: 12,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  completeButton: {
+    backgroundColor: '#10B981',
+  },
+  notesButton: {
+    backgroundColor: '#4559A7',
+  },
+  deleteButton: {
+    backgroundColor: '#EF4444',
+  },
+  actionButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });
 

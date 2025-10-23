@@ -1,7 +1,7 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { FileText, ChevronRight, Settings } from "lucide-react-native";
 import type { Pet } from "../../../../types";
-import { getPetAgeString, getGenderSymbol } from "../../../../lib/utils";
+import { getPetAgeString, getGenderSymbol, calculateAge } from "../../../../lib/utils";
 import { getSafeImageSource } from "../../../../lib/imageUtils";
 
 interface PetCardProps {
@@ -13,12 +13,13 @@ interface PetCardProps {
 
 export function PetCard({ pet, onPress, onPetRecords, onEditPet }: PetCardProps) {
   const genderColor = pet.gender === "female" ? "#EC4899" : "#3B82F6";
+  const petAge = pet.dateOfBirth ? calculateAge(pet.dateOfBirth) : 0;
   
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.container}>
       <View style={styles.header}>
         <Image
-          source={getSafeImageSource(pet.imageUrl, pet.name)}
+          source={getSafeImageSource(pet.imageUrl, pet.name, pet.gender)}
           style={styles.image}
           onError={(error) => {
             console.log('PetCard image load error:', error);
@@ -27,14 +28,14 @@ export function PetCard({ pet, onPress, onPetRecords, onEditPet }: PetCardProps)
         <View style={styles.info}>
           <View style={styles.nameRow}>
             <Text style={styles.name}>{pet.name}</Text>
-            <View style={[styles.genderBadge, { backgroundColor: `${genderColor}15` }]}>
-              <Text style={[styles.genderText, { color: genderColor }]}>
+            <View style={[styles.genderBadge, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
+              <Text style={[styles.genderText, { color: '#FFFFFF' }]}>
                 {getGenderSymbol(pet.gender)}
               </Text>
             </View>
           </View>
           <Text style={styles.breed}>{pet.breed}</Text>
-          <Text style={styles.age}>{getPetAgeString(pet.age)}</Text>
+          <Text style={styles.age}>{getPetAgeString(petAge)}</Text>
           {pet.weight && (
             <Text style={styles.weight}>{pet.weight} lbs</Text>
           )}
@@ -47,9 +48,9 @@ export function PetCard({ pet, onPress, onPetRecords, onEditPet }: PetCardProps)
               onEditPet();
             }}
           >
-            <Settings size={18} color="#4559A7" />
+            <Settings size={18} color="#FFFFFF" />
           </TouchableOpacity>
-          <ChevronRight size={20} color="#9CA3AF" />
+          <ChevronRight size={20} color="rgba(255, 255, 255, 0.7)" />
         </View>
       </View>
 
@@ -62,26 +63,18 @@ export function PetCard({ pet, onPress, onPetRecords, onEditPet }: PetCardProps)
           onPetRecords();
         }}
       >
-        <FileText size={18} color="#4F46E5" />
+        <FileText size={20} color="#FFFFFF" />
         <Text style={styles.actionText}>Pet Records</Text>
       </TouchableOpacity>
 
       {/* Quick Info Pills */}
-      {(pet.allergies?.length || pet.medications?.length) ? (
+      {pet.allergies?.length ? (
         <View style={styles.quickInfo}>
           {pet.allergies && pet.allergies.length > 0 && (
             <View style={styles.infoPill}>
               <View style={[styles.infoDot, { backgroundColor: "#EF4444" }]} />
               <Text style={styles.infoPillText}>
                 {pet.allergies.length} {pet.allergies.length === 1 ? "Allergy" : "Allergies"}
-              </Text>
-            </View>
-          )}
-          {pet.medications && pet.medications.length > 0 && (
-            <View style={styles.infoPill}>
-              <View style={[styles.infoDot, { backgroundColor: "#10B981" }]} />
-              <Text style={styles.infoPillText}>
-                {pet.medications.length} {pet.medications.length === 1 ? "Medication" : "Medications"}
               </Text>
             </View>
           )}
@@ -93,7 +86,7 @@ export function PetCard({ pet, onPress, onPetRecords, onEditPet }: PetCardProps)
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "white",
+    backgroundColor: "#4559A7",
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -112,7 +105,9 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     marginRight: 12,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.3)",
   },
   info: {
     flex: 1,
@@ -125,7 +120,7 @@ const styles = StyleSheet.create({
   settingsButton: {
     padding: 8,
     borderRadius: 8,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
   nameRow: {
     flexDirection: "row",
@@ -135,7 +130,7 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#1F2937",
+    color: "#FFFFFF",
   },
   genderBadge: {
     paddingHorizontal: 8,
@@ -148,21 +143,21 @@ const styles = StyleSheet.create({
   },
   breed: {
     fontSize: 14,
-    color: "#4B5563",
+    color: "rgba(255, 255, 255, 0.8)",
     marginTop: 2,
   },
   age: {
     fontSize: 13,
-    color: "#6B7280",
+    color: "rgba(255, 255, 255, 0.7)",
     marginTop: 2,
   },
   weight: {
     fontSize: 13,
-    color: "#6B7280",
+    color: "rgba(255, 255, 255, 0.7)",
   },
   divider: {
     height: 1,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     marginVertical: 12,
     marginHorizontal: -16,
   },
@@ -170,13 +165,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
-    paddingVertical: 8,
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    borderRadius: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   actionText: {
-    color: "#4F46E5",
-    fontSize: 13,
-    fontWeight: "600",
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
   },
   quickInfo: {
     flexDirection: "row",
@@ -184,13 +190,13 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
+    borderTopColor: "rgba(255, 255, 255, 0.2)",
   },
   infoPill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -202,7 +208,7 @@ const styles = StyleSheet.create({
   },
   infoPillText: {
     fontSize: 12,
-    color: "#6B7280",
+    color: "rgba(255, 255, 255, 0.8)",
   },
 });
 

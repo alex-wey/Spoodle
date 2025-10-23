@@ -4,14 +4,19 @@ import { Platform } from 'react-native';
  * Get a safe image source URI that works across platforms
  * @param imageUrl - The image URL (could be base64, blob, or regular URL)
  * @param fallbackName - Name to use for fallback avatar
+ * @param gender - Pet gender to determine default avatar
  * @returns Safe image source object
  */
-export const getSafeImageSource = (imageUrl?: string | null, fallbackName?: string) => {
+export const getSafeImageSource = (imageUrl?: string | null, fallbackName?: string, gender?: string) => {
   if (!imageUrl) {
+    // Use gender-specific default avatars
+    const genderIcon = gender === 'female' ? '♀' : gender === 'male' ? '♂' : '🐾';
+    const backgroundColor = gender === 'female' ? 'EC4899' : gender === 'male' ? '3B82F6' : '4F46E5';
+    
     return {
       uri: fallbackName 
-        ? `https://ui-avatars.com/api/?name=${fallbackName}&background=4F46E5&color=fff&size=200`
-        : 'https://ui-avatars.com/api/?name=Pet&background=4F46E5&color=fff&size=200'
+        ? `https://ui-avatars.com/api/?name=${fallbackName}&background=${backgroundColor}&color=fff&size=200`
+        : `https://ui-avatars.com/api/?name=${genderIcon}&background=${backgroundColor}&color=fff&size=200`
     };
   }
 
@@ -24,10 +29,13 @@ export const getSafeImageSource = (imageUrl?: string | null, fallbackName?: stri
   if (Platform.OS === 'web' && imageUrl.startsWith('blob:')) {
     // For blob URLs, we'll use a fallback since they can become invalid
     console.warn('Blob URL detected, using fallback avatar');
+    const genderIcon = gender === 'female' ? '♀' : gender === 'male' ? '♂' : '🐾';
+    const backgroundColor = gender === 'female' ? 'EC4899' : gender === 'male' ? '3B82F6' : '4F46E5';
+    
     return {
       uri: fallbackName 
-        ? `https://ui-avatars.com/api/?name=${fallbackName}&background=4F46E5&color=fff&size=200`
-        : 'https://ui-avatars.com/api/?name=Pet&background=4F46E5&color=fff&size=200'
+        ? `https://ui-avatars.com/api/?name=${fallbackName}&background=${backgroundColor}&color=fff&size=200`
+        : `https://ui-avatars.com/api/?name=${genderIcon}&background=${backgroundColor}&color=fff&size=200`
     };
   }
 

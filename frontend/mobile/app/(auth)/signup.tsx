@@ -1,10 +1,9 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ArrowLeft, Eye, EyeOff, Mail, Lock, User, Phone } from "lucide-react-native";
 import { useAuthStore } from "../store/auth";
-import { LinearGradient } from "expo-linear-gradient";
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -92,9 +91,8 @@ export default function SignUpScreen() {
   };
 
   return (
-    <LinearGradient
-      colors={["#4F46E5", "#7C3AED"]}
-      style={styles.gradient}
+    <View
+      style={[styles.container, { backgroundColor: "#4559A7" }]}
     >
       <SafeAreaView style={styles.container}>
         <KeyboardAvoidingView
@@ -114,6 +112,7 @@ export default function SignUpScreen() {
               >
                 <ArrowLeft size={24} color="white" />
               </TouchableOpacity>
+              
               <View style={styles.titleContainer}>
                 <Text style={styles.title}>Create Account</Text>
                 <Text style={styles.subtitle}>Join Spoodle to care for your pets</Text>
@@ -273,14 +272,11 @@ export default function SignUpScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradient: {
-    flex: 1,
-  },
   container: {
     flex: 1,
   },
@@ -362,7 +358,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   signupButton: {
-    backgroundColor: "#4F46E5",
+    backgroundColor: "#ADD7EB",
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",

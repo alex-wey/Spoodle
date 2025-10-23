@@ -12,6 +12,58 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Check if OpenAI API key is configured
+if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'sk-proj-your-openai-api-key-here') {
+  console.error('❌ OPENAI_API_KEY not configured in environment variables');
+  console.error('📝 Please set OPENAI_API_KEY in your .env file');
+}
+
+// Test endpoint without authentication
+router.post('/test', async (req: Request, res: Response) => {
+  try {
+    const { message } = req.body;
+    
+    if (!message) {
+      return res.status(400).json({
+        success: false,
+        error: 'Message required',
+        message: 'Please provide a message'
+      });
+    }
+
+    // Create a mock pet for testing
+    const mockPet = {
+      name: 'Test Pet',
+      species: 'Dog',
+      breed: 'Golden Retriever',
+      weight: 50,
+      dateOfBirth: '2020-01-01',
+      spayedNeutered: true,
+      allergies: [],
+      dietaryRestrictions: []
+    };
+
+    // Get AI response from OpenAI
+    const aiResponse = await getOpenAIResponse(message, mockPet);
+
+    res.json({
+      success: true,
+      data: {
+        response: aiResponse,
+        timestamp: new Date().toISOString()
+      },
+      message: 'Test message processed successfully'
+    });
+  } catch (error) {
+    console.error('Chatbot test error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error',
+      message: 'Unable to process test message'
+    });
+  }
+});
+
 // Apply authentication to all routes
 router.use(authenticateToken);
 
@@ -127,6 +179,12 @@ router.get('/history/:petId',
 // OpenAI response generator
 async function getOpenAIResponse(message: string, pet: any): Promise<string> {
   try {
+    // Check if OpenAI API key is configured
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'sk-proj-your-openai-api-key-here') {
+      console.error('❌ OpenAI API key not configured - using fallback response');
+      return generateFallbackResponse(message, pet);
+    }
+
     const systemPrompt = `You are Spoodle, an AI pet care assistant specializing in ${pet.species.toLowerCase()} care. You are helping the owner of ${pet.name}, a ${pet.species.toLowerCase()}${pet.breed ? ` (${pet.breed} breed)` : ''}.
 
 Key information about ${pet.name}:
@@ -149,6 +207,7 @@ Guidelines for responses:
 
 Remember: You are not a substitute for veterinary care, but you can provide helpful general guidance.`;
 
+    console.log('🤖 Sending request to OpenAI API...');
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
@@ -165,9 +224,11 @@ Remember: You are not a substitute for veterinary care, but you can provide help
       temperature: 0.7,
     });
 
-    return completion.choices[0]?.message?.content || "I'm sorry, I'm having trouble responding right now. Please try again later.";
-  } catch (error) {
-    console.error('OpenAI API error:', error);
+    const response = completion.choices[0]?.message?.content || "I'm sorry, I'm having trouble responding right now. Please try again later.";
+    console.log('✅ OpenAI API response received');
+    return response;
+  } catch (error: any) {
+    console.error('❌ OpenAI API error:', error.message || error);
     // Fallback to simple response if OpenAI fails
     return generateFallbackResponse(message, pet);
   }

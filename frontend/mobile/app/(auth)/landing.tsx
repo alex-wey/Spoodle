@@ -1,8 +1,6 @@
-import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
-import { Dog, Heart, Calendar, Sparkles } from "lucide-react-native";
 
 const { width } = Dimensions.get("window");
 
@@ -10,42 +8,20 @@ export default function LandingScreen() {
   const router = useRouter();
 
   return (
-    <LinearGradient
-      colors={["#4F46E5", "#7C3AED"]}
-      style={styles.container}
+    <View
+      style={[styles.container, { backgroundColor: "#4559A7" }]}
     >
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
           {/* Logo and Title */}
           <View style={styles.logoContainer}>
-            <View style={styles.logoCircle}>
-              <Dog size={60} color="white" />
-            </View>
-            <Text style={styles.title}>Spoodle</Text>
-            <Text style={styles.subtitle}>Your Pet&apos;s Health Companion</Text>
-          </View>
-
-          {/* Features */}
-          <View style={styles.features}>
-            <View style={styles.featureRow}>
-              <View style={styles.feature}>
-                <Heart size={24} color="white" />
-                <Text style={styles.featureText}>Health Records</Text>
-              </View>
-              <View style={styles.feature}>
-                <Calendar size={24} color="white" />
-                <Text style={styles.featureText}>Appointments</Text>
-              </View>
-            </View>
-            <View style={styles.featureRow}>
-              <View style={styles.feature}>
-                <Sparkles size={24} color="white" />
-                <Text style={styles.featureText}>AI Assistant</Text>
-              </View>
-              <View style={styles.feature}>
-                <Dog size={24} color="white" />
-                <Text style={styles.featureText}>Pet Profiles</Text>
-              </View>
+            <View style={styles.logoWrapper}>
+              <Image
+                source={require("../../assets/images/Spoodle Logo Variations Transparent Backgrounds-02.png")}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+              <Text style={styles.subtitle}>Your Pet&apos;s Health Companion</Text>
             </View>
           </View>
 
@@ -73,7 +49,7 @@ export default function LandingScreen() {
           </View>
         </View>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -91,44 +67,24 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
+    paddingTop: 40,
   },
-  logoCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    justifyContent: "center",
+  logoWrapper: {
     alignItems: "center",
-    marginBottom: 24,
+    position: "relative",
   },
-  title: {
-    fontSize: 48,
-    fontWeight: "bold",
-    color: "white",
-    marginBottom: 8,
+  logo: {
+    width: 450,
+    height: 450,
   },
   subtitle: {
     fontSize: 18,
     color: "rgba(255, 255, 255, 0.9)",
-  },
-  features: {
-    marginBottom: 40,
-  },
-  featureRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 20,
-  },
-  feature: {
-    alignItems: "center",
-    width: width * 0.35,
-  },
-  featureText: {
-    color: "white",
-    marginTop: 8,
-    fontSize: 14,
+    marginTop: -140,
+    textAlign: "center",
+    fontWeight: "500",
   },
   buttonContainer: {
     gap: 16,

@@ -1,15 +1,19 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TextInput, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TextInput, Alert, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { TouchableOpacity } from "react-native";
 import { ArrowLeft, Send, Bug, AlertTriangle, Info, AlertCircle } from "lucide-react-native";
+import { useAuthStore } from "../store/auth";
+import { apiClient } from "../lib/api";
 
 export default function SupportScreen() {
   const router = useRouter();
+  const { token } = useAuthStore();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState('medium');
+  const [category, setCategory] = useState('General');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const severityOptions = [
@@ -25,22 +29,40 @@ export default function SupportScreen() {
       return;
     }
 
+    if (!token) {
+      Alert.alert('Error', 'Please log in to submit a bug report');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      // For now, just show a success message
-      // In the future, this will submit to the backend API
-      Alert.alert(
-        'Success!', 
-        'Your bug report has been submitted successfully. We\'ll review it and get back to you soon.',
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
-      
-      // Reset form
-      setTitle('');
-      setDescription('');
-      setSeverity('medium');
+      const response = await apiClient.submitBugReport({
+        title: title.trim(),
+        description: description.trim(),
+        severity,
+        category,
+        deviceInfo: `Mobile App - ${Platform.OS}`,
+        appVersion: '1.0.0'
+      });
+
+          if (response.success) {
+            Alert.alert(
+              'Bug Report Submitted! 🐾', 
+              'Spoodle team will be solving the concern as soon as pawsible with paws!',
+              [{ text: 'OK', onPress: () => router.back() }]
+            );
+        
+        // Reset form
+        setTitle('');
+        setDescription('');
+        setSeverity('medium');
+        setCategory('General');
+      } else {
+        Alert.alert('Error', response.message || 'Failed to submit bug report. Please try again.');
+      }
     } catch (error) {
-      Alert.alert('Error', 'Failed to submit bug report. Please try again.');
+      console.error('Bug report submission error:', error);
+      Alert.alert('Error', 'Failed to submit bug report. Please check your connection and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -98,6 +120,30 @@ export default function SupportScreen() {
                   </TouchableOpacity>
                 );
               })}
+            </View>
+          </View>
+
+          {/* Category Selection */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Category *</Text>
+            <View style={styles.categoryContainer}>
+              {['General', 'UI Issue', 'Performance', 'Login/Auth', 'Data Sync', 'Other'].map((cat) => (
+                <TouchableOpacity
+                  key={cat}
+                  style={[
+                    styles.categoryButton,
+                    category === cat && styles.categoryButtonSelected
+                  ]}
+                  onPress={() => setCategory(cat)}
+                >
+                  <Text style={[
+                    styles.categoryButtonText,
+                    category === cat && styles.categoryButtonTextSelected
+                  ]}>
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
 
@@ -217,6 +263,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     marginLeft: 4,
+  },
+  categoryContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  categoryButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    backgroundColor: "#FFFFFF",
+  },
+  categoryButtonSelected: {
+    backgroundColor: "#3BB272",
+    borderColor: "#3BB272",
+  },
+  categoryButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#374151",
+  },
+  categoryButtonTextSelected: {
+    color: "#FFFFFF",
   },
   submitButton: {
     flexDirection: "row",

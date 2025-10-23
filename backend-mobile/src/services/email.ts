@@ -18,11 +18,17 @@ class EmailService {
 
   private initializeResend() {
     try {
-      // You'll need to set your Resend API key in environment variables
-      // For now, using a placeholder - replace with your actual Resend API key
-      const apiKey = process.env.RESEND_API_KEY || 'your-resend-api-key-here';
+      const apiKey = process.env.RESEND_API_KEY;
+      
+      if (!apiKey || apiKey === 'your-resend-api-key-here') {
+        console.error('❌ RESEND_API_KEY not configured in environment variables');
+        console.error('📝 Please set RESEND_API_KEY in your .env file');
+        this.resend = null;
+        return;
+      }
+      
       this.resend = new Resend(apiKey);
-      console.log('✅ Resend email service initialized');
+      console.log('✅ Resend email service initialized with API key');
     } catch (error) {
       console.error('❌ Failed to initialize Resend email service:', error);
       this.resend = null;
@@ -30,15 +36,26 @@ class EmailService {
   }
 
   async sendBugReport(data: BugReportEmailData): Promise<boolean> {
+    console.log('📧 EmailService.sendBugReport called with:', {
+      title: data.title,
+      severity: data.severity,
+      reporterEmail: data.reporterEmail,
+      timestamp: data.timestamp
+    });
+    
     if (!this.resend) {
-      console.error('Resend email service not initialized');
+      console.error('❌ Resend email service not initialized - check RESEND_API_KEY');
       return false;
     }
 
     try {
+      console.log('📧 Attempting to send bug report email...');
+      console.log('📧 Recipient: seher@spoodle.co');
+      console.log('📧 Subject:', data.title);
+      
       const severityEmojis = {
         low: '🟢',
-        medium: '🟡', 
+        medium: '🟡',
         high: '🟠',
         critical: '🔴'
       };
@@ -46,13 +63,13 @@ class EmailService {
       const severityLabels = {
         low: 'Low Priority',
         medium: 'Medium Priority',
-        high: 'High Priority', 
+        high: 'High Priority',
         critical: 'Critical Priority'
       };
 
       const emailData = {
-        from: 'Spoodle Bug Reports <taneja.seher@gmail.com>',
-        to: ['spoodlebugs@gmail.com'],
+        from: 'Spoodle Bug Reports <onboarding@resend.dev>',
+        to: ['seher@spoodle.co'],
         subject: `[${severityLabels[data.severity as keyof typeof severityLabels]}] Bug Report: ${data.title}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -122,6 +139,7 @@ This bug report was submitted through the Spoodle mobile application.
 
       const result = await this.resend.emails.send(emailData);
       console.log('✅ Bug report email sent successfully via Resend:', result);
+      console.log('📧 Resend API Response:', JSON.stringify(result, null, 2));
       return true;
     } catch (error) {
       console.error('❌ Failed to send bug report email via Resend:', error);
@@ -137,8 +155,8 @@ This bug report was submitted through the Spoodle mobile application.
     try {
       // Test Resend connection by sending a simple test email
       const result = await this.resend.emails.send({
-        from: 'Spoodle Bug Reports <taneja.seher@gmail.com>',
-        to: ['spoodlebugs@gmail.com'],
+        from: 'Spoodle Bug Reports <onboarding@resend.dev>',
+        to: ['seher@spoodle.co'],
         subject: 'Test Email from Spoodle',
         html: '<p>This is a test email to verify Resend connection.</p>',
       });

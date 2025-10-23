@@ -13,6 +13,9 @@ const createBugReportSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
   description: z.string().min(1, 'Description is required').max(2000, 'Description too long'),
   severity: z.enum(['low', 'medium', 'high', 'critical']),
+  category: z.string().min(1, 'Category is required').max(100, 'Category too long'),
+  deviceInfo: z.string().optional(),
+  appVersion: z.string().optional(),
   reporterEmail: z.string().email().optional()
 });
 
@@ -90,27 +93,73 @@ router.post('/',
   validateRequest({ body: createBugReportSchema }),
   async (req: Request, res: Response) => {
     try {
-      const { title, description, severity, reporterEmail } = req.body;
-      
-      const newBugReport = await prisma.bugReport.create({
-        data: {
-          id: uuidv4(),
-          title,
-          description,
-          severity,
-          reporterId: req.user?.id || null,
-          reporterEmail: reporterEmail || req.user?.email || null
-        }
+      console.log('🐛 Bug report submission received:', {
+        title: req.body.title,
+        severity: req.body.severity,
+        category: req.body.category,
+        user: req.user?.email || 'No user',
+        hasAuthHeader: !!req.headers.authorization,
+        authToken: req.headers.authorization ? req.headers.authorization.substring(0, 20) + '...' : 'No token',
+        timestamp: new Date().toISOString()
       });
+      
+      const { title, description, severity, category, deviceInfo, appVersion, reporterEmail } = req.body;
+      
+      // Try to create the bug report in database, but don't fail if it doesn't work
+      let bugReportId = null;
+      try {
+        // First, check if the user exists in pet_owners table, if not create them
+        let petOwner = await prisma.pet_owners.findUnique({
+          where: { email: req.user?.email || reporterEmail }
+        });
+        
+        if (!petOwner && req.user) {
+          // Create pet_owner record if it doesn't exist
+          petOwner = await prisma.pet_owners.create({
+            data: {
+              id: uuidv4(),
+              email: req.user.email,
+              password: 'temp_password', // This will be updated when they set a proper password
+              firstName: req.user.firstName,
+              lastName: req.user.lastName,
+              phone: req.user.phone || null,
+              address: req.user.address || null
+            }
+          });
+        }
+        
+        if (petOwner) {
+          const newBugReport = await prisma.bugReport.create({
+            data: {
+              id: uuidv4(),
+              petOwnerId: petOwner.id,
+              title,
+              description,
+              severity,
+              category,
+              deviceInfo: deviceInfo || null,
+              appVersion: appVersion || null,
+              status: 'pending',
+              priority: severity === 'critical' ? 'high' : severity === 'high' ? 'medium' : 'low'
+            }
+          });
+          bugReportId = newBugReport.id;
+          console.log('✅ Bug report saved to database:', bugReportId);
+        }
+      } catch (dbError) {
+        console.log('⚠️ Database save failed, but continuing with email:', dbError.message);
+        // Continue with email sending even if database save fails
+      }
 
       // Send email notification
       try {
+        console.log('📧 Attempting to send email for bug report:', title);
         const emailSent = await emailService.sendBugReport({
           title,
           description,
           severity,
-          reporterEmail: reporterEmail || req.user?.email || null,
-          reporterName: req.user ? `${req.user.firstName} ${req.user.lastName}` : null,
+          reporterEmail: reporterEmail || req.user?.email || 'seher@spoodle.co',
+          reporterName: req.user ? `${req.user.firstName} ${req.user.lastName}` : 'Mobile App User',
           timestamp: new Date().toLocaleString()
         });
 
@@ -126,8 +175,10 @@ router.post('/',
       
       res.status(201).json({
         success: true,
-        data: newBugReport,
-        message: 'Bug report created and email notification sent successfully'
+        data: { id: bugReportId, title, description, severity, category },
+        message: bugReportId 
+          ? 'Bug report created and email notification sent successfully'
+          : 'Bug report email sent successfully (database save failed)'
       });
     } catch (error) {
       console.error('Create bug report error:', error);
@@ -235,7 +286,7 @@ router.post('/test-email', async (req: Request, res: Response) => {
     if (emailSent) {
       res.status(200).json({
         success: true,
-        message: 'Test email sent successfully! Check spoodlebugs@gmail.com'
+        message: 'Test email sent successfully! Check seher@spoodle.co'
       });
     } else {
       res.status(500).json({
