@@ -8,7 +8,7 @@ const getApiBaseUrl = () => {
   if (__DEV__) {
     // IMPORTANT: If testing on a physical device, uncomment the line below
     // and replace with your computer's IP address (find it with: ipconfig getifaddr en0 on Mac)
-    // return "http://YOUR_COMPUTER_IP:3001/api";
+    return "http://10.123.0.79:3002/api";
     
     if (Platform.OS === "android") {
       // Android emulator
