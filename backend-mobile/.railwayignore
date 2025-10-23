@@ -1,0 +1,59 @@
+# Railway Ignore File
+# Files and directories to exclude from Railway deployments
+
+# Development files
+*.md
+.git
+.gitignore
+.env.example
+
+# Test files
+test/
+tests/
+__tests__/
+*.test.ts
+*.spec.ts
+
+# Documentation
+docs/
+*.md
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Scripts not needed in production
+check-*.ts
+check-*.cjs
+debug-*.ts
+fix-*.ts
+fix-*.cjs
+drop-*.cjs
+clean-*.cjs
+create-tables.js
+test-*.ts
+test-*.js
+
+# Certificates (should be in env vars)
+certs/
+
+# Build artifacts will be rebuilt
+node_modules/
+dist/
+
+# Local uploads (use cloud storage in production)
+uploads/**
+!uploads/.gitkeep
+
+# Setup instructions
+SETUP_INSTRUCTIONS.md
+

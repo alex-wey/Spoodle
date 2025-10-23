@@ -28,5 +28,35 @@
     "address": "789 Pine Road, Riverside, ST 13579",
     "createdAt": "2025-10-21T01:45:11.687Z",
     "updatedAt": "2025-10-21T01:45:11.687Z"
+  },
+  {
+    "petOwnerId": "user-1",
+    "username": "Sarah Johnson",
+    "email": "sarah.johnson@email.com",
+    "password": "$2a$12$yDxDF0QBHs7/AkrIdqUKSODZOL5dU/xjiIvnWb6p/2Qja9CLH3pPu",
+    "phoneNumber": "(555) 123-4567",
+    "address": "123 Main Street, Anytown, ST 12345",
+    "createdAt": "2025-10-22T00:38:02.855Z",
+    "updatedAt": "2025-10-22T00:38:02.855Z"
+  },
+  {
+    "petOwnerId": "user-2",
+    "username": "Michael Chen",
+    "email": "michael.chen@email.com",
+    "password": "$2a$12$yDxDF0QBHs7/AkrIdqUKSODZOL5dU/xjiIvnWb6p/2Qja9CLH3pPu",
+    "phoneNumber": "(555) 234-5678",
+    "address": "456 Oak Avenue, Springfield, ST 67890",
+    "createdAt": "2025-10-22T00:38:02.856Z",
+    "updatedAt": "2025-10-22T00:38:02.856Z"
+  },
+  {
+    "petOwnerId": "user-3",
+    "username": "Emma Wilson",
+    "email": "emma.wilson@email.com",
+    "password": "$2a$12$yDxDF0QBHs7/AkrIdqUKSODZOL5dU/xjiIvnWb6p/2Qja9CLH3pPu",
+    "phoneNumber": "(555) 345-6789",
+    "address": "789 Pine Road, Riverside, ST 13579",
+    "createdAt": "2025-10-22T00:38:02.856Z",
+    "updatedAt": "2025-10-22T00:38:02.856Z"
   }
 ]

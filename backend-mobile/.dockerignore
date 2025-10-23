@@ -1,0 +1,49 @@
+# Docker Ignore File (in case Railway uses Docker builder)
+
+node_modules
+npm-debug.log
+dist
+.git
+.gitignore
+.env
+.env.local
+.env.*.local
+README.md
+*.md
+
+# Development files
+test/
+tests/
+__tests__/
+*.test.ts
+*.spec.ts
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Scripts
+check-*.ts
+check-*.cjs
+debug-*.ts
+fix-*.ts
+fix-*.cjs
+drop-*.cjs
+clean-*.cjs
+create-tables.js
+test-*.ts
+test-*.js
+
+# Uploads (use cloud storage)
+uploads/**
+!uploads/.gitkeep
+

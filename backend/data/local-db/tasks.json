@@ -45,5 +45,52 @@
     "notes": "Give with food to prevent stomach upset",
     "createdAt": "2025-10-21T01:45:11.692Z",
     "updatedAt": "2025-10-21T01:45:11.692Z"
+  },
+  {
+    "taskId": "task-1",
+    "petId": "pet-1",
+    "ownerId": "user-1",
+    "type": "walk",
+    "title": "Morning walk",
+    "description": "30-minute walk around the neighborhood",
+    "scheduledTime": "2024-12-20T07:00:00Z",
+    "completionStatus": false,
+    "recurring": true,
+    "recurrencePattern": "daily",
+    "notes": "",
+    "createdAt": "2025-10-22T00:38:02.860Z",
+    "updatedAt": "2025-10-22T00:38:02.860Z"
+  },
+  {
+    "taskId": "task-2",
+    "petId": "pet-2",
+    "ownerId": "user-2",
+    "type": "feed",
+    "title": "Evening feeding",
+    "description": "Wet food meal",
+    "scheduledTime": "2024-12-20T18:00:00Z",
+    "completionStatus": true,
+    "completedAt": "2024-12-20T18:05:00Z",
+    "completedBy": "michael_chen",
+    "recurring": true,
+    "recurrencePattern": "daily",
+    "notes": "Ate well, finished entire portion",
+    "createdAt": "2025-10-22T00:38:02.860Z",
+    "updatedAt": "2025-10-22T00:38:02.860Z"
+  },
+  {
+    "taskId": "task-3",
+    "petId": "pet-3",
+    "ownerId": "user-3",
+    "type": "medicate",
+    "title": "Heartworm prevention",
+    "description": "Monthly heartworm tablet",
+    "scheduledTime": "2024-12-25T09:00:00Z",
+    "completionStatus": false,
+    "recurring": true,
+    "recurrencePattern": "monthly",
+    "notes": "Give with food to prevent stomach upset",
+    "createdAt": "2025-10-22T00:38:02.860Z",
+    "updatedAt": "2025-10-22T00:38:02.860Z"
   }
 ]
