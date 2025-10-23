@@ -1,16 +1,23 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
-import { MessageCircle, Dog } from "lucide-react-native";
+import { useState, useEffect } from "react";
+import { MessageCircle, Dog, Clock } from "lucide-react-native";
 import { usePetStore } from "../../store/pets";
+import { useChatStore } from "../../store/chat";
 import PetSelectionModal from "../../components/PetSelectionModal";
 import ChatInterfaceModal from "../../components/ChatInterfaceModal";
 
 export default function ChatScreen() {
   const { pets } = usePetStore();
+  const { chatSessions, loadChatSessions } = useChatStore();
   const [petSelectionVisible, setPetSelectionVisible] = useState(false);
   const [chatInterfaceVisible, setChatInterfaceVisible] = useState(false);
   const [selectedPet, setSelectedPet] = useState<any>(null);
+
+  useEffect(() => {
+    // Load chat sessions when component mounts
+    loadChatSessions();
+  }, []);
 
   const handleStartChat = () => {
     if (pets.length === 0) {
@@ -25,6 +32,21 @@ export default function ChatScreen() {
     setPetSelectionVisible(false);
     // Skip intro modal and go directly to chat interface
     setChatInterfaceVisible(true);
+  };
+
+  const handleResumeChat = (pet: any) => {
+    setSelectedPet(pet);
+    setChatInterfaceVisible(true);
+  };
+
+  const formatLastActivity = (date: Date) => {
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+    return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
 
   return (
@@ -60,6 +82,37 @@ export default function ChatScreen() {
             <Text style={styles.noPetsDescription}>
               Add a pet to start chatting with Spoodle about their care
             </Text>
+          </View>
+        )}
+
+        {/* Active Chat Sessions */}
+        {Object.keys(chatSessions).length > 0 && (
+          <View style={styles.activeChatsSection}>
+            <Text style={styles.activeChatsTitle}>Continue Previous Chats</Text>
+            {Object.values(chatSessions).map((session) => (
+              <TouchableOpacity
+                key={session.petId}
+                style={styles.chatSessionCard}
+                onPress={() => handleResumeChat({ id: session.petId, name: session.petName })}
+              >
+                <View style={styles.chatSessionInfo}>
+                  <View style={styles.chatSessionHeader}>
+                    <Dog size={20} color="#4559A7" />
+                    <Text style={styles.chatSessionPetName}>{session.petName}</Text>
+                  </View>
+                  <View style={styles.chatSessionMeta}>
+                    <Clock size={14} color="#6B7280" />
+                    <Text style={styles.chatSessionTime}>
+                      {formatLastActivity(session.lastActivity)}
+                    </Text>
+                    <Text style={styles.chatSessionCount}>
+                      {session.messages.length} messages
+                    </Text>
+                  </View>
+                </View>
+                <MessageCircle size={20} color="#4559A7" />
+              </TouchableOpacity>
+            ))}
           </View>
         )}
 
@@ -215,6 +268,58 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#4559A7",
     textAlign: "center",
+  },
+  activeChatsSection: {
+    marginBottom: 32,
+  },
+  activeChatsTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#4559A7",
+    marginBottom: 16,
+  },
+  chatSessionCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#ADD7EB",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  chatSessionInfo: {
+    flex: 1,
+  },
+  chatSessionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  chatSessionPetName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#4559A7",
+    marginLeft: 8,
+  },
+  chatSessionMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  chatSessionTime: {
+    fontSize: 12,
+    color: "#6B7280",
+  },
+  chatSessionCount: {
+    fontSize: 12,
+    color: "#6B7280",
   },
   featuresSection: {
     marginBottom: 32,

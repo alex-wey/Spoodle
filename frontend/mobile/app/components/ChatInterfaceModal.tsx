@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -12,18 +12,12 @@ import {
 } from 'react-native';
 import { X, Send, User } from 'lucide-react-native';
 import { useAuthStore } from '../store/auth';
+import { useChatStore, Message } from '../store/chat';
 
 interface Pet {
   id: string;
   name: string;
   species: string;
-}
-
-interface Message {
-  id: string;
-  text: string;
-  isUser: boolean;
-  timestamp: Date;
 }
 
 interface ChatInterfaceModalProps {
@@ -40,16 +34,33 @@ export default function ChatInterfaceModal({
   petId,
 }: ChatInterfaceModalProps) {
   const token = useAuthStore((state) => state.token);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: `Hello! I'm Spoodle, your AI assistant for ${petName}. How can I help you today?`,
-      isUser: false,
-      timestamp: new Date(),
-    },
-  ]);
+  const { 
+    chatSessions, 
+    initializeChatSession, 
+    addMessage, 
+    setCurrentPet,
+    loadChatSessions 
+  } = useChatStore();
+  
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Get current chat session
+  const currentSession = chatSessions[petId];
+  const messages = currentSession?.messages || [];
+
+  useEffect(() => {
+    // Load chat sessions when component mounts
+    loadChatSessions();
+  }, []);
+
+  useEffect(() => {
+    if (visible && petId) {
+      // Initialize chat session for this pet when modal opens
+      initializeChatSession(petId, petName);
+      setCurrentPet(petId);
+    }
+  }, [visible, petId, petName]);
 
   const handleSendMessage = async () => {
     if (inputText.trim() && !isLoading) {
@@ -60,7 +71,8 @@ export default function ChatInterfaceModal({
         timestamp: new Date(),
       };
       
-      setMessages(prev => [...prev, userMessage]);
+      // Add user message to chat session
+      addMessage(petId, userMessage);
       setInputText('');
       setIsLoading(true);
       
@@ -87,7 +99,8 @@ export default function ChatInterfaceModal({
             isUser: false,
             timestamp: new Date(),
           };
-          setMessages(prev => [...prev, aiResponse]);
+          // Add AI response to chat session
+          addMessage(petId, aiResponse);
         } else {
           throw new Error(data.message || 'Failed to get response from chatbot');
         }
@@ -99,7 +112,8 @@ export default function ChatInterfaceModal({
           isUser: false,
           timestamp: new Date(),
         };
-        setMessages(prev => [...prev, errorResponse]);
+        // Add error response to chat session
+        addMessage(petId, errorResponse);
       } finally {
         setIsLoading(false);
       }
@@ -124,7 +138,7 @@ export default function ChatInterfaceModal({
       <SafeAreaView style={styles.container}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Chat with Spoodle</Text>
+            <Text style={styles.modalTitle}>Chat with Spoodle - {petName}</Text>
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
               <X size={24} color="#4559A7" />
             </TouchableOpacity>

@@ -256,41 +256,73 @@ router.delete('/me', authenticateToken, async (req: Request, res: Response) => {
       });
     }
 
+    console.log(`🗑️ Starting complete account deletion for user: ${req.user.id}`);
+
     // Delete all user-related data in the correct order to respect foreign key constraints
-    // 1. Delete documents
-    await prisma.document.deleteMany({
+    // 1. Delete bug reports
+    await prisma.bugReport.deleteMany({
+      where: { petOwnerId: req.user.id }
+    });
+    console.log('✅ Deleted bug reports');
+
+    // 2. Delete medical records
+    await prisma.medical_records.deleteMany({
       where: { ownerId: req.user.id }
     });
+    console.log('✅ Deleted medical records');
 
-    // 2. Delete tasks (these are related to pets)
-    await prisma.task.deleteMany({
+    // 3. Delete appointments
+    await prisma.appointments.deleteMany({
       where: { 
-        pet: {
+        pets: {
           ownerId: req.user.id
         }
       }
     });
+    console.log('✅ Deleted appointments');
 
-    // 3. Delete pets
+    // 4. Delete documents
+    await prisma.document.deleteMany({
+      where: { ownerId: req.user.id }
+    });
+    console.log('✅ Deleted documents');
+
+    // 5. Delete tasks
+    await prisma.task.deleteMany({
+      where: { ownerId: req.user.id }
+    });
+    console.log('✅ Deleted tasks');
+
+    // 6. Delete pets (this will cascade delete related data due to foreign key constraints)
     await prisma.pet.deleteMany({
       where: { ownerId: req.user.id }
     });
+    console.log('✅ Deleted pets');
 
-    // 4. Delete user
+    // 7. Delete pet_owners record if it exists
+    await prisma.pet_owners.deleteMany({
+      where: { id: req.user.id }
+    });
+    console.log('✅ Deleted pet_owners record');
+
+    // 8. Finally, delete the user
     await prisma.user.delete({
       where: { id: req.user.id }
     });
+    console.log('✅ Deleted user account');
+
+    console.log(`🎉 Complete account deletion successful for user: ${req.user.id}`);
     
     res.json({
       success: true,
-      message: 'Account deleted successfully'
+      message: 'Account and all related data deleted successfully'
     });
   } catch (error) {
-    console.error('Delete account error:', error);
+    console.error('❌ Delete account error:', error);
     res.status(500).json({
       success: false,
       error: 'Server error',
-      message: 'Unable to delete account'
+      message: 'Unable to delete account. Please try again or contact support.'
     });
   }
 });

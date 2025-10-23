@@ -1,7 +1,7 @@
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, Platform, Alert, Image } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState, useEffect } from "react";
-import { Plus, Bug, LogOut, Dog } from "lucide-react-native";
+import { Plus, Bug, Dog } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { usePetStore } from "../../store/pets";
 import { useAuthStore } from "../../store/auth";
@@ -10,11 +10,11 @@ import { useDocumentStore } from "../../store/documents";
 import { getGreeting } from "../../lib/utils";
 import { PetCard } from "./[id]/components/PetCard";
 import { FAB } from "../../components/FAB";
+import type { Pet } from "../../types";
 
 export default function PetsScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
-  const { logout } = useAuthStore();
   const { pets, fetchPets, isLoading, error, clearPets } = usePetStore();
   const { clearTasks } = useTaskStore();
   const { clearDocuments } = useDocumentStore();
@@ -43,36 +43,6 @@ export default function PetsScreen() {
   const handleEditPet = (petId: string) => {
     // Navigate to add pet page in edit mode
     router.push(`/pets/add?editId=${petId}`);
-  };
-
-  const handleLogout = () => {
-    console.log('🔴 LOGOUT BUTTON CLICKED - handleLogout function called');
-    
-    // For testing - direct logout without confirmation
-    console.log('🚪 Starting direct logout process...');
-    
-    // Clear all stores first
-    clearPets();
-    clearTasks();
-    clearDocuments();
-    console.log('✅ All stores cleared');
-    
-    // Clear auth data
-    logout().then(() => {
-      console.log('✅ Auth logout completed');
-      // Force redirect to landing page
-      console.log('🚪 Redirecting to landing page...');
-      // Try multiple redirect methods to ensure it works
-      setTimeout(() => {
-        router.replace("/(auth)/landing");
-      }, 100);
-    }).catch((error) => {
-      console.error('❌ Logout error:', error);
-      // Even if logout fails, force redirect
-      setTimeout(() => {
-        router.replace("/(auth)/landing");
-      }, 100);
-    });
   };
 
   if (isLoading && pets.length === 0) {
@@ -115,16 +85,6 @@ export default function PetsScreen() {
               <Text style={styles.greeting}>{getGreeting()},</Text>
               <Text style={styles.userName}>{user?.firstName || "Pet Parent"}!</Text>
             </View>
-            <TouchableOpacity
-              onPress={() => {
-                console.log('🔴 LOGOUT TOUCHABLE OPACITY PRESSED');
-                handleLogout();
-              }}
-              style={styles.logoutButton}
-              activeOpacity={0.5}
-            >
-              <LogOut size={24} color="#6B7280" />
-            </TouchableOpacity>
           </View>
           <Text style={styles.subtitle}>How are your pets doing today?</Text>
         </View>
@@ -162,7 +122,6 @@ export default function PetsScreen() {
                   pet={pet}
                   onPress={() => handlePetPress(pet.id)}
                   onPetRecords={() => handlePetRecords(pet.id)}
-                  onEditPet={() => handleEditPet(pet.id)}
                 />
               ))}
 
@@ -234,13 +193,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
     color: "#4559A7",
-  },
-  logoutButton: {
-    padding: 12,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   subtitle: {
     fontSize: 14,

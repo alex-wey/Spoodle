@@ -177,7 +177,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.log("🗑️ Auth store: Starting account deletion...");
       
       // Call the delete account API
-      await apiClient.deleteAccount();
+      const response = await apiClient.deleteAccount();
+      
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to delete account');
+      }
       
       // Clear state immediately
       set({

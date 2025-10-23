@@ -1,5 +1,5 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
-import { FileText, ChevronRight, Settings } from "lucide-react-native";
+import { FileText, ChevronRight } from "lucide-react-native";
 import type { Pet } from "../../../../types";
 import { getPetAgeString, getGenderSymbol, calculateAge } from "../../../../lib/utils";
 import { getSafeImageSource } from "../../../../lib/imageUtils";
@@ -8,10 +8,9 @@ interface PetCardProps {
   pet: Pet;
   onPress: () => void;
   onPetRecords: () => void;
-  onEditPet: () => void;
 }
 
-export function PetCard({ pet, onPress, onPetRecords, onEditPet }: PetCardProps) {
+export function PetCard({ pet, onPress, onPetRecords }: PetCardProps) {
   const genderColor = pet.gender === "female" ? "#EC4899" : "#3B82F6";
   const petAge = pet.dateOfBirth ? calculateAge(pet.dateOfBirth) : 0;
   
@@ -41,15 +40,6 @@ export function PetCard({ pet, onPress, onPetRecords, onEditPet }: PetCardProps)
           )}
         </View>
         <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={(e) => {
-              e.stopPropagation();
-              onEditPet();
-            }}
-          >
-            <Settings size={18} color="#FFFFFF" />
-          </TouchableOpacity>
           <ChevronRight size={20} color="rgba(255, 255, 255, 0.7)" />
         </View>
       </View>

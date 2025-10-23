@@ -76,13 +76,23 @@ export default function SettingsScreen() {
                   onPress: async () => {
                     try {
                       await deleteAccount();
-                      // Navigate to landing page after successful deletion
-                      router.replace("/(auth)/landing");
+                      // Show success message
+                      Alert.alert(
+                        "Account Deleted",
+                        "Your account and all associated data have been permanently deleted.",
+                        [
+                          {
+                            text: "OK",
+                            onPress: () => router.replace("/(auth)/landing")
+                          }
+                        ]
+                      );
                     } catch (error) {
                       console.error("Error deleting account:", error);
                       Alert.alert(
-                        "Error",
-                        "Failed to delete account. Please try again."
+                        "Deletion Failed",
+                        error instanceof Error ? error.message : "Failed to delete account. Please try again or contact support.",
+                        [{ text: "OK" }]
                       );
                     }
                   }

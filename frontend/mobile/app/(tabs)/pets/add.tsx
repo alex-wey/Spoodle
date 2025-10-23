@@ -30,7 +30,24 @@ export default function AddPetScreen() {
   const [petImage, setPetImage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Populate form with existing pet data when in edit mode
+  // Reset form to initial state
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      species: '',
+      breed: '',
+      gender: '',
+      dateOfBirth: '',
+      weight: '',
+      microchipId: '',
+      allergies: '',
+      dietaryRestrictions: '',
+      notes: ''
+    });
+    setPetImage(null);
+  };
+
+  // Populate form with existing pet data when in edit mode, or reset for new pet
   useEffect(() => {
     if (isEditMode && existingPet) {
       setFormData({
@@ -46,8 +63,18 @@ export default function AddPetScreen() {
         notes: existingPet.notes || ''
       });
       setPetImage(existingPet.imageUrl || null);
+    } else {
+      // Reset form for new pet
+      resetForm();
     }
   }, [isEditMode, existingPet]);
+
+  // Reset form when component mounts for adding a new pet
+  useEffect(() => {
+    if (!isEditMode) {
+      resetForm();
+    }
+  }, []);
 
   const convertUriToBase64 = async (uri: string): Promise<string> => {
     try {
@@ -158,7 +185,10 @@ export default function AddPetScreen() {
       } else {
         await addPet(petData);
         Alert.alert('Success', 'Pet added successfully!', [
-          { text: 'OK', onPress: () => router.back() }
+          { text: 'OK', onPress: () => {
+            resetForm(); // Reset form after successful addition
+            router.back();
+          }}
         ]);
       }
     } catch (error) {

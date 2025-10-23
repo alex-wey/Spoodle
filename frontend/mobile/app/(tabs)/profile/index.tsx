@@ -7,7 +7,9 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Alert,
+  Platform,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   User, 
   Mail, 
@@ -37,7 +39,7 @@ export default function ProfileScreen() {
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const { user, logout } = useAuthStore();
+  const { user, logout, deleteAccount } = useAuthStore();
   const { pets: petsFromStore, clearPets } = usePetStore();
   const { clearTasks } = useTaskStore();
   const { clearDocuments } = useDocumentStore();
@@ -102,69 +104,93 @@ export default function ProfileScreen() {
   };
 
   const handleDeleteAccount = async () => {
-    Alert.alert(
-      'Delete Account',
-      'Are you sure you want to permanently delete your account? This action cannot be undone and will remove all your data including pets, documents, and tasks.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete Account', 
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert(
-              'Final Confirmation',
-              'This is your last chance to cancel. Are you absolutely sure you want to delete your account?',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Yes, Delete Forever',
-                  style: 'destructive',
-                  onPress: async () => {
-                    try {
-                      setLoading(true);
-                      console.log('🗑️ Starting account deletion process...');
-                      
-                      // Call the delete account API
-                      const response = await fetch('http://localhost:3002/api/auth/me', {
-                        method: 'DELETE',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': `Bearer ${user?.token || ''}`,
-                        },
-                      });
-
-                      if (response.ok) {
-                        console.log('✅ Account deleted successfully');
-                        
-                        // Clear all stores
-                        clearPets();
-                        clearTasks();
-                        clearDocuments();
-                        
-                        // Clear auth data
-                        logout().then(() => {
-                          console.log('✅ Auth cleared after account deletion');
-                          router.replace("/(auth)/landing");
-                        });
-                      } else {
-                        const errorData = await response.json();
-                        console.error('❌ Account deletion failed:', errorData);
-                        Alert.alert('Error', errorData.message || 'Failed to delete account. Please try again.');
-                      }
-                    } catch (error) {
-                      console.error('❌ Account deletion error:', error);
-                      Alert.alert('Error', 'Failed to delete account. Please check your connection and try again.');
-                    } finally {
-                      setLoading(false);
-                    }
+    console.log('🔴 Delete Account button pressed!');
+    
+    // For web compatibility, use window.confirm instead of Alert.alert
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Are you sure you want to permanently delete your account? This action cannot be undone and will remove all your data including pets, documents, and tasks.');
+      if (!confirmed) return;
+      
+      const finalConfirmed = window.confirm('This is your last chance to cancel. Are you absolutely sure you want to delete your account?');
+      if (!finalConfirmed) return;
+    } else {
+      Alert.alert(
+        'Delete Account',
+        'Are you sure you want to permanently delete your account? This action cannot be undone and will remove all your data including pets, documents, and tasks.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Delete Account', 
+            style: 'destructive',
+            onPress: () => {
+              Alert.alert(
+                'Final Confirmation',
+                'This is your last chance to cancel. Are you absolutely sure you want to delete your account?',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Yes, Delete Forever',
+                    style: 'destructive',
+                    onPress: () => executeDeletion()
                   }
-                }
-              ]
-            );
+                ]
+              );
+            }
           }
-        }
-      ]
-    );
+        ]
+      );
+      return;
+    }
+    
+    // Execute the deletion
+    await executeDeletion();
+  };
+
+  const executeDeletion = async () => {
+    try {
+      setLoading(true);
+      console.log('🗑️ Starting account deletion process...');
+      
+      // Use the auth store deleteAccount method
+      await deleteAccount();
+      
+      console.log('✅ Account deleted successfully');
+      
+      // Clear all stores
+      clearPets();
+      clearTasks();
+      clearDocuments();
+      
+      // Show success message and navigate to landing
+      if (Platform.OS === 'web') {
+        alert('Your account and all associated data have been permanently deleted.');
+        router.replace('/(auth)/landing');
+      } else {
+        Alert.alert(
+          'Account Deleted',
+          'Your account and all associated data have been permanently deleted.',
+          [
+            {
+              text: 'OK',
+              onPress: () => router.replace('/(auth)/landing')
+            }
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('❌ Account deletion error:', error);
+      if (Platform.OS === 'web') {
+        alert(`Deletion Failed: ${error instanceof Error ? error.message : 'Failed to delete account. Please try again or contact support.'}`);
+      } else {
+        Alert.alert(
+          'Deletion Failed',
+          error instanceof Error ? error.message : 'Failed to delete account. Please try again or contact support.',
+          [{ text: 'OK' }]
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatJoinDate = (date: Date) => {
@@ -199,43 +225,6 @@ export default function ProfileScreen() {
               <Text style={styles.profileEmail}>{profile.email}</Text>
             </View>
           </View>
-        </View>
-
-        {/* Pet Summary Card */}
-        <View style={styles.petSummaryCard}>
-          <View style={styles.petSummaryHeader}>
-            <View style={styles.petSummaryIconContainer}>
-              <Heart size={28} color="#8B5CF6" />
-            </View>
-            <View style={styles.petSummaryInfo}>
-              <Text style={styles.petSummaryTitle}>My Pets</Text>
-              <Text style={styles.petSummarySubtitle}>
-                {pets.length} {pets.length === 1 ? 'pet' : 'pets'} registered
-              </Text>
-            </View>
-          </View>
-          {pets.length > 0 && (
-            <View style={styles.petList}>
-              {pets.slice(0, 3).map((pet, index) => (
-                <View key={pet.id} style={styles.petItem}>
-                  <View style={styles.petAvatar}>
-                    <Text style={styles.petInitial}>
-                      {pet.name.charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-                  <View style={styles.petDetails}>
-                    <Text style={styles.petName}>{pet.name}</Text>
-                    <Text style={styles.petBreed}>{pet.breed || 'Mixed Breed'}</Text>
-                  </View>
-                </View>
-              ))}
-              {pets.length > 3 && (
-                <Text style={styles.morePetsText}>
-                  +{pets.length - 3} more pets
-                </Text>
-              )}
-            </View>
-          )}
         </View>
 
         {/* Contact Information */}
@@ -323,6 +312,21 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* Spoodle Team Contact Information */}
+        <View style={styles.contactCard}>
+          <Text style={styles.contactTitle}>Spoodle Team Contact Information</Text>
+          
+          <View style={styles.contactItem}>
+            <View style={styles.contactIconContainer}>
+              <Mail size={20} color="#4559A7" />
+            </View>
+            <View style={styles.contactDetails}>
+              <Text style={styles.contactValue}>spoodlebugs@gmail.com</Text>
+              <Text style={styles.contactLabel}>Email Address</Text>
+            </View>
+          </View>
+        </View>
+
         {/* Account Actions */}
         <View style={styles.actionsCard}>
           <TouchableOpacity 
@@ -338,7 +342,10 @@ export default function ProfileScreen() {
 
           <TouchableOpacity 
             style={[styles.actionItem, { backgroundColor: '#FEF7F7', borderRadius: 8, marginTop: 8, borderWidth: 1, borderColor: '#FED7D7' }]} 
-            onPress={handleDeleteAccount}
+            onPress={() => {
+              console.log('🔴 Delete Account TouchableOpacity pressed!');
+              handleDeleteAccount();
+            }}
             activeOpacity={0.5}
           >
             <View style={[styles.actionIconContainer, { backgroundColor: '#F56565' }]}>
@@ -418,92 +425,6 @@ const styles = StyleSheet.create({
   profileEmail: {
     fontSize: 14,
     color: '#4559A7',
-  },
-  petSummaryCard: {
-    marginHorizontal: 20,
-    marginBottom: 20,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  petSummaryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  petSummaryIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#ADD7EB',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  petSummaryInfo: {
-    flex: 1,
-  },
-  petSummaryTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#4559A7',
-    marginBottom: 2,
-  },
-  petSummarySubtitle: {
-    fontSize: 14,
-    color: '#4559A7',
-  },
-  petList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  petItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ADD7EB',
-    padding: 12,
-    borderRadius: 12,
-    minWidth: '45%',
-  },
-  petAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#4559A7',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  petInitial: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  petDetails: {
-    flex: 1,
-  },
-  petName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4559A7',
-    marginBottom: 2,
-  },
-  petBreed: {
-    fontSize: 12,
-    color: '#4559A7',
-  },
-  morePetsText: {
-    fontSize: 12,
-    color: '#4559A7',
-    fontStyle: 'italic',
-    alignSelf: 'center',
-    marginTop: 8,
   },
   contactCard: {
     marginHorizontal: 20,
