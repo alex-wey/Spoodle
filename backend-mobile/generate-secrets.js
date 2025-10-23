@@ -9,7 +9,7 @@
  * Usage: node generate-secrets.js
  */
 
-const crypto = require('crypto');
+import crypto from 'crypto';
 
 console.log('\n🔐 Generating Secure Secrets for Production\n');
 console.log('═'.repeat(60));
