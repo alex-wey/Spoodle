@@ -1,28 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
+import { config } from "../config/env";
 
-// For iOS Simulator, use localhost
-// For Android Emulator, use 10.0.2.2 (special alias to host machine)
-// For physical devices, use your computer's IP address
-const getApiBaseUrl = () => {
-  if (__DEV__) {
-    // IMPORTANT: If testing on a physical device, uncomment the line below
-    // and replace with your computer's IP address (find it with: ipconfig getifaddr en0 on Mac)
-    return "http://10.123.0.79:3002/api";
-    
-    if (Platform.OS === "android") {
-      // Android emulator
-      return "http://10.0.2.2:3002/api";
-    } else {
-      // iOS simulator
-      return "http://localhost:3002/api";
-    }
-  }
-  // Production URL
-  return "https://api.spoodle.com/api";
-};
-
-const API_BASE_URL = getApiBaseUrl();
+// Use environment-based configuration
+// This will automatically use:
+// - Production Railway URL by default
+// - Local URL in development (if EXPO_PUBLIC_API_URL not set)
+// - Custom URL from .env file (if EXPO_PUBLIC_API_URL is set)
+const API_BASE_URL = config.apiUrl;
 const AUTH_TOKEN_KEY = "@spoodle:auth_token";
 
 /**
