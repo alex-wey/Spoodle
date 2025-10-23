@@ -25,11 +25,20 @@ export default function RootLayout() {
     // Initialize auth state and hide splash screen
     const prepare = async () => {
       try {
+        console.log('[App] Starting initialization...');
         await initAuth();
+        console.log('[App] Auth initialized successfully');
       } catch (e) {
         console.error("Failed to initialize auth:", e);
+        // Don't crash the app, just continue without auth
+        console.log('[App] Continuing without auth initialization');
       } finally {
-        await SplashScreen.hideAsync();
+        try {
+          await SplashScreen.hideAsync();
+          console.log('[App] Splash screen hidden');
+        } catch (splashError) {
+          console.error('[App] Error hiding splash:', splashError);
+        }
       }
     };
 
