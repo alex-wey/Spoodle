@@ -5,7 +5,6 @@ import { Plus, Bug, Dog } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { usePetStore } from "../../store/pets";
 import { useAuthStore } from "../../store/auth";
-import { useTaskStore } from "../../store/tasks";
 import { useDocumentStore } from "../../store/documents";
 import { getGreeting } from "../../lib/utils";
 import { PetCard } from "./[id]/components/PetCard";
@@ -16,7 +15,6 @@ export default function PetsScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const { pets, fetchPets, isLoading, error, clearPets } = usePetStore();
-  const { clearTasks } = useTaskStore();
   const { clearDocuments } = useDocumentStore();
   const [refreshing, setRefreshing] = useState(false);
   const insets = useSafeAreaInsets();

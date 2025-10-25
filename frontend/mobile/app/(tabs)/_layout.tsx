@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Dog, MessageCircle, Calendar, User } from "lucide-react-native";
+import { Dog, MessageCircle, User } from "lucide-react-native";
 import { useAuthStore } from "../store/auth";
 import { Redirect } from "expo-router";
 import { Platform } from "react-native";
@@ -49,25 +49,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="appointments/index"
-        options={{
-          title: "Task Calendar",
-          href: null, // Temporarily hidden from tab bar
-          tabBarIcon: ({ color, size }) => <Calendar size={24} color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="profile/index"
         options={{
           title: "Profile",
           href: "/(tabs)/profile",
           tabBarIcon: ({ color, size }) => <User size={24} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="notifications/index"
-        options={{
-          href: null, // Hide from tab bar
         }}
       />
       <Tabs.Screen
@@ -123,13 +109,6 @@ export default function TabLayout() {
         name="profile/edit"
         options={{
           href: null, // Hide from tab bar - accessible only via pen icon
-        }}
-      />
-      <Tabs.Screen
-        name="appointments/add"
-        options={{
-          href: null, // Hide from tab bar - accessible only via plus button
-          presentation: 'modal',
         }}
       />
     </Tabs>

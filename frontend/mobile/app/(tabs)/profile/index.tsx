@@ -23,7 +23,6 @@ import {
 } from 'lucide-react-native';
 import { useAuthStore } from '../../store/auth';
 import { usePetStore } from '../../store/pets';
-import { useTaskStore } from '../../store/tasks';
 import { useDocumentStore } from '../../store/documents';
 import { useRouter } from 'expo-router';
 
@@ -41,7 +40,6 @@ export default function ProfileScreen() {
 
   const { user, logout, deleteAccount } = useAuthStore();
   const { pets: petsFromStore, clearPets } = usePetStore();
-  const { clearTasks } = useTaskStore();
   const { clearDocuments } = useDocumentStore();
 
   useEffect(() => {
@@ -83,7 +81,6 @@ export default function ProfileScreen() {
           
           // Clear all stores first
           clearPets();
-          clearTasks();
           clearDocuments();
           console.log('✅ All stores cleared');
           
@@ -158,7 +155,6 @@ export default function ProfileScreen() {
       
       // Clear all stores
       clearPets();
-      clearTasks();
       clearDocuments();
       
       // Show success message and navigate to landing

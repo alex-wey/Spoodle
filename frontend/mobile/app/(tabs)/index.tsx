@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { router } from 'expo-router';
-import { ChevronRight, Plus, Settings, Heart, Calendar, FileText, MessageCircle, Bug } from 'lucide-react-native';
+import { ChevronRight, Plus, Settings, Heart, FileText, MessageCircle, Bug } from 'lucide-react-native';
 import { useAuthStore } from '../store/auth';
 import { usePetStore } from '../store/pets';
 import PetSelectionModal from '../components/PetSelectionModal';
@@ -76,13 +76,6 @@ export default function HomeScreen() {
   };
 
   const quickActions = [
-    {
-      id: 'appointments',
-      title: 'Task Calendar',
-      icon: Calendar,
-      color: '#4559A7',
-      onPress: () => router.push('/(tabs)/appointments'),
-    },
     {
       id: 'documents',
       title: 'Documents',
