@@ -1,14 +1,26 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { prisma } from '../index.js';
-import pool from '../lib/db.js';
-import { validateRequest, validationSchemas, commonSchemas } from '../middleware/validation.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { prisma } from '../index';
+import pool from '../lib/db';
+import { validateRequest, validationSchemas, commonSchemas } from '../middleware/validation';
+import { authenticateClerk } from '../middleware/auth';
+import { getUserFromClerkOrCreate } from '../services/userSync';
 
 const router = Router();
 
 // Apply authentication to all pet routes
-router.use(authenticateToken);
+router.use(authenticateClerk);
+
+// Helper function to get local user ID from Clerk user ID
+async function getLocalUserId(clerkUserId: string): Promise<string> {
+  const user = await getUserFromClerkOrCreate({
+    userId: clerkUserId,
+    email: '', // Will be filled by userSync
+    firstName: '',
+    lastName: ''
+  });
+  return user.id;
+}
 
 // Helper function to validate and clean image URLs
 function validateImageUrl(imageUrl: string | null | undefined): string | null {
@@ -38,7 +50,7 @@ function validateImageUrl(imageUrl: string | null | undefined): string | null {
 // Get all pets for the authenticated user
 router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
+    if (!req.auth) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -46,19 +58,20 @@ router.get('/', async (req: Request, res: Response) => {
       });
     }
 
+    const localUserId = await getLocalUserId(req.auth.userId);
     const pets = await prisma.pet.findMany({
-      where: { ownerId: req.user.id },
+      where: { ownerId: localUserId },
       orderBy: { createdAt: 'desc' }
     });
     
-    res.json({
+    return res.json({
       success: true,
       data: pets,
       message: 'Pets retrieved successfully'
     });
   } catch (error) {
     console.error('Get pets error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Server error',
       message: 'Unable to retrieve pets'
@@ -75,8 +88,8 @@ router.get('/:id',
       
       const pet = await prisma.pet.findFirst({
         where: { 
-          id,
-          ownerId: req.user!.id
+          id: id as string,
+          ownerId: req.auth!.userId
         }
       });
       
@@ -88,14 +101,14 @@ router.get('/:id',
         });
       }
       
-      res.json({
+      return res.json({
         success: true,
         data: pet,
         message: 'Pet retrieved successfully'
       });
     } catch (error) {
       console.error('Get pet error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to retrieve pet'
@@ -109,7 +122,7 @@ router.post('/',
   // validateRequest({ body: validationSchemas.createPet }), // TEMPORARILY DISABLED FOR DEBUGGING
   async (req: Request, res: Response) => {
     try {
-      if (!req.user) {
+      if (!req.auth) {
         return res.status(401).json({
           success: false,
           error: 'Authentication required',
@@ -124,7 +137,7 @@ router.post('/',
       
       // DEBUG: Log what we're trying to create
       console.log('🐕 Attempting to create pet:');
-      console.log('   Owner ID:', req.user.id);
+      console.log('   Owner ID:', req.auth.userId);
       console.log('   Pet Name:', petData.name);
       console.log('   Species:', petData.species);
       console.log('   Image URL:', cleanImageUrl ? 'Valid image URL provided' : 'No valid image URL');
@@ -141,7 +154,7 @@ router.post('/',
         ) RETURNING *`,
         [
           petId,
-          req.user.id,
+          req.auth.userId,
           petData.name,
           petData.species || 'Dog',
           petData.breed || null,
@@ -159,7 +172,7 @@ router.post('/',
       const newPet = result.rows[0];
       console.log('✅ Pet created successfully:', newPet.id);
       
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
         data: newPet,
         message: 'Pet created successfully'
@@ -169,7 +182,7 @@ router.post('/',
       console.error('Error name:', (error as any).name);
       console.error('Error message:', (error as any).message);
       console.error('Full error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to create pet'
@@ -191,8 +204,8 @@ router.put('/:id',
       // Check if pet exists and belongs to user
       const existingPet = await prisma.pet.findFirst({
         where: { 
-          id,
-          ownerId: req.user!.id
+          id: id as string,
+          ownerId: req.auth!.userId
         }
       });
       
@@ -216,18 +229,18 @@ router.put('/:id',
       }
 
       const updatedPet = await prisma.pet.update({
-        where: { id },
+        where: { id: id as string },
         data: updateData
       });
       
-      res.json({
+      return res.json({
         success: true,
         data: updatedPet,
         message: 'Pet updated successfully'
       });
     } catch (error) {
       console.error('Update pet error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to update pet'
@@ -246,8 +259,8 @@ router.delete('/:id',
       // Check if pet exists and belongs to user
       const existingPet = await prisma.pet.findFirst({
         where: { 
-          id,
-          ownerId: req.user!.id
+          id: id as string,
+          ownerId: req.auth!.userId
         }
       });
       
@@ -260,16 +273,16 @@ router.delete('/:id',
       }
 
       await prisma.pet.delete({
-        where: { id }
+        where: { id: id as string }
       });
       
-      res.json({
+      return res.json({
         success: true,
         message: 'Pet deleted successfully'
       });
     } catch (error) {
       console.error('Delete pet error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to delete pet'

@@ -8,9 +8,7 @@ import { PrismaClient } from '@prisma/client';
 // Import route modules
 import authRoutes from './routes/auth.js';
 import petsRoutes from './routes/pets.js';
-import tasksRoutes from './routes/tasks.js';
 import documentsRoutes from './routes/documents.js';
-import dashboardRoutes from './routes/dashboard.js';
 import setupRoutes from './routes/setup.js';
 import bugReportRoutes from './routes/bug-report.js';
 import chatbotRoutes from './routes/chatbot.js';
@@ -25,7 +23,7 @@ const PORT = process.env.PORT || 3002;
 export const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.MOBILE_DATABASE_URL
+      url: process.env.MOBILE_DATABASE_URL || 'postgresql://localhost:5432/spoodle_mobile'
     }
   },
   log: ['query', 'info', 'warn', 'error']
@@ -73,9 +71,7 @@ app.get('/health', (req: Request, res: Response) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/pets', petsRoutes);
-app.use('/api/tasks', tasksRoutes);
 app.use('/api/documents', documentsRoutes);
-app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/setup', setupRoutes);
 app.use('/api/bug-report', bugReportRoutes);
 app.use('/api/chatbot', chatbotRoutes);
@@ -88,9 +84,7 @@ app.get('/api', (req: Request, res: Response) => {
     endpoints: {
       auth: '/api/auth',
       pets: '/api/pets',
-      tasks: '/api/tasks',
       documents: '/api/documents',
-      dashboard: '/api/dashboard',
       bugReport: '/api/bug-report',
       chatbot: '/api/chatbot'
     },
@@ -107,7 +101,6 @@ app.use('/api/*', (req: Request, res: Response) => {
     availableEndpoints: [
       '/api/auth',
       '/api/pets',
-      '/api/tasks',
       '/api/documents',
       '/api/dashboard',
       '/api/bug-report',
@@ -175,7 +168,7 @@ app.listen(PORT, () => {
   console.log('🔑 Mobile Backend Environment variables loaded:');
   console.log(`  - PORT: ${PORT}`);
   console.log(`  - MOBILE_DATABASE_URL: ${process.env.MOBILE_DATABASE_URL ? '✅ Set' : '❌ Not set'}`);
-  console.log(`  - JWT_SECRET: ${process.env.JWT_SECRET ? '✅ Set' : '❌ Not set'}`);
+  console.log(`  - CLERK_SECRET_KEY: ${process.env.CLERK_SECRET_KEY ? '✅ Set' : '❌ Not set'}`);
   console.log(`🚀 Spoodle MOBILE Backend API running on http://localhost:${PORT}`);
   console.log(`📱 Mobile app should connect to: http://localhost:${PORT}`);
   console.log(`🔍 Mobile API endpoints available at:`);
@@ -184,7 +177,6 @@ app.listen(PORT, () => {
   console.log(`  - Dashboard: http://localhost:${PORT}/api/dashboard/*`);
   console.log(`  - Pets: http://localhost:${PORT}/api/pets/*`);
   console.log(`  - Documents: http://localhost:${PORT}/api/documents/*`);
-  console.log(`  - Tasks: http://localhost:${PORT}/api/tasks/*`);
   console.log(`  - Bug Reports: http://localhost:${PORT}/api/bug-report/*`);
   console.log(`  - Chatbot: http://localhost:${PORT}/api/chatbot/*`);
   console.log(`🔒 This backend is COMPLETELY SEPARATE from web backend`);

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { validateRequest } from '../middleware/validation';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateClerk } from '../middleware/auth';
 import { prisma } from '../index.js';
 import OpenAI from 'openai';
 
@@ -46,7 +46,7 @@ router.post('/test', async (req: Request, res: Response) => {
     // Get AI response from OpenAI
     const aiResponse = await getOpenAIResponse(message, mockPet);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         response: aiResponse,
@@ -56,7 +56,7 @@ router.post('/test', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Chatbot test error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Server error',
       message: 'Unable to process test message'
@@ -65,7 +65,7 @@ router.post('/test', async (req: Request, res: Response) => {
 });
 
 // Apply authentication to all routes
-router.use(authenticateToken);
+router.use(authenticateClerk);
 
 // Chat message schema
 const chatMessageSchema = z.object({
@@ -83,8 +83,8 @@ router.post('/chat',
       // Verify the pet belongs to the user
       const pet = await prisma.pet.findFirst({
         where: {
-          id: petId,
-          ownerId: req.user!.id
+          id: petId as string,
+          ownerId: req.auth!.userId
         }
       });
 
@@ -110,7 +110,7 @@ router.post('/chat',
       //   }
       // });
 
-      res.json({
+      return res.json({
         success: true,
         data: {
           response: aiResponse,
@@ -121,7 +121,7 @@ router.post('/chat',
       });
     } catch (error) {
       console.error('Chatbot error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to process your message'
@@ -142,8 +142,8 @@ router.get('/history/:petId',
       // Verify the pet belongs to the user
       const pet = await prisma.pet.findFirst({
         where: {
-          id: petId,
-          ownerId: req.user!.id
+          id: petId as string,
+          ownerId: req.auth!.userId
         }
       });
 
@@ -157,7 +157,7 @@ router.get('/history/:petId',
 
       // For now, return empty history since we're not storing messages yet
       // In a real implementation, this would fetch from the chatMessage table
-      res.json({
+      return res.json({
         success: true,
         data: {
           messages: [],
@@ -167,7 +167,7 @@ router.get('/history/:petId',
       });
     } catch (error) {
       console.error('Chat history error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to retrieve chat history'

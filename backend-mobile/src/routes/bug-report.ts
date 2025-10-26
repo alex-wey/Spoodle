@@ -29,7 +29,7 @@ const updateBugReportSchema = z.object({
 // Get all bug reports (admin only - for now, allow all authenticated users)
 router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
+    if (!req.auth) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -41,14 +41,14 @@ router.get('/', async (req: Request, res: Response) => {
       orderBy: { createdAt: 'desc' }
     });
     
-    res.json({
+    return res.json({
       success: true,
       data: bugReports,
       message: 'Bug reports retrieved successfully'
     });
   } catch (error) {
     console.error('Get bug reports error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Server error',
       message: 'Unable to retrieve bug reports'
@@ -62,7 +62,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
     
     const bugReport = await prisma.bugReport.findUnique({
-      where: { id }
+      where: { id: id as string }
     });
     
     if (!bugReport) {
@@ -73,14 +73,14 @@ router.get('/:id', async (req: Request, res: Response) => {
       });
     }
     
-    res.json({
+    return res.json({
       success: true,
       data: bugReport,
       message: 'Bug report retrieved successfully'
     });
   } catch (error) {
     console.error('Get bug report error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Server error',
       message: 'Unable to retrieve bug report'
@@ -97,7 +97,7 @@ router.post('/',
         title: req.body.title,
         severity: req.body.severity,
         category: req.body.category,
-        user: req.user?.email || 'No user',
+        user: req.auth?.email || 'No user',
         hasAuthHeader: !!req.headers.authorization,
         authToken: req.headers.authorization ? req.headers.authorization.substring(0, 20) + '...' : 'No token',
         timestamp: new Date().toISOString()
@@ -110,20 +110,22 @@ router.post('/',
       try {
         // First, check if the user exists in pet_owners table, if not create them
         let petOwner = await prisma.pet_owners.findUnique({
-          where: { email: req.user?.email || reporterEmail }
+          where: { email: req.auth?.email || reporterEmail }
         });
         
-        if (!petOwner && req.user) {
+        if (!petOwner && req.auth) {
           // Create pet_owner record if it doesn't exist
           petOwner = await prisma.pet_owners.create({
             data: {
               id: uuidv4(),
-              email: req.user.email,
+              email: req.auth.email,
               password: 'temp_password', // This will be updated when they set a proper password
-              firstName: req.user.firstName,
-              lastName: req.user.lastName,
-              phone: req.user.phone || null,
-              address: req.user.address || null
+              firstName: req.auth.firstName,
+              lastName: req.auth.lastName,
+              phone: null,
+              address: null,
+              createdAt: new Date(),
+              updatedAt: new Date()
             }
           });
         }
@@ -147,7 +149,7 @@ router.post('/',
           console.log('✅ Bug report saved to database:', bugReportId);
         }
       } catch (dbError) {
-        console.log('⚠️ Database save failed, but continuing with email:', dbError.message);
+        console.log('⚠️ Database save failed, but continuing with email:', (dbError as Error).message);
         // Continue with email sending even if database save fails
       }
 
@@ -158,8 +160,8 @@ router.post('/',
           title,
           description,
           severity,
-          reporterEmail: reporterEmail || req.user?.email || 'seher@spoodle.co',
-          reporterName: req.user ? `${req.user.firstName} ${req.user.lastName}` : 'Mobile App User',
+          reporterEmail: reporterEmail || req.auth?.email || 'seher@spoodle.co',
+          reporterName: req.auth ? `${req.auth.firstName} ${req.auth.lastName}` : 'Mobile App User',
           timestamp: new Date().toLocaleString()
         });
 
@@ -173,7 +175,7 @@ router.post('/',
         // Don't fail the request if email fails, just log it
       }
       
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
         data: { id: bugReportId, title, description, severity, category },
         message: bugReportId 
@@ -182,7 +184,7 @@ router.post('/',
       });
     } catch (error) {
       console.error('Create bug report error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to create bug report'
@@ -203,7 +205,7 @@ router.put('/:id',
       
       // Check if bug report exists
       const existingBugReport = await prisma.bugReport.findUnique({
-        where: { id }
+        where: { id: id as string }
       });
       
       if (!existingBugReport) {
@@ -215,18 +217,18 @@ router.put('/:id',
       }
 
       const updatedBugReport = await prisma.bugReport.update({
-        where: { id },
+        where: { id: id as string },
         data: req.body
       });
       
-      res.json({
+      return res.json({
         success: true,
         data: updatedBugReport,
         message: 'Bug report updated successfully'
       });
     } catch (error) {
       console.error('Update bug report error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to update bug report'
@@ -242,7 +244,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     
     // Check if bug report exists
     const existingBugReport = await prisma.bugReport.findUnique({
-      where: { id }
+      where: { id: id as string }
     });
     
     if (!existingBugReport) {
@@ -254,16 +256,16 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     await prisma.bugReport.delete({
-      where: { id }
+      where: { id: id as string }
     });
     
-    res.json({
+    return res.json({
       success: true,
       message: 'Bug report deleted successfully'
     });
   } catch (error) {
     console.error('Delete bug report error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Server error',
       message: 'Unable to delete bug report'

@@ -1,109 +1,80 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { prisma } from '../index.js';
+import { verifyToken } from '@clerk/backend';
 
-// Extend Express Request type to include user
+// Extend Express Request type to include Clerk auth
 declare global {
   namespace Express {
     interface Request {
-      user?: {
-        id: string;
+      auth?: {
+        userId: string;
         email: string;
         firstName: string;
         lastName: string;
+        sessionId: string;
       };
     }
   }
 }
 
-export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
-
-  if (!token) {
-    return res.status(401).json({
-      success: false,
-      error: 'Access token required',
-      message: 'Please provide an access token'
-    });
-  }
-
+export const authenticateClerk = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      throw new Error('JWT_SECRET not configured');
-    }
+    const authHeader = req.headers['authorization'];
+    const sessionToken = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
-    const decoded = jwt.verify(token, jwtSecret) as any;
-    
-    // Verify user still exists in database
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true
-      }
-    });
-
-    if (!user) {
+    if (!sessionToken) {
       return res.status(401).json({
         success: false,
-        error: 'User not found',
-        message: 'User account no longer exists'
+        error: 'Session token required',
+        message: 'Please provide a Clerk session token'
       });
     }
 
-    req.user = user;
-    next();
+    // Verify Clerk session token
+    const payload = await verifyToken(sessionToken, {
+      secretKey: process.env.CLERK_SECRET_KEY!
+    });
+
+    // Extract user info from Clerk token
+    req.auth = {
+      userId: payload.sub || '', // Clerk user ID
+      email: (payload.email as string) || '',
+      firstName: (payload.first_name as string) || '',
+      lastName: (payload.last_name as string) || '',
+      sessionId: (payload.sid as string) || ''
+    };
+
+    return next();
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(403).json({
-        success: false,
-        error: 'Invalid token',
-        message: 'Access token is invalid or expired'
-      });
-    }
-
-    console.error('Auth middleware error:', error);
-    return res.status(500).json({
+    console.error('Clerk authentication error:', error);
+    return res.status(401).json({
       success: false,
-      error: 'Authentication error',
-      message: 'Unable to authenticate user'
+      error: 'Invalid session token',
+      message: 'Clerk session token is invalid or expired'
     });
   }
 };
 
-export const optionalAuth = async (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return next(); // Continue without authentication
-  }
-
+export const optionalClerkAuth = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      return next(); // Continue without authentication if JWT not configured
+    const authHeader = req.headers['authorization'];
+    const sessionToken = authHeader && authHeader.split(' ')[1];
+
+    if (!sessionToken) {
+      return next(); // Continue without authentication
     }
 
-    const decoded = jwt.verify(token, jwtSecret) as any;
-    
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true
-      }
+    // Try to verify token, but don't fail if invalid
+    const payload = await verifyToken(sessionToken, {
+      secretKey: process.env.CLERK_SECRET_KEY!
     });
 
-    if (user) {
-      req.user = user;
-    }
+    req.auth = {
+      userId: payload.sub || '',
+      email: (payload.email as string) || '',
+      firstName: (payload.first_name as string) || '',
+      lastName: (payload.last_name as string) || '',
+      sessionId: (payload.sid as string) || ''
+    };
 
     next();
   } catch (error) {

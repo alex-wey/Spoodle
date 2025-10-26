@@ -5,8 +5,8 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import { z } from 'zod';
 import { prisma } from '../index.js';
-import { validateRequest, validationSchemas, commonSchemas } from '../middleware/validation.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { validateRequest, commonSchemas } from '../middleware/validation';
+import { authenticateClerk } from '../middleware/auth';
 
 const router = Router();
 
@@ -20,7 +20,7 @@ const storage = multer.diskStorage({
       await fs.mkdir(documentsDir, { recursive: true });
       cb(null, documentsDir);
     } catch (error) {
-      cb(error, '');
+      cb(error as Error, '');
     }
   },
   filename: (req, file, cb) => {
@@ -48,12 +48,12 @@ const upload = multer({
 });
 
 // Apply authentication to all document routes
-router.use(authenticateToken);
+router.use(authenticateClerk);
 
 // Get all documents for the authenticated user
 router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
+    if (!req.auth) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -62,7 +62,7 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     const documents = await prisma.document.findMany({
-      where: { ownerId: req.user.id },
+      where: { ownerId: req.auth.userId },
       include: {
         pet: {
           select: {
@@ -75,14 +75,14 @@ router.get('/', async (req: Request, res: Response) => {
       orderBy: { createdAt: 'desc' }
     });
     
-    res.json({
+    return res.json({
       success: true,
       data: documents,
       message: 'Documents retrieved successfully'
     });
   } catch (error) {
     console.error('Get documents error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Server error',
       message: 'Unable to retrieve documents'
@@ -99,7 +99,7 @@ router.get('/category/:category',
   }),
   async (req: Request, res: Response) => {
     try {
-      if (!req.user) {
+      if (!req.auth) {
         return res.status(401).json({
           success: false,
           error: 'Authentication required',
@@ -110,9 +110,9 @@ router.get('/category/:category',
       const { category } = req.params;
       
       const documents = await prisma.document.findMany({
-        where: { 
-          ownerId: req.user.id,
-          category
+        where: {
+          ownerId: req.auth.userId,
+          category: category as string
         },
         include: {
           pet: {
@@ -126,14 +126,14 @@ router.get('/category/:category',
         orderBy: { createdAt: 'desc' }
       });
       
-      res.json({
+      return res.json({
         success: true,
         data: documents,
         message: 'Documents retrieved successfully'
       });
     } catch (error) {
       console.error('Get documents by category error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to retrieve documents'
@@ -152,7 +152,7 @@ router.get('/pet/:petId/category/:category',
   }),
   async (req: Request, res: Response) => {
     try {
-      if (!req.user) {
+      if (!req.auth) {
         return res.status(401).json({
           success: false,
           error: 'Authentication required',
@@ -164,9 +164,9 @@ router.get('/pet/:petId/category/:category',
       
       // Verify pet belongs to the authenticated user
       const pet = await prisma.pet.findFirst({
-        where: { 
-          id: petId,
-          ownerId: req.user.id
+        where: {
+          id: petId as string,
+          ownerId: req.auth.userId
         }
       });
       
@@ -180,9 +180,9 @@ router.get('/pet/:petId/category/:category',
       
       const documents = await prisma.document.findMany({
         where: { 
-          petId,
-          ownerId: req.user.id,
-          category
+          petId: petId as string,
+          ownerId: req.auth.userId,
+          category: category as string
         },
         include: {
           pet: {
@@ -196,14 +196,14 @@ router.get('/pet/:petId/category/:category',
         orderBy: { createdAt: 'desc' }
       });
       
-      res.json({
+      return res.json({
         success: true,
         data: documents,
         message: 'Documents retrieved successfully'
       });
     } catch (error) {
       console.error('Get documents by pet and category error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to retrieve documents'
@@ -222,8 +222,8 @@ router.get('/pet/:petId',
       // Verify pet belongs to the authenticated user
       const pet = await prisma.pet.findFirst({
         where: { 
-          id: petId,
-          ownerId: req.user!.id
+          id: petId as string,
+          ownerId: req.auth!.userId
         }
       });
       
@@ -237,20 +237,20 @@ router.get('/pet/:petId',
 
       const documents = await prisma.document.findMany({
         where: { 
-          petId,
-          ownerId: req.user!.id
+          petId: petId as string,
+          ownerId: req.auth!.userId
         },
         orderBy: { createdAt: 'desc' }
       });
       
-      res.json({
+      return res.json({
         success: true,
         data: documents,
         message: 'Documents retrieved successfully'
       });
     } catch (error) {
       console.error('Get pet documents error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to retrieve documents'
@@ -268,8 +268,8 @@ router.get('/:id',
       
       const document = await prisma.document.findFirst({
         where: { 
-          id,
-          ownerId: req.user!.id
+          id: id as string,
+          ownerId: req.auth!.userId
         },
         include: {
           pet: {
@@ -290,14 +290,14 @@ router.get('/:id',
         });
       }
       
-      res.json({
+      return res.json({
         success: true,
         data: document,
         message: 'Document retrieved successfully'
       });
     } catch (error) {
       console.error('Get document error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to retrieve document'
@@ -312,13 +312,13 @@ router.post('/upload',
   async (req: Request, res: Response) => {
     try {
       console.log('📤 Upload request received');
-      console.log('  User:', req.user?.id);
+      console.log('  User:', req.auth?.userId);
       console.log('  File:', req.file ? req.file.originalname : 'NO FILE');
       console.log('  File details:', req.file);
       console.log('  Body:', req.body);
       console.log('  Headers:', req.headers);
       
-      if (!req.user) {
+      if (!req.auth) {
         console.log('❌ No user authenticated');
         return res.status(401).json({
           success: false,
@@ -348,10 +348,10 @@ router.post('/upload',
       let selectedPetId = petId;
       if (petId) {
         const pet = await prisma.pet.findFirst({
-          where: { 
-            id: petId,
-            ownerId: req.user.id
-          }
+        where: {
+          id: petId as string,
+          ownerId: req.auth.userId
+        }
         });
         
         if (!pet) {
@@ -364,12 +364,12 @@ router.post('/upload',
       } else {
         // If no petId provided, get the user's first pet
         const userPets = await prisma.pet.findMany({
-          where: { ownerId: req.user.id },
+          where: { ownerId: req.auth.userId },
           take: 1
         });
         
         if (userPets.length > 0) {
-          selectedPetId = userPets[0].id;
+          selectedPetId = userPets[0]!.id;
         } else {
           return res.status(400).json({
             success: false,
@@ -382,7 +382,7 @@ router.post('/upload',
       const documentData = {
         id: uuidv4(),
         petId: selectedPetId,
-        ownerId: req.user.id,
+            ownerId: req.auth.userId,
         category,
         hospitalName,
         fileName: req.file.filename,
@@ -412,7 +412,7 @@ router.post('/upload',
       console.log('✅ Document created successfully:', newDocument.id);
       console.log('✅ Document data:', newDocument);
       
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
         data: newDocument,
         message: 'Document uploaded successfully'
@@ -428,7 +428,7 @@ router.post('/upload',
       }
       
       console.error('Upload document error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to upload document'
@@ -456,8 +456,8 @@ router.put('/:id',
       // Check if document exists and belongs to user
       const existingDocument = await prisma.document.findFirst({
         where: { 
-          id,
-          ownerId: req.user!.id
+          id: id as string,
+          ownerId: req.auth!.userId
         }
       });
       
@@ -475,7 +475,7 @@ router.put('/:id',
       }
 
       const updatedDocument = await prisma.document.update({
-        where: { id },
+        where: { id: id as string },
         data: updateData,
         include: {
           pet: {
@@ -488,14 +488,14 @@ router.put('/:id',
         }
       });
       
-      res.json({
+      return res.json({
         success: true,
         data: updatedDocument,
         message: 'Document updated successfully'
       });
     } catch (error) {
       console.error('Update document error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to update document'
@@ -514,8 +514,8 @@ router.get('/download/:id',
       // Check if document exists and belongs to user
       const document = await prisma.document.findFirst({
         where: { 
-          id,
-          ownerId: req.user!.id
+          id: id as string,
+          ownerId: req.auth!.userId
         }
       });
       
@@ -538,11 +538,11 @@ router.get('/download/:id',
         
         // Stream the file
         const fileStream = await fs.readFile(document.filePath);
-        res.send(fileStream);
+        return res.send(fileStream);
         
       } catch (error) {
         console.error('File not found:', document.filePath);
-        res.status(404).json({
+        return res.status(404).json({
           success: false,
           error: 'File not found',
           message: 'The document file could not be found on the server'
@@ -550,7 +550,7 @@ router.get('/download/:id',
       }
     } catch (error) {
       console.error('Download document error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to retrieve document download info'
@@ -569,8 +569,8 @@ router.delete('/:id',
       // Check if document exists and belongs to user
       const existingDocument = await prisma.document.findFirst({
         where: { 
-          id,
-          ownerId: req.user!.id
+          id: id as string,
+          ownerId: req.auth!.userId
         }
       });
       
@@ -591,16 +591,16 @@ router.delete('/:id',
       }
 
       await prisma.document.delete({
-        where: { id }
+        where: { id: id as string }
       });
       
-      res.json({
+      return res.json({
         success: true,
         message: 'Document deleted successfully'
       });
     } catch (error) {
       console.error('Delete document error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to delete document'

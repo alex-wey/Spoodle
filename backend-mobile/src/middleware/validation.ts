@@ -5,7 +5,6 @@ import { z } from 'zod';
 export const commonSchemas = {
   id: z.string().uuid('Invalid ID format'),
   email: z.string().email('Invalid email format'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
   name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
   phone: z.string().optional(),
   date: z.string().datetime('Invalid date format').optional()
@@ -13,19 +12,6 @@ export const commonSchemas = {
 
 // Validation schemas
 export const validationSchemas = {
-  register: z.object({
-    email: commonSchemas.email,
-    firstName: commonSchemas.name,
-    lastName: commonSchemas.name,
-    password: commonSchemas.password,
-    phone: commonSchemas.phone
-  }),
-  
-  login: z.object({
-    email: commonSchemas.email,
-    password: z.string().min(1, 'Password is required')
-  }),
-  
   createPet: z.object({
     name: commonSchemas.name,
     species: z.string().min(1, 'Species is required'),
@@ -111,7 +97,7 @@ export const validateRequest = (schema: { body?: z.ZodSchema; params?: z.ZodSche
         });
       }
       
-      next(error);
+      return next(error);
     }
   };
 };
