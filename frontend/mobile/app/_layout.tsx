@@ -4,7 +4,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useAuthStore } from "./store/auth";
+import { ClerkProvider } from '@clerk/clerk-expo';
+import { tokenCache } from '@clerk/clerk-expo/token-cache'
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -19,32 +20,26 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
-  const initAuth = useAuthStore((state) => state.initialize);
-
   useEffect(() => {
-    // Initialize auth state and hide splash screen
-    const prepare = async () => {
-      try {
-        await initAuth();
-      } catch (e) {
-        console.error("Failed to initialize auth:", e);
-      } finally {
-        await SplashScreen.hideAsync();
-      }
-    };
+    // Hide splash screen after a short delay
+    const timer = setTimeout(() => {
+      SplashScreen.hideAsync();
+    }, 1000);
 
-    prepare();
+    return () => clearTimeout(timer);
   }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <StatusBar style="auto" />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(tabs)" />
-        </Stack>
-      </QueryClientProvider>
-    </GestureHandlerRootView>
+    <ClerkProvider tokenCache={tokenCache}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <QueryClientProvider client={queryClient}>
+          <StatusBar style="auto" />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(tabs)" />
+          </Stack>
+        </QueryClientProvider>
+      </GestureHandlerRootView>
+    </ClerkProvider>
   );
 }

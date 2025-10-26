@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Calendar, Weight, Syringe, AlertCircle, Heart, Save, X, Plus, Trash2 } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { apiClient } from "../../../lib/api";
+import { clerkApiClient } from "../../../lib/api";
 import { getPetAgeString, getGenderSymbol, calculateAge } from "../../../lib/utils";
 import { getSafeImageSource } from "../../../lib/imageUtils";
 import { usePetStore } from "../../../store/pets";

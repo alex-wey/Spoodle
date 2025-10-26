@@ -14,7 +14,7 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Upload, FileText, Calendar, MapPin, StickyNote, ChevronDown, Trash2 } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import { useAuthStore } from '../../../../store/auth';
+import { useAuth } from '@clerk/clerk-expo';
 import { usePetStore } from '../../../../store/pets';
 
 export default function UploadDocumentScreen() {
@@ -53,7 +53,7 @@ export default function UploadDocumentScreen() {
     }
   }, []);
 
-  const { token } = useAuthStore();
+  const { getToken } = useAuth();
   const { pets, fetchPets } = usePetStore();
 
   // Function to reset the form
@@ -80,7 +80,7 @@ export default function UploadDocumentScreen() {
   ];
 
   React.useEffect(() => {
-    fetchPets();
+    fetchPets(getToken);
   }, []);
 
   // Auto-select the pet based on petId from URL
@@ -188,7 +188,8 @@ export default function UploadDocumentScreen() {
       console.log('  File Type:', fileType);
       console.log('  Sending request to backend...');
 
-      const response = await fetch('http://localhost:3002/api/documents/upload', {
+      const token = await getToken();
+      const response = await fetch(`http://localhost:3002/api/documents/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

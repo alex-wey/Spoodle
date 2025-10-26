@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get("window");
 
@@ -8,8 +9,11 @@ export default function LandingScreen() {
   const router = useRouter();
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: "#4559A7" }]}
+    <LinearGradient
+      colors={['#4559A7', '#5B6FB8', '#3A4A8F']}
+      style={styles.container}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
     >
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
@@ -29,15 +33,15 @@ export default function LandingScreen() {
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={styles.primaryButton}
-              onPress={() => router.push("/(auth)/login")}
+              onPress={() => router.push("/(auth)/sign-in")}
               activeOpacity={0.8}
             >
-              <Text style={styles.primaryButtonText}>Login</Text>
+              <Text style={styles.primaryButtonText}>Sign In</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.secondaryButton}
-              onPress={() => router.push("/(auth)/signup")}
+              onPress={() => router.push("/(auth)/sign-up")}
               activeOpacity={0.8}
             >
               <Text style={styles.secondaryButtonText}>Create Account</Text>
@@ -49,7 +53,7 @@ export default function LandingScreen() {
           </View>
         </View>
       </SafeAreaView>
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -62,14 +66,12 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     padding: 24,
+    alignItems: "center",
   },
   logoContainer: {
-    flex: 1,
-    justifyContent: "flex-start",
     alignItems: "center",
-    paddingTop: 40,
   },
   logoWrapper: {
     alignItems: "center",
@@ -80,47 +82,60 @@ const styles = StyleSheet.create({
     height: 450,
   },
   subtitle: {
-    fontSize: 18,
-    color: "rgba(255, 255, 255, 0.9)",
-    marginTop: -140,
+    fontSize: 22,
+    color: "rgba(255, 255, 255, 0.95)",
+    marginTop: -150,
     textAlign: "center",
-    fontWeight: "500",
+    fontWeight: "600",
+    letterSpacing: 0.5,
+    marginBottom: 20,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   buttonContainer: {
     gap: 16,
+    width: "100%",
   },
   primaryButton: {
     backgroundColor: "white",
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: 18,
+    borderRadius: 16,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  primaryButtonText: {
+    color: "#4559A7",
+    fontSize: 22,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  secondaryButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.4)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
-  },
-  primaryButtonText: {
-    color: "#4F46E5",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  secondaryButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
+    elevation: 2,
   },
   secondaryButtonText: {
     color: "white",
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 22,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
   termsText: {
     color: "rgba(255, 255, 255, 0.7)",
-    fontSize: 12,
+    fontSize: 15,
     textAlign: "center",
     marginTop: 16,
   },

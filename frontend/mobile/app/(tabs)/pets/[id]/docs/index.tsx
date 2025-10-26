@@ -32,7 +32,7 @@ import {
   Pill,
   ArrowLeft
 } from 'lucide-react-native';
-import { useAuthStore } from '../../../../store/auth';
+import { useAuth } from '@clerk/clerk-expo';
 import { useDocumentStore } from '../../../../store/documents';
 import { usePetStore } from '../../../../store/pets';
 import { FAB } from '../../../../components/FAB';
@@ -63,12 +63,12 @@ export default function DocsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
 
-  const { token } = useAuthStore();
+  const { getToken } = useAuth();
   const { documents, fetchDocuments } = useDocumentStore();
   const { pets, fetchPets } = usePetStore();
 
   useEffect(() => {
-    fetchPets();
+    fetchPets(getToken);
   }, []);
 
   useEffect(() => {
@@ -93,15 +93,18 @@ export default function DocsScreen() {
     React.useCallback(() => {
       console.log('🔄 Docs screen focused, refreshing document counts...');
       fetchDocumentCounts();
-    }, [selectedPet, token])
+    }, [selectedPet, getToken])
   );
 
   const fetchDocumentCounts = async () => {
-    if (!token || !selectedPet) return;
+    if (!selectedPet) return;
     
     console.log(`📊 Fetching document counts for pet: ${selectedPet.name} (${selectedPet.id})`);
     setLoading(true);
     try {
+      const token = await getToken();
+      if (!token) return;
+      
       // Fetch document counts for each category for the selected pet
       const counts = await Promise.all(
         documentCategories.map(async (category) => {

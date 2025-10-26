@@ -1,28 +1,19 @@
-import { Stack } from "expo-router";
-import { useAuthStore } from "../store/auth";
-import { Redirect } from "expo-router";
+import { Redirect, Stack } from 'expo-router'
+import { useAuth } from '@clerk/clerk-expo'
 
 export default function AuthLayout() {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isSignedIn } = useAuth()
 
-  // Redirect to main app if already authenticated
-  if (isAuthenticated) {
-    return <Redirect href="/(tabs)/pets" />;
+  if (isSignedIn) {
+    return <Redirect href={'/'} />
   }
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        animation: "slide_from_right",
-      }}
-    >
+    <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="landing" />
-      <Stack.Screen name="login" />
-      <Stack.Screen name="signup" />
-      <Stack.Screen name="onboarding" />
+      <Stack.Screen name="sign-in" />
+      <Stack.Screen name="sign-up" />
+      <Stack.Screen name="verify-contact" />
     </Stack>
-  );
+  )
 }
-
-

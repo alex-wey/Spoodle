@@ -5,7 +5,7 @@ A comprehensive pet healthcare management mobile application built with React Na
 ## 🚀 Features
 
 ### Implemented Features ✅
-- **Authentication**: Secure login/signup with JWT tokens and persistent sessions
+- **Authentication**: Secure sign-in/sign-up with JWT tokens and persistent sessions
 - **Pet Management**: View and manage multiple pet profiles with detailed information
 - **Pet Profiles**: Comprehensive pet details including breed, age, weight, allergies, and dietary restrictions
 - **Medical Records**: View and manage pet medical records with file type categorization
@@ -33,7 +33,7 @@ A comprehensive pet healthcare management mobile application built with React Na
 
 The app includes:
 - Landing page with feature highlights
-- Authentication flow (Login/Signup/Onboarding)
+- Authentication flow (Sign-in/Sign-up)
 - Bottom tab navigation
 - Pet profile cards with quick actions
 - Floating action buttons for chat and support
@@ -85,9 +85,8 @@ app/
 ├── (auth)/                    # Authentication screens
 │   ├── _layout.tsx            # Auth navigation
 │   ├── landing.tsx            # Welcome screen
-│   ├── login.tsx              # Login form with test credentials
-│   ├── signup.tsx             # Registration form
-│   └── onboarding.tsx         # New user onboarding
+│   ├── sign-in.tsx            # Sign-in form with test credentials
+│   ├── sign-up.tsx             # Registration form
 ├── (tabs)/                    # Main app screens (tab navigation)
 │   ├── _layout.tsx            # Tab navigation configuration
 │   ├── pets/                  # Pet management section
@@ -148,7 +147,7 @@ Email: sarah.johnson@email.com
 Password: password123
 ```
 
-The login screen includes a "Quick Fill" button to auto-populate these credentials.
+The sign-in screen includes a "Quick Fill" button to auto-populate these credentials.
 
 ## 🎨 Design System
 
@@ -220,8 +219,6 @@ Update `app.json` with:
 - [ ] Internationalization (i18n)
 - [ ] Dark mode support
 - [ ] Analytics integration
-- [ ] Crash reporting (Sentry)
-- [ ] User onboarding tour
 - [ ] In-app messaging
 - [ ] Pull-to-refresh on all lists
 - [ ] Skeleton loaders for better UX

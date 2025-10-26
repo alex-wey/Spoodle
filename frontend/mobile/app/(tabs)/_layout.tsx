@@ -1,16 +1,21 @@
 import { Tabs } from "expo-router";
 import { Dog, MessageCircle, User } from "lucide-react-native";
-import { useAuthStore } from "../store/auth";
+import { useAuth } from '@clerk/clerk-expo';
 import { Redirect } from "expo-router";
 import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabLayout() {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isSignedIn, isLoaded } = useAuth();
   const insets = useSafeAreaInsets();
 
+  // Show loading while Clerk is initializing
+  if (!isLoaded) {
+    return null;
+  }
+
   // Redirect to auth if not authenticated
-  if (!isAuthenticated) {
+  if (!isSignedIn) {
     return <Redirect href="/(auth)/landing" />;
   }
 
@@ -82,12 +87,6 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="pets/add"
-        options={{
-          href: null, // Hide from tab bar
-        }}
-      />
-      <Tabs.Screen
-        name="profile/settings/index"
         options={{
           href: null, // Hide from tab bar
         }}

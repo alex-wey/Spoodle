@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Pet, CreatePet, UpdatePet } from "../types";
-import { apiClient } from "../lib/api";
+import { clerkApiClient } from "../lib/api";
 
 interface PetState {
   pets: Pet[];
@@ -12,11 +12,11 @@ interface PetState {
   
   // Actions
   setPets: (pets: Pet[]) => void;
-  addPet: (pet: CreatePet) => Promise<Pet>;
-  updatePet: (id: string, updates: UpdatePet) => Promise<void>;
-  deletePet: (id: string) => Promise<void>;
+  addPet: (pet: CreatePet, getToken: () => Promise<string | null>) => Promise<Pet>;
+  updatePet: (id: string, updates: UpdatePet, getToken: () => Promise<string | null>) => Promise<void>;
+  deletePet: (id: string, getToken: () => Promise<string | null>) => Promise<void>;
   selectPet: (petId: string | null) => void;
-  fetchPets: () => Promise<void>;
+  fetchPets: (getToken: () => Promise<string | null>) => Promise<void>;
   clearError: () => void;
   clearPets: () => void;
 }
@@ -34,11 +34,11 @@ export const usePetStore = create<PetState>((set, get) => ({
     set({ pets });
   },
 
-  addPet: async (petData) => {
+  addPet: async (petData, getToken) => {
     try {
       set({ isLoading: true, error: null });
       
-      const response = await apiClient.createPet({
+      const response = await clerkApiClient.createPet({
         name: petData.name,
         species: petData.species || "Dog",
         breed: petData.breed || "Mixed Breed",
@@ -52,7 +52,7 @@ export const usePetStore = create<PetState>((set, get) => ({
         spayedNeutered: petData.spayedNeutered || false,
         allergies: petData.allergies,
         dietaryRestrictions: petData.dietaryRestrictions,
-      } as any);
+      } as any, getToken);
       
       if (response.success) {
         const backendPet = response.data;
@@ -102,11 +102,11 @@ export const usePetStore = create<PetState>((set, get) => ({
     }
   },
 
-  updatePet: async (id, updates) => {
+  updatePet: async (id, updates, getToken) => {
     try {
       set({ isLoading: true, error: null });
       
-      const response = await apiClient.updatePet(id, {
+      const response = await clerkApiClient.updatePet(id, {
         name: updates.name,
         breed: updates.breed,
         dateOfBirth: updates.dateOfBirth 
@@ -119,7 +119,7 @@ export const usePetStore = create<PetState>((set, get) => ({
         spayedNeutered: updates.spayedNeutered,
         allergies: updates.allergies,
         dietaryRestrictions: updates.dietaryRestrictions,
-      } as any);
+      } as any, getToken);
       
       if (response.success) {
         const backendPet = response.data;
@@ -167,11 +167,11 @@ export const usePetStore = create<PetState>((set, get) => ({
     }
   },
 
-  deletePet: async (id) => {
+  deletePet: async (id, getToken) => {
     try {
       set({ isLoading: true, error: null });
       
-      await apiClient.deletePet(id);
+      await clerkApiClient.deletePet(id, getToken);
       
       const currentPets = get().pets;
       const updatedPets = currentPets.filter((pet) => pet.id !== id);
@@ -212,11 +212,11 @@ export const usePetStore = create<PetState>((set, get) => ({
     }
   },
 
-  fetchPets: async () => {
+  fetchPets: async (getToken) => {
     try {
       set({ isLoading: true, error: null });
       
-      const response = await apiClient.getPets();
+      const response = await clerkApiClient.getPets(getToken);
       
       if (response.success) {
         // Transform backend pets to app pet format

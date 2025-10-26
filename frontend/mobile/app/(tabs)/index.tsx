@@ -1,11 +1,16 @@
 import { Redirect } from "expo-router";
-import { useAuthStore } from "../store/auth";
+import { useAuth } from '@clerk/clerk-expo';
 
 export default function Index() {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isSignedIn, isLoaded } = useAuth();
+
+  // Show loading while Clerk is initializing
+  if (!isLoaded) {
+    return null;
+  }
 
   // Redirect based on authentication status
-  if (isAuthenticated) {
+  if (isSignedIn) {
     return <Redirect href="/(tabs)/pets" />;
   }
   

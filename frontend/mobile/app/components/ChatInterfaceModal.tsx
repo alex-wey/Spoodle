@@ -11,7 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { X, Send, User } from 'lucide-react-native';
-import { useAuthStore } from '../store/auth';
+import { useAuth } from '@clerk/clerk-expo';
 import { useChatStore, Message } from '../store/chat';
 
 interface Pet {
@@ -33,10 +33,10 @@ export default function ChatInterfaceModal({
   petName,
   petId,
 }: ChatInterfaceModalProps) {
-  const token = useAuthStore((state) => state.token);
+  const { getToken } = useAuth();
   const { 
     chatSessions, 
-    initializeChatSession, 
+    initializeChatSession,  
     addMessage, 
     setCurrentPet,
     loadChatSessions 
@@ -77,8 +77,9 @@ export default function ChatInterfaceModal({
       setIsLoading(true);
       
       try {
+        const token = await getToken();
         // Send message to chatbot API
-        const response = await fetch('http://localhost:3002/api/chatbot/chat', {
+        const response = await fetch(`http://localhost:3002/api/chatbot/chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

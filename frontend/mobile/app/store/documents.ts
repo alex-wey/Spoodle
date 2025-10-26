@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { apiClient } from "../lib/api";
+import { clerkApiClient } from "../lib/api";
 
 export interface Document {
   id: string;

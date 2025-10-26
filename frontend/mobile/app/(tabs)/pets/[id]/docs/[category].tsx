@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { ArrowLeft, FileText, Calendar, MapPin, Download, Eye, Plus, X, ExternalLink, Shield, Activity, Stethoscope, Zap, Microscope, Heart, Pill } from 'lucide-react-native';
-import { useAuthStore } from '../../../../store/auth';
+import { useAuth } from '@clerk/clerk-expo';
 import { useDocumentStore } from '../../../../store/documents';
 
 export default function CategoryDocumentsScreen() {
@@ -26,7 +26,7 @@ export default function CategoryDocumentsScreen() {
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [viewerVisible, setViewerVisible] = useState(false);
 
-  const { token } = useAuthStore();
+  const { getToken } = useAuth();
   const { fetchDocumentsByCategory } = useDocumentStore();
 
   const categoryTitles = {
@@ -62,11 +62,12 @@ export default function CategoryDocumentsScreen() {
     React.useCallback(() => {
       console.log('🔄 Screen focused, refreshing documents...');
       fetchDocuments();
-    }, [category, petId, token])
+    }, [category, petId, getToken])
   );
 
   const fetchDocuments = async () => {
-    if (!token || !category) return;
+    if (!getToken || !category) return;
+    const token = await getToken();
     
     setLoading(true);
     try {
@@ -134,6 +135,7 @@ export default function CategoryDocumentsScreen() {
               text: 'Download & Open', 
               onPress: async () => {
                 try {
+                  const token = await getToken();
                   const response = await fetch(`http://localhost:3002/api/documents/download/${document.id}`, {
                     headers: {
                       'Authorization': `Bearer ${token}`,
@@ -183,6 +185,7 @@ export default function CategoryDocumentsScreen() {
                 Alert.alert('Download Started', `Preparing download for ${document.fileName}...`);
                 
                 // Call backend download endpoint
+                const token = await getToken();
                 const response = await fetch(`http://localhost:3002/api/documents/download/${document.id}`, {
                   headers: {
                     'Authorization': `Bearer ${token}`,
@@ -444,6 +447,7 @@ export default function CategoryDocumentsScreen() {
                   
                   if (Platform.OS === 'web') {
                     // For web, download and open in new tab
+                    const token = await getToken();
                     const response = await fetch(`http://localhost:3002/api/documents/download/${selectedDocument.id}`, {
                       headers: {
                         'Authorization': `Bearer ${token}`,
@@ -477,6 +481,7 @@ export default function CategoryDocumentsScreen() {
                             text: 'Download & Open', 
                             onPress: async () => {
                               try {
+                                const token = await getToken();
                                 const response = await fetch(`http://localhost:3002/api/documents/download/${selectedDocument.id}`, {
                                   headers: {
                                     'Authorization': `Bearer ${token}`,

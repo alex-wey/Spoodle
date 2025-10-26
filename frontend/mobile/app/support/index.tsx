@@ -4,12 +4,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { TouchableOpacity } from "react-native";
 import { ArrowLeft, Send, Bug, AlertTriangle, Info, AlertCircle } from "lucide-react-native";
-import { useAuthStore } from "../store/auth";
-import { apiClient } from "../lib/api";
+import { useAuth } from '@clerk/clerk-expo';
+import { clerkApiClient } from "../lib/api";
 
 export default function SupportScreen() {
   const router = useRouter();
-  const { token } = useAuthStore();
+  const { getToken } = useAuth();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState('medium');
@@ -29,21 +29,16 @@ export default function SupportScreen() {
       return;
     }
 
-    if (!token) {
-      Alert.alert('Error', 'Please log in to submit a bug report');
-      return;
-    }
-
     setIsSubmitting(true);
     try {
-      const response = await apiClient.submitBugReport({
+      const response = await clerkApiClient.submitBugReport({
         title: title.trim(),
         description: description.trim(),
         severity,
         category,
         deviceInfo: `Mobile App - ${Platform.OS}`,
         appVersion: '1.0.0'
-      });
+      }, getToken);
 
           if (response.success) {
             Alert.alert(
@@ -127,7 +122,7 @@ export default function SupportScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Category *</Text>
             <View style={styles.categoryContainer}>
-              {['General', 'UI Issue', 'Performance', 'Login/Auth', 'Data Sync', 'Other'].map((cat) => (
+              {['General', 'UI Issue', 'Performance', 'Sign-in/Auth', 'Data Sync', 'Other'].map((cat) => (
                 <TouchableOpacity
                   key={cat}
                   style={[
