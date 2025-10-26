@@ -14,13 +14,14 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Upload, FileText, Calendar, MapPin, StickyNote, ChevronDown, Trash2 } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import { useAuthStore } from '../../store/auth';
-import { usePetStore } from '../../store/pets';
+import { useAuthStore } from '../../../../store/auth';
+import { usePetStore } from '../../../../store/pets';
 
 export default function UploadDocumentScreen() {
-  // Get category from URL params if navigating from a specific folder
-  const params = useLocalSearchParams();
-  const preselectedCategory = params.category as string || '';
+  // Get category and petId from URL params
+  const params = useLocalSearchParams<{ category?: string; id: string }>();
+  const preselectedCategory = params.category || '';
+  const petId = params.id;
   
   const [step, setStep] = useState(preselectedCategory ? 2 : 1); // Skip to step 2 if category provided
   const [selectedPet, setSelectedPet] = useState<any>(null);
@@ -81,6 +82,16 @@ export default function UploadDocumentScreen() {
   React.useEffect(() => {
     fetchPets();
   }, []);
+
+  // Auto-select the pet based on petId from URL
+  React.useEffect(() => {
+    if (petId && pets.length > 0) {
+      const pet = pets.find((p: any) => p.id === petId);
+      if (pet) {
+        setSelectedPet(pet);
+      }
+    }
+  }, [petId, pets]);
 
   const handleCategorySelect = (catId: string) => {
     setCategory(catId);
@@ -158,13 +169,13 @@ export default function UploadDocumentScreen() {
           throw new Error('Failed to process file for upload');
         }
       } else {
-        // React Native platform
-        const fileData = {
+        // React Native platform - append as any to bypass type checking
+        const fileData: any = {
           uri: fileUri,
           type: fileType,
           name: fileName,
         };
-        formData.append('document', fileData);
+        formData.append('document', fileData as any);
         console.log('📤 Native file appended:', fileData);
       }
 
@@ -193,8 +204,8 @@ export default function UploadDocumentScreen() {
       if (data.success) {
         // Reset the form first
         resetForm();
-        // Always go back to main docs page after upload
-        router.replace('/(tabs)/docs');
+        // Go back to the pet's docs page after upload
+        router.replace(`/(tabs)/pets/${petId}/docs` as any);
         Alert.alert('Success', 'Document uploaded successfully!');
       } else {
         Alert.alert('Error', data.message || 'Failed to upload document');
@@ -231,7 +242,7 @@ export default function UploadDocumentScreen() {
           <View style={styles.form}>
             <Text style={styles.stepTitle}>Select Document Category</Text>
             <Text style={styles.stepDescription}>
-              Choose the type of medical record you want to upload
+              Choose the type of document you want to upload
             </Text>
 
             <TouchableOpacity

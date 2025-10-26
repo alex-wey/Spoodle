@@ -93,7 +93,33 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   autoLoginAsSarah: async () => {
     try {
       set({ isLoading: true });
-      await get().login(SARAH_EMAIL, SARAH_PASSWORD);
+      
+      // Create mock Sarah user data for development (bypass API)
+      const mockToken = "mock-token-sarah-johnson";
+      const user: User = {
+        id: "sarah-johnson-id",
+        email: SARAH_EMAIL,
+        firstName: "Sarah",
+        lastName: "Johnson",
+        phoneNumber: "+1234567890",
+        address: "123 Pet Street, Dog City, DC 12345",
+        role: "pet_owner",
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date(),
+      };
+      
+      // Save to storage
+      await AsyncStorage.setItem(AUTH_TOKEN_KEY, mockToken);
+      await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(user));
+      
+      set({
+        user,
+        token: mockToken,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+      
+      console.log("✅ Auto-logged in as Sarah (mock data)");
     } catch (error) {
       console.error("Auto-login failed:", error);
       set({ isLoading: false });
@@ -218,14 +244,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isLoading: false,
         });
       } else {
-        // No stored auth data - user is not authenticated
-        console.log("🔍 Auth store: No stored auth data, setting isAuthenticated to false");
-        set({ 
-          user: null,
-          token: null,
-          isAuthenticated: false,
-          isLoading: false 
-        });
+        // No stored auth data - auto-login as Sarah for development
+        console.log("🔍 Auth store: No stored auth data, auto-logging in as Sarah");
+        try {
+          await get().autoLoginAsSarah();
+        } catch (error) {
+          console.error("Auto-login failed, setting isAuthenticated to false:", error);
+          set({ 
+            user: null,
+            token: null,
+            isAuthenticated: false,
+            isLoading: false 
+          });
+        }
       }
     } catch (error) {
       console.error("Auth initialization error:", error);

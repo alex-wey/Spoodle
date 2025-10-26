@@ -15,8 +15,8 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { ArrowLeft, FileText, Calendar, MapPin, Download, Eye, Plus, X, ExternalLink, Shield, Activity, Stethoscope, Zap, Microscope, Heart, Pill } from 'lucide-react-native';
-import { useAuthStore } from '../../store/auth';
-import { useDocumentStore } from '../../store/documents';
+import { useAuthStore } from '../../../../store/auth';
+import { useDocumentStore } from '../../../../store/documents';
 
 export default function CategoryDocumentsScreen() {
   const { category, petId } = useLocalSearchParams();
@@ -260,7 +260,7 @@ export default function CategoryDocumentsScreen() {
             <TouchableOpacity
               style={styles.addButton}
               onPress={() => router.push({
-                pathname: '/(tabs)/docs/upload',
+                pathname: `/(tabs)/pets/${petId}/docs/upload` as any,
                 params: { category: category }
               })}
             >
@@ -316,7 +316,7 @@ export default function CategoryDocumentsScreen() {
       <TouchableOpacity
         style={styles.fab}
         onPress={() => router.push({
-          pathname: '/(tabs)/docs/upload',
+          pathname: `/(tabs)/pets/${petId}/docs/upload` as any,
           params: { category: category }
         })}
       >
@@ -507,7 +507,7 @@ export default function CategoryDocumentsScreen() {
               }}
             >
               <Eye size={24} color="#FFFFFF" />
-              <Text style={styles.viewButtonText}>View Record</Text>
+              <Text style={styles.viewButtonText}>View Document</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>

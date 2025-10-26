@@ -9,15 +9,12 @@ import { useDocumentStore } from "../../store/documents";
 import { getGreeting } from "../../lib/utils";
 import { PetCard } from "./[id]/components/PetCard";
 import { FAB } from "../../components/FAB";
-import type { Pet } from "../../types";
 
 export default function PetsScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
-  const { pets, fetchPets, isLoading, error, clearPets } = usePetStore();
-  const { clearDocuments } = useDocumentStore();
+  const { pets, fetchPets, isLoading, error } = usePetStore();
   const [refreshing, setRefreshing] = useState(false);
-  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     fetchPets();
@@ -33,31 +30,27 @@ export default function PetsScreen() {
     router.push(`/pets/${petId}/profile`);
   };
 
-  const handlePetRecords = (petId: string) => {
-    // Navigate to docs page (medical records)
-    router.push(`/(tabs)/docs`);
+  const handlePetDocuments = (petId: string) => {
+    // Navigate to pet-specific docs page
+    router.push(`/(tabs)/pets/${petId}/docs` as any);
   };
 
-  const handleEditPet = (petId: string) => {
-    // Navigate to add pet page in edit mode
-    router.push(`/pets/add?editId=${petId}`);
-  };
-
-  if (isLoading && pets.length === 0) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4F46E5" />
-          <Text style={styles.loadingText}>Loading your pets...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  // if (isLoading && pets.length === 0) {
+  //   return (
+  //     <SafeAreaView style={styles.container}>
+  //       <View style={styles.loadingContainer}>
+  //         <ActivityIndicator size="large" color="#4F46E5" />
+  //         <Text style={styles.loadingText}>Loading your pets...</Text>
+  //       </View>
+  //     </SafeAreaView>
+  //   );
+  // }
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -69,15 +62,6 @@ export default function PetsScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          {/* Spoodle Logo */}
-          <View style={styles.logoContainer}>
-            <Image
-              source={require("../../../assets/images/Spoodle Logo Variations Transparent Backgrounds-02.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </View>
-          
           <View style={styles.headerTop}>
             <View>
               <Text style={styles.greeting}>{getGreeting()},</Text>
@@ -119,7 +103,7 @@ export default function PetsScreen() {
                   key={pet.id}
                   pet={pet}
                   onPress={() => handlePetPress(pet.id)}
-                  onPetRecords={() => handlePetRecords(pet.id)}
+                  onPetDocuments={() => handlePetDocuments(pet.id)}
                 />
               ))}
 
@@ -137,7 +121,7 @@ export default function PetsScreen() {
       </ScrollView>
 
       {/* Floating Action Button */}
-      <View style={[styles.fabContainer, { bottom: Platform.OS === "ios" ? 76 + Math.max(insets.bottom - 2, 6) : 80 }]}>
+      <View style={styles.fabContainer}>
         <FAB
           icon={<Bug size={24} color="#FFFFFF" />}
           onPress={() => router.push("/support")}
@@ -154,6 +138,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: Platform.OS === "ios" ? 100 : 80, // Extra padding for FAB and tab bar
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -166,16 +154,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 0,
-    paddingHorizontal: 20,
     paddingBottom: 5,
-  },
-  logoContainer: {
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  logo: {
-    width: 120,
-    height: 60,
   },
   headerTop: {
     flexDirection: "row",
@@ -198,7 +177,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   content: {
-    padding: 20,
     paddingTop: 10,
   },
   errorContainer: {
@@ -270,7 +248,7 @@ const styles = StyleSheet.create({
   },
   fabContainer: {
     position: "absolute",
-    bottom: 80,
+    bottom: Platform.OS === "ios" ? 76 : 80,
     right: 20,
   },
   fabSecondary: {

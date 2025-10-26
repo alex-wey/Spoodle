@@ -7,10 +7,10 @@ import { getSafeImageSource } from "../../../../lib/imageUtils";
 interface PetCardProps {
   pet: Pet;
   onPress: () => void;
-  onPetRecords: () => void;
+  onPetDocuments: () => void;
 }
 
-export function PetCard({ pet, onPress, onPetRecords }: PetCardProps) {
+export function PetCard({ pet, onPress, onPetDocuments }: PetCardProps) {
   const genderColor = pet.gender === "female" ? "#EC4899" : "#3B82F6";
   const petAge = pet.dateOfBirth ? calculateAge(pet.dateOfBirth) : 0;
   
@@ -50,11 +50,11 @@ export function PetCard({ pet, onPress, onPetRecords }: PetCardProps) {
         style={styles.actionButton}
         onPress={(e) => {
           e.stopPropagation();
-          onPetRecords();
+          onPetDocuments();
         }}
       >
         <FileText size={20} color="#FFFFFF" />
-        <Text style={styles.actionText}>Pet Records</Text>
+        <Text style={styles.actionText}>Pet Documents</Text>
       </TouchableOpacity>
 
       {/* Quick Info Pills */}

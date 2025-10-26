@@ -73,7 +73,7 @@ export default function PetProfileScreen() {
       setLoading(true);
       const response = await apiClient.getPet(id);
       if (response.success) {
-        setPet(response.data as PetProfile);
+        setPet(response.data as unknown as PetProfile);
       }
     } catch (error) {
       Alert.alert("Error", "Failed to load pet profile");
@@ -528,7 +528,7 @@ export default function PetProfileScreen() {
 
         {/* Additional Info */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Record Information</Text>
+          <Text style={styles.sectionTitle}>Profile Information</Text>
           <View style={styles.infoRow}>
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Created</Text>

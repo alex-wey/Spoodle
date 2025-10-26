@@ -63,7 +63,19 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="pets/[id]/records"
+        name="pets/[id]/docs/index"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="pets/[id]/docs/[category]"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="pets/[id]/docs/upload"
         options={{
           href: null, // Hide from tab bar
         }}
@@ -78,25 +90,6 @@ export default function TabLayout() {
         name="profile/settings/index"
         options={{
           href: null, // Hide from tab bar
-        }}
-      />
-      <Tabs.Screen
-        name="docs/upload"
-        options={{
-          href: null, // Hide from tab bar
-          presentation: 'modal',
-        }}
-      />
-      <Tabs.Screen
-        name="docs/[category]"
-        options={{
-          href: null, // Hide from tab bar
-        }}
-      />
-      <Tabs.Screen
-        name="docs/index"
-        options={{
-          href: null, // Hide from tab bar - accessible from pet records
         }}
       />
       <Tabs.Screen

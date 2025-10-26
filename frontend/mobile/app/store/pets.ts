@@ -50,12 +50,9 @@ export const usePetStore = create<PetState>((set, get) => ({
         gender: petData.gender || "male",
         weight: petData.weight || 0,
         spayedNeutered: petData.spayedNeutered || false,
-        microchipId: petData.microchipId,
         allergies: petData.allergies,
         dietaryRestrictions: petData.dietaryRestrictions,
-        notes: petData.notes,
-        imageUrl: petData.imageUrl,
-      });
+      } as any);
       
       if (response.success) {
         const backendPet = response.data;
@@ -64,17 +61,17 @@ export const usePetStore = create<PetState>((set, get) => ({
         const newPet: Pet = {
           id: backendPet.id,
           name: backendPet.name,
-          species: backendPet.species || petData.species || "dog",
+          species: (backendPet as any).species || petData.species || "dog",
           breed: backendPet.breed,
           dateOfBirth: new Date(backendPet.dateOfBirth),
           gender: backendPet.gender as "male" | "female",
           weight: backendPet.weight,
           spayedNeutered: backendPet.spayedNeutered,
-          microchipId: backendPet.microchipId,
+          microchipId: (backendPet as any).microchipId,
           allergies: backendPet.allergies,
           dietaryRestrictions: backendPet.dietaryRestrictions,
-          notes: backendPet.notes,
-          imageUrl: backendPet.imageUrl || petData.imageUrl,
+          notes: (backendPet as any).notes,
+          imageUrl: (backendPet as any).imageUrl || petData.imageUrl,
           createdAt: new Date(backendPet.createdAt),
           updatedAt: new Date(backendPet.updatedAt),
         };
@@ -111,7 +108,6 @@ export const usePetStore = create<PetState>((set, get) => ({
       
       const response = await apiClient.updatePet(id, {
         name: updates.name,
-        species: updates.species,
         breed: updates.breed,
         dateOfBirth: updates.dateOfBirth 
           ? (updates.dateOfBirth instanceof Date 
@@ -121,12 +117,9 @@ export const usePetStore = create<PetState>((set, get) => ({
         gender: updates.gender,
         weight: updates.weight,
         spayedNeutered: updates.spayedNeutered,
-        microchipId: updates.microchipId,
         allergies: updates.allergies,
         dietaryRestrictions: updates.dietaryRestrictions,
-        notes: updates.notes,
-        imageUrl: updates.imageUrl,
-      });
+      } as any);
       
       if (response.success) {
         const backendPet = response.data;
@@ -135,17 +128,17 @@ export const usePetStore = create<PetState>((set, get) => ({
         const updatedPet: Pet = {
           id: backendPet.id,
           name: backendPet.name,
-          species: backendPet.species || get().pets.find(p => p.id === id)?.species || "dog",
+          species: (backendPet as any).species || get().pets.find(p => p.id === id)?.species || "dog",
           breed: backendPet.breed,
           dateOfBirth: new Date(backendPet.dateOfBirth),
           gender: backendPet.gender as "male" | "female",
           weight: backendPet.weight,
           spayedNeutered: backendPet.spayedNeutered,
-          microchipId: backendPet.microchipId,
+          microchipId: (backendPet as any).microchipId,
           allergies: backendPet.allergies,
           dietaryRestrictions: backendPet.dietaryRestrictions,
-          notes: backendPet.notes,
-          imageUrl: backendPet.imageUrl || updates.imageUrl,
+          notes: (backendPet as any).notes,
+          imageUrl: (backendPet as any).imageUrl || updates.imageUrl,
           createdAt: new Date(backendPet.createdAt),
           updatedAt: new Date(backendPet.updatedAt),
         };
@@ -230,17 +223,17 @@ export const usePetStore = create<PetState>((set, get) => ({
         const pets: Pet[] = response.data.map((backendPet) => ({
           id: backendPet.id,
           name: backendPet.name,
-          species: backendPet.species || "dog",
+          species: (backendPet as any).species || "dog",
           breed: backendPet.breed,
           dateOfBirth: new Date(backendPet.dateOfBirth),
           gender: backendPet.gender as "male" | "female",
           weight: backendPet.weight,
           spayedNeutered: backendPet.spayedNeutered,
-          microchipId: backendPet.microchipId,
+          microchipId: (backendPet as any).microchipId,
           allergies: backendPet.allergies,
           dietaryRestrictions: backendPet.dietaryRestrictions,
-          notes: backendPet.notes,
-          imageUrl: backendPet.imageUrl,
+          notes: (backendPet as any).notes,
+          imageUrl: (backendPet as any).imageUrl,
           createdAt: new Date(backendPet.createdAt),
           updatedAt: new Date(backendPet.updatedAt),
         }));

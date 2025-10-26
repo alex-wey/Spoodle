@@ -29,25 +29,30 @@ import {
   Zap,
   Microscope,
   Heart,
-  Pill
+  Pill,
+  ArrowLeft
 } from 'lucide-react-native';
-import { useAuthStore } from '../../store/auth';
-import { useDocumentStore } from '../../store/documents';
-import { usePetStore } from '../../store/pets';
-import { FAB } from '../../components/FAB';
+import { useAuthStore } from '../../../../store/auth';
+import { useDocumentStore } from '../../../../store/documents';
+import { usePetStore } from '../../../../store/pets';
+import { FAB } from '../../../../components/FAB';
 import { Bug } from 'lucide-react-native';
+import { useLocalSearchParams } from 'expo-router';
+import type { Pet } from '../../../../types';
 
 export default function DocsScreen() {
+  const { id: petId } = useLocalSearchParams<{ id: string }>();
+  
   const [documentCategories, setDocumentCategories] = useState([
     { id: 'past_appointments', title: 'Past Appointments', fileCount: 0, color: '#3BB272' },
     { id: 'x_ray_documents', title: 'X-Ray Documents', fileCount: 0, color: '#E75325' },
     { id: 'diagnostic_reports', title: 'Diagnostic Reports', fileCount: 0, color: '#FF5D91' },
     { id: 'blood_test_reports', title: 'Blood Test Reports', fileCount: 0, color: '#4559A7' },
     { id: 'vaccination_history', title: 'Vaccination History', fileCount: 0, color: '#E75325' },
-    { id: 'upload-documents', title: 'Upload Past Medical Records', fileCount: null, color: '#3BB272', isUpload: true },
+    { id: 'upload-documents', title: 'Upload Past Documents', fileCount: null, color: '#3BB272', isUpload: true },
   ]);
 
-  const categoryIcons = {
+  const categoryIcons: Record<string, any> = {
     'past_appointments': Calendar,
     'x_ray_documents': Zap,
     'diagnostic_reports': Stethoscope,
@@ -56,7 +61,7 @@ export default function DocsScreen() {
   };
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedPet, setSelectedPet] = useState(null);
+  const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
 
   const { token } = useAuthStore();
   const { documents, fetchDocuments } = useDocumentStore();
@@ -64,10 +69,17 @@ export default function DocsScreen() {
 
   useEffect(() => {
     fetchPets();
-    if (pets.length > 0 && !selectedPet) {
-      setSelectedPet(pets[0]); // Auto-select first pet
+  }, []);
+
+  useEffect(() => {
+    // Auto-select the pet based on the petId from URL params
+    if (petId && pets.length > 0) {
+      const pet = pets.find((p) => p.id === petId);
+      if (pet) {
+        setSelectedPet(pet);
+      }
     }
-  }, [pets]);
+  }, [petId, pets]);
 
   useEffect(() => {
     if (selectedPet) {
@@ -136,14 +148,14 @@ export default function DocsScreen() {
     setRefreshing(false);
   };
 
-  const handleCategoryPress = (category) => {
+  const handleCategoryPress = (category: any) => {
     console.log('Category pressed:', category.id);
     if (category.isUpload) {
       console.log('Navigating to upload page');
-      router.push('/(tabs)/docs/upload');
+      router.push(`/(tabs)/pets/${petId}/docs/upload` as any);
     } else {
       console.log('Navigating to category page:', category.id);
-      router.push(`/(tabs)/docs/${category.id}?petId=${selectedPet.id}`);
+      router.push(`/(tabs)/pets/${petId}/docs/${category.id}?petId=${petId}` as any);
     }
   };
 
@@ -158,7 +170,7 @@ export default function DocsScreen() {
     );
   };
 
-  const getCategoryIcon = (categoryId) => {
+  const getCategoryIcon = (categoryId: string) => {
     return categoryIcons[categoryId] || FolderOpen;
   };
 
@@ -177,46 +189,18 @@ export default function DocsScreen() {
         }
       >
         {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.placeholder} />
-          <Text style={styles.title}>Docs & Files</Text>
+          <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ArrowLeft size={24} color="#4559A7" />
+          </TouchableOpacity>
+          <Text style={styles.title}>{selectedPet?.name}'s Docs</Text>
           <TouchableOpacity 
             style={styles.uploadButton}
-            onPress={() => router.push('/(tabs)/docs/upload')}
+            onPress={() => router.push(`/(tabs)/pets/${petId}/docs/upload` as any)}
           >
             <Upload size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
-
-        {/* Pet Selector */}
-        {pets.length > 0 && (
-          <View style={styles.petSelector}>
-            <Text style={styles.petSelectorTitle}>Select Pet:</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.petsScroll}>
-              {pets.map((pet) => (
-                <TouchableOpacity
-                  key={pet.id}
-                  style={[
-                    styles.petCard,
-                    selectedPet?.id === pet.id && styles.selectedPetCard
-                  ]}
-                  onPress={() => setSelectedPet(pet)}
-                >
-                  <View style={[
-                    styles.petAvatar,
-                    selectedPet?.id === pet.id && styles.selectedPetAvatar
-                  ]}>
-                    <Text style={styles.petInitial}>{pet.name.charAt(0).toUpperCase()}</Text>
-                  </View>
-                  <Text style={[
-                    styles.petName,
-                    selectedPet?.id === pet.id && styles.selectedPetName
-                  ]}>{pet.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
@@ -290,12 +274,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ADD7EB',
+  },
+  backButton: {
+    padding: 8,
   },
   placeholder: {
     width: 40,
   },
   title: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#4559A7',
   },
