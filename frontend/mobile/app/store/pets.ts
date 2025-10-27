@@ -12,11 +12,11 @@ interface PetState {
   
   // Actions
   setPets: (pets: Pet[]) => void;
-  addPet: (pet: CreatePet, getToken: () => Promise<string | null>) => Promise<Pet>;
-  updatePet: (id: string, updates: UpdatePet, getToken: () => Promise<string | null>) => Promise<void>;
-  deletePet: (id: string, getToken: () => Promise<string | null>) => Promise<void>;
+  addPet: (pet: CreatePet) => Promise<Pet>;
+  updatePet: (id: string, updates: UpdatePet) => Promise<void>;
+  deletePet: (id: string) => Promise<void>;
   selectPet: (petId: string | null) => void;
-  fetchPets: (getToken: () => Promise<string | null>) => Promise<void>;
+  fetchPets: () => Promise<void>;
   clearError: () => void;
   clearPets: () => void;
 }
@@ -34,7 +34,7 @@ export const usePetStore = create<PetState>((set, get) => ({
     set({ pets });
   },
 
-  addPet: async (petData, getToken) => {
+  addPet: async (petData) => {
     try {
       set({ isLoading: true, error: null });
       
@@ -52,7 +52,7 @@ export const usePetStore = create<PetState>((set, get) => ({
         spayedNeutered: petData.spayedNeutered || false,
         allergies: petData.allergies,
         dietaryRestrictions: petData.dietaryRestrictions,
-      } as any, getToken);
+      } as any);
       
       if (response.success) {
         const backendPet = response.data;
@@ -67,7 +67,6 @@ export const usePetStore = create<PetState>((set, get) => ({
           gender: backendPet.gender as "male" | "female",
           weight: backendPet.weight,
           spayedNeutered: backendPet.spayedNeutered,
-          microchipId: (backendPet as any).microchipId,
           allergies: backendPet.allergies,
           dietaryRestrictions: backendPet.dietaryRestrictions,
           notes: (backendPet as any).notes,
@@ -102,7 +101,7 @@ export const usePetStore = create<PetState>((set, get) => ({
     }
   },
 
-  updatePet: async (id, updates, getToken) => {
+  updatePet: async (id, updates) => {
     try {
       set({ isLoading: true, error: null });
       
@@ -119,7 +118,7 @@ export const usePetStore = create<PetState>((set, get) => ({
         spayedNeutered: updates.spayedNeutered,
         allergies: updates.allergies,
         dietaryRestrictions: updates.dietaryRestrictions,
-      } as any, getToken);
+      } as any);
       
       if (response.success) {
         const backendPet = response.data;
@@ -134,7 +133,6 @@ export const usePetStore = create<PetState>((set, get) => ({
           gender: backendPet.gender as "male" | "female",
           weight: backendPet.weight,
           spayedNeutered: backendPet.spayedNeutered,
-          microchipId: (backendPet as any).microchipId,
           allergies: backendPet.allergies,
           dietaryRestrictions: backendPet.dietaryRestrictions,
           notes: (backendPet as any).notes,
@@ -167,11 +165,11 @@ export const usePetStore = create<PetState>((set, get) => ({
     }
   },
 
-  deletePet: async (id, getToken) => {
+  deletePet: async (id) => {
     try {
       set({ isLoading: true, error: null });
       
-      await clerkApiClient.deletePet(id, getToken);
+      await clerkApiClient.deletePet(id);
       
       const currentPets = get().pets;
       const updatedPets = currentPets.filter((pet) => pet.id !== id);
@@ -212,11 +210,11 @@ export const usePetStore = create<PetState>((set, get) => ({
     }
   },
 
-  fetchPets: async (getToken) => {
+  fetchPets: async () => {
     try {
       set({ isLoading: true, error: null });
       
-      const response = await clerkApiClient.getPets(getToken);
+      const response = await clerkApiClient.getPets();
       
       if (response.success) {
         // Transform backend pets to app pet format
@@ -229,7 +227,6 @@ export const usePetStore = create<PetState>((set, get) => ({
           gender: backendPet.gender as "male" | "female",
           weight: backendPet.weight,
           spayedNeutered: backendPet.spayedNeutered,
-          microchipId: (backendPet as any).microchipId,
           allergies: backendPet.allergies,
           dietaryRestrictions: backendPet.dietaryRestrictions,
           notes: (backendPet as any).notes,

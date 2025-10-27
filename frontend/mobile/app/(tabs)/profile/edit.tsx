@@ -13,11 +13,11 @@ import {
 import { ArrowLeft, Save, User, Mail, Phone, MapPin } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { clerkApiClient } from '../../lib/api';
-import { useAuth } from '@clerk/clerk-expo';
+import { useUser } from '@clerk/clerk-expo';
 
 export default function EditProfileScreen() {
   const router = useRouter();
-  const { user, getToken } = useAuth();
+  const { user } = useUser();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   
@@ -56,7 +56,7 @@ export default function EditProfileScreen() {
         lastName: formData.lastName.trim(),
         phone: formData.phone.trim() || undefined,
         address: formData.address.trim() || undefined,
-      }, getToken);
+      });
 
       if (response.success) {
         // Update the user in the auth store

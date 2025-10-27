@@ -71,7 +71,7 @@ export default function PetProfileScreen() {
   const loadPetProfile = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.getPet(id);
+      const response = await clerkApiClient.getPet(id);
       if (response.success) {
         setPet(response.data as unknown as PetProfile);
       }

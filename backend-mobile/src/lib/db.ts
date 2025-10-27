@@ -4,12 +4,13 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
-// Create a PostgreSQL connection pool that works with AWS RDS SSL
+// Create a PostgreSQL connection pool
 const pool = new Pool({
   connectionString: process.env.MOBILE_DATABASE_URL,
-  ssl: {
+  // Disable SSL for local development, enable for production (AWS RDS)
+  ssl: process.env.NODE_ENV === 'production' ? {
     rejectUnauthorized: false // Accept self-signed certificates from AWS RDS
-  }
+  } : false
 });
 
 // Test connection on startup

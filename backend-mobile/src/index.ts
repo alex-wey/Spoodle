@@ -179,5 +179,4 @@ app.listen(PORT, () => {
   console.log(`  - Documents: http://localhost:${PORT}/api/documents/*`);
   console.log(`  - Bug Reports: http://localhost:${PORT}/api/bug-report/*`);
   console.log(`  - Chatbot: http://localhost:${PORT}/api/chatbot/*`);
-  console.log(`🔒 This backend is COMPLETELY SEPARATE from web backend`);
 });

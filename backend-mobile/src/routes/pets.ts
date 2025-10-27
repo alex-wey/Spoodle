@@ -4,23 +4,11 @@ import { prisma } from '../index';
 import pool from '../lib/db';
 import { validateRequest, validationSchemas, commonSchemas } from '../middleware/validation';
 import { authenticateClerk } from '../middleware/auth';
-import { getUserFromClerkOrCreate } from '../services/userSync';
 
 const router = Router();
 
 // Apply authentication to all pet routes
 router.use(authenticateClerk);
-
-// Helper function to get local user ID from Clerk user ID
-async function getLocalUserId(clerkUserId: string): Promise<string> {
-  const user = await getUserFromClerkOrCreate({
-    userId: clerkUserId,
-    email: '', // Will be filled by userSync
-    firstName: '',
-    lastName: ''
-  });
-  return user.id;
-}
 
 // Helper function to validate and clean image URLs
 function validateImageUrl(imageUrl: string | null | undefined): string | null {
@@ -50,7 +38,7 @@ function validateImageUrl(imageUrl: string | null | undefined): string | null {
 // Get all pets for the authenticated user
 router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.auth) {
+    if (!req.user) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -58,9 +46,8 @@ router.get('/', async (req: Request, res: Response) => {
       });
     }
 
-    const localUserId = await getLocalUserId(req.auth.userId);
     const pets = await prisma.pet.findMany({
-      where: { ownerId: localUserId },
+      where: { ownerId: req.user.id },
       orderBy: { createdAt: 'desc' }
     });
     
@@ -89,7 +76,7 @@ router.get('/:id',
       const pet = await prisma.pet.findFirst({
         where: { 
           id: id as string,
-          ownerId: req.auth!.userId
+          ownerId: req.user!.id
         }
       });
       
@@ -122,7 +109,7 @@ router.post('/',
   // validateRequest({ body: validationSchemas.createPet }), // TEMPORARILY DISABLED FOR DEBUGGING
   async (req: Request, res: Response) => {
     try {
-      if (!req.auth) {
+      if (!req.user) {
         return res.status(401).json({
           success: false,
           error: 'Authentication required',
@@ -137,7 +124,7 @@ router.post('/',
       
       // DEBUG: Log what we're trying to create
       console.log('🐕 Attempting to create pet:');
-      console.log('   Owner ID:', req.auth.userId);
+      console.log('   Owner ID:', req.user.id);
       console.log('   Pet Name:', petData.name);
       console.log('   Species:', petData.species);
       console.log('   Image URL:', cleanImageUrl ? 'Valid image URL provided' : 'No valid image URL');
@@ -147,14 +134,14 @@ router.post('/',
       const result = await pool.query(
         `INSERT INTO pets (
           id, "ownerId", name, species, breed, "dateOfBirth", 
-          gender, "spayedNeutered", weight, "microchipId", 
+          gender, "spayedNeutered", weight, 
           allergies, "dietaryRestrictions", "imageUrl", "createdAt", "updatedAt"
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()
         ) RETURNING *`,
         [
           petId,
-          req.auth.userId,
+          req.user.id,
           petData.name,
           petData.species || 'Dog',
           petData.breed || null,
@@ -162,7 +149,6 @@ router.post('/',
           petData.gender || null,
           petData.spayedNeutered || false,
           petData.weight || null,
-          petData.microchipId || null,
           petData.allergies || [],
           petData.dietaryRestrictions || [],
           cleanImageUrl
@@ -205,7 +191,7 @@ router.put('/:id',
       const existingPet = await prisma.pet.findFirst({
         where: { 
           id: id as string,
-          ownerId: req.auth!.userId
+          ownerId: req.user!.id
         }
       });
       
@@ -260,7 +246,7 @@ router.delete('/:id',
       const existingPet = await prisma.pet.findFirst({
         where: { 
           id: id as string,
-          ownerId: req.auth!.userId
+          ownerId: req.user!.id
         }
       });
       

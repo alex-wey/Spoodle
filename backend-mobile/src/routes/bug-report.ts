@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import { validateRequest } from '../middleware/validation';
-import { emailService } from '../services/email';
+import { emailService } from '../utils/email';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -108,45 +108,35 @@ router.post('/',
       // Try to create the bug report in database, but don't fail if it doesn't work
       let bugReportId = null;
       try {
-        // First, check if the user exists in pet_owners table, if not create them
-        let petOwner = await prisma.pet_owners.findUnique({
-          where: { email: req.auth?.email || reporterEmail }
-        });
-        
-        if (!petOwner && req.auth) {
-          // Create pet_owner record if it doesn't exist
-          petOwner = await prisma.pet_owners.create({
-            data: {
-              id: uuidv4(),
-              email: req.auth.email,
-              password: 'temp_password', // This will be updated when they set a proper password
-              firstName: req.auth.firstName,
-              lastName: req.auth.lastName,
-              phone: null,
-              address: null,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            }
+        if (req.auth?.userId) {
+          // Find petOwner by clerkUserId
+          let petOwner = await prisma.petOwner.findUnique({
+            where: { clerkUserId: req.auth.userId }
           });
-        }
-        
-        if (petOwner) {
-          const newBugReport = await prisma.bugReport.create({
-            data: {
-              id: uuidv4(),
-              petOwnerId: petOwner.id,
-              title,
-              description,
-              severity,
-              category,
-              deviceInfo: deviceInfo || null,
-              appVersion: appVersion || null,
-              status: 'pending',
-              priority: severity === 'critical' ? 'high' : severity === 'high' ? 'medium' : 'low'
-            }
-          });
-          bugReportId = newBugReport.id;
-          console.log('✅ Bug report saved to database:', bugReportId);
+          
+          if (!petOwner) {
+            console.log('⚠️ PetOwner not found for clerkUserId:', req.auth.userId);
+            console.log('   This should have been created during user registration');
+          }
+          
+          if (petOwner) {
+            const newBugReport = await prisma.bugReport.create({
+              data: {
+                id: uuidv4(),
+                petOwnerId: petOwner.id,
+                title,
+                description,
+                severity,
+                category,
+                deviceInfo: deviceInfo || null,
+                appVersion: appVersion || null,
+                status: 'pending',
+                priority: severity === 'critical' ? 'high' : severity === 'high' ? 'medium' : 'low'
+              }
+            });
+            bugReportId = newBugReport.id;
+            console.log('✅ Bug report saved to database:', bugReportId);
+          }
         }
       } catch (dbError) {
         console.log('⚠️ Database save failed, but continuing with email:', (dbError as Error).message);

@@ -1,13 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { authenticateClerk } from '../middleware/auth';
-import { getUserFromClerkOrCreate, updateUserProfile, deleteUserData } from '../services/userSync';
+import { updateUserProfile, deleteUserData } from '../utils/userSync';
 
 const router = Router();
 
 // Get current user profile
 router.get('/me', authenticateClerk, async (req: Request, res: Response) => {
   try {
-    if (!req.auth) {
+    if (!req.user) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -15,17 +15,10 @@ router.get('/me', authenticateClerk, async (req: Request, res: Response) => {
       });
     }
 
-    // Get or create user from Clerk data
-    const user = await getUserFromClerkOrCreate({
-      userId: req.auth.userId,
-      email: req.auth.email,
-      firstName: req.auth.firstName,
-      lastName: req.auth.lastName
-    });
-    
+    // User is already synced by authenticateClerk middleware
     return res.json({
       success: true,
-      data: user,
+      data: req.user,
       message: 'Profile retrieved successfully'
     });
   } catch (error) {

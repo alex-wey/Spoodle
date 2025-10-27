@@ -53,7 +53,7 @@ router.use(authenticateClerk);
 // Get all documents for the authenticated user
 router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.auth) {
+    if (!req.user) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -62,7 +62,7 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     const documents = await prisma.document.findMany({
-      where: { ownerId: req.auth.userId },
+      where: { ownerId: req.user.id },
       include: {
         pet: {
           select: {
@@ -94,12 +94,12 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/category/:category',
   validateRequest({ 
     params: z.object({ 
-      category: z.enum(['past_appointments', 'x_ray_documents', 'diagnostic_reports', 'blood_test_reports', 'vaccination_history'])
+      category: z.enum(['x_ray_documents', 'diagnostic_reports', 'blood_test_reports', 'vaccination_history'])
     })
   }),
   async (req: Request, res: Response) => {
     try {
-      if (!req.auth) {
+      if (!req.user) {
         return res.status(401).json({
           success: false,
           error: 'Authentication required',
@@ -111,7 +111,7 @@ router.get('/category/:category',
       
       const documents = await prisma.document.findMany({
         where: {
-          ownerId: req.auth.userId,
+          ownerId: req.user!.id,
           category: category as string
         },
         include: {
@@ -147,12 +147,12 @@ router.get('/pet/:petId/category/:category',
   validateRequest({ 
     params: z.object({ 
       petId: commonSchemas.id,
-      category: z.enum(['past_appointments', 'x_ray_documents', 'diagnostic_reports', 'blood_test_reports', 'vaccination_history'])
+      category: z.enum(['x_ray_documents', 'diagnostic_reports', 'blood_test_reports', 'vaccination_history'])
     })
   }),
   async (req: Request, res: Response) => {
     try {
-      if (!req.auth) {
+      if (!req.user) {
         return res.status(401).json({
           success: false,
           error: 'Authentication required',
@@ -166,7 +166,7 @@ router.get('/pet/:petId/category/:category',
       const pet = await prisma.pet.findFirst({
         where: {
           id: petId as string,
-          ownerId: req.auth.userId
+          ownerId: req.user!.id
         }
       });
       
@@ -181,7 +181,7 @@ router.get('/pet/:petId/category/:category',
       const documents = await prisma.document.findMany({
         where: { 
           petId: petId as string,
-          ownerId: req.auth.userId,
+          ownerId: req.user!.id,
           category: category as string
         },
         include: {
@@ -223,7 +223,7 @@ router.get('/pet/:petId',
       const pet = await prisma.pet.findFirst({
         where: { 
           id: petId as string,
-          ownerId: req.auth!.userId
+          ownerId: req.user!.id
         }
       });
       
@@ -238,7 +238,7 @@ router.get('/pet/:petId',
       const documents = await prisma.document.findMany({
         where: { 
           petId: petId as string,
-          ownerId: req.auth!.userId
+          ownerId: req.user!.id
         },
         orderBy: { createdAt: 'desc' }
       });
@@ -269,7 +269,7 @@ router.get('/:id',
       const document = await prisma.document.findFirst({
         where: { 
           id: id as string,
-          ownerId: req.auth!.userId
+          ownerId: req.user!.id
         },
         include: {
           pet: {
@@ -312,13 +312,13 @@ router.post('/upload',
   async (req: Request, res: Response) => {
     try {
       console.log('📤 Upload request received');
-      console.log('  User:', req.auth?.userId);
+      console.log('  User:', req.user?.id);
       console.log('  File:', req.file ? req.file.originalname : 'NO FILE');
       console.log('  File details:', req.file);
       console.log('  Body:', req.body);
       console.log('  Headers:', req.headers);
       
-      if (!req.auth) {
+      if (!req.user) {
         console.log('❌ No user authenticated');
         return res.status(401).json({
           success: false,
@@ -350,7 +350,7 @@ router.post('/upload',
         const pet = await prisma.pet.findFirst({
         where: {
           id: petId as string,
-          ownerId: req.auth.userId
+          ownerId: req.user!.id
         }
         });
         
@@ -364,7 +364,7 @@ router.post('/upload',
       } else {
         // If no petId provided, get the user's first pet
         const userPets = await prisma.pet.findMany({
-          where: { ownerId: req.auth.userId },
+          where: { ownerId: req.user!.id },
           take: 1
         });
         
@@ -382,7 +382,7 @@ router.post('/upload',
       const documentData = {
         id: uuidv4(),
         petId: selectedPetId,
-            ownerId: req.auth.userId,
+        ownerId: req.user!.id,
         category,
         hospitalName,
         fileName: req.file.filename,
@@ -442,7 +442,7 @@ router.put('/:id',
   validateRequest({ 
     params: z.object({ id: commonSchemas.id }),
     body: z.object({
-      category: z.enum(['past_appointments', 'x_ray_documents', 'diagnostic_reports', 'blood_test_reports', 'vaccination_history']).optional(),
+      category: z.enum(['x_ray_documents', 'diagnostic_reports', 'blood_test_reports', 'vaccination_history']).optional(),
       hospitalName: z.string().min(1).optional(),
       fileName: z.string().min(1).optional(),
       date: z.string().datetime().optional(),
@@ -457,7 +457,7 @@ router.put('/:id',
       const existingDocument = await prisma.document.findFirst({
         where: { 
           id: id as string,
-          ownerId: req.auth!.userId
+          ownerId: req.user!.id
         }
       });
       
@@ -515,7 +515,7 @@ router.get('/download/:id',
       const document = await prisma.document.findFirst({
         where: { 
           id: id as string,
-          ownerId: req.auth!.userId
+          ownerId: req.user!.id
         }
       });
       
@@ -570,7 +570,7 @@ router.delete('/:id',
       const existingDocument = await prisma.document.findFirst({
         where: { 
           id: id as string,
-          ownerId: req.auth!.userId
+          ownerId: req.user!.id
         }
       });
       

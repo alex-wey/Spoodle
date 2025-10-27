@@ -1,10 +1,21 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image, Platform } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Save, Camera, X } from "lucide-react-native";
 import { useState, useEffect } from "react";
 import { usePetStore } from "../../store/pets";
 import * as ImagePicker from 'expo-image-picker';
+
+const INITIAL_FORM_STATE = {
+  name: '',
+  species: '',
+  breed: '',
+  gender: '',
+  dateOfBirth: '',
+  weight: '',
+  allergies: '',
+  dietaryRestrictions: ''
+};
 
 export default function AddPetScreen() {
   const router = useRouter();
@@ -14,87 +25,41 @@ export default function AddPetScreen() {
   const isEditMode = !!editId;
   const existingPet = isEditMode ? pets.find(pet => pet.id === editId) : null;
   
-  const [formData, setFormData] = useState({
-    name: '',
-    species: '',
-    breed: '',
-    gender: '',
-    dateOfBirth: '',
-    weight: '',
-    microchipId: '',
-    allergies: '',
-    dietaryRestrictions: '',
-    notes: ''
-  });
-  
-  const [petImage, setPetImage] = useState(null);
+  const [formData, setFormData] = useState(INITIAL_FORM_STATE);
+  const [petImage, setPetImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Reset form to initial state
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      species: '',
-      breed: '',
-      gender: '',
-      dateOfBirth: '',
-      weight: '',
-      microchipId: '',
-      allergies: '',
-      dietaryRestrictions: '',
-      notes: ''
-    });
-    setPetImage(null);
-  };
-
-  // Populate form with existing pet data when in edit mode, or reset for new pet
+  // Load existing pet data or reset form
   useEffect(() => {
     if (isEditMode && existingPet) {
+      // Convert ISO date to MM/DD/YYYY
+      let formattedDate = '';
+      if (existingPet.dateOfBirth) {
+        const date = existingPet.dateOfBirth instanceof Date 
+          ? existingPet.dateOfBirth 
+          : new Date(existingPet.dateOfBirth);
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const year = date.getFullYear();
+        formattedDate = `${month}/${day}/${year}`;
+      }
+
       setFormData({
         name: existingPet.name || '',
         species: existingPet.species || '',
         breed: existingPet.breed || '',
         gender: existingPet.gender || '',
-        dateOfBirth: existingPet.dateOfBirth ? (typeof existingPet.dateOfBirth === 'string' ? existingPet.dateOfBirth.split('T')[0] : existingPet.dateOfBirth.toISOString().split('T')[0]) : '',
-        weight: existingPet.weight ? existingPet.weight.toString() : '',
-        microchipId: existingPet.microchipId || '',
-        allergies: existingPet.allergies ? existingPet.allergies.join(', ') : '',
-        dietaryRestrictions: existingPet.dietaryRestrictions ? existingPet.dietaryRestrictions.join(', ') : '',
-        notes: existingPet.notes || ''
+        dateOfBirth: formattedDate,
+        weight: existingPet.weight?.toString() || '',
+        allergies: existingPet.allergies?.join(', ') || '',
+        dietaryRestrictions: existingPet.dietaryRestrictions?.join(', ') || ''
       });
       setPetImage(existingPet.imageUrl || null);
     } else {
-      // Reset form for new pet
-      resetForm();
+      setFormData(INITIAL_FORM_STATE);
+      setPetImage(null);
     }
   }, [isEditMode, existingPet]);
-
-  // Reset form when component mounts for adding a new pet
-  useEffect(() => {
-    if (!isEditMode) {
-      resetForm();
-    }
-  }, []);
-
-  const convertUriToBase64 = async (uri: string): Promise<string> => {
-    try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64String = reader.result as string;
-          resolve(base64String);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    } catch (error) {
-      console.error('Error converting URI to base64:', error);
-      return uri; // Return original URI if conversion fails
-    }
-  };
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -105,40 +70,36 @@ export default function AddPetScreen() {
     });
 
     if (!result.canceled) {
-      const imageUri = result.assets[0].uri;
-      
-      // Convert blob URL to base64 for web platform
-      if (Platform.OS === 'web' && imageUri.startsWith('blob:')) {
-        try {
-          const base64Image = await convertUriToBase64(imageUri);
-          setPetImage(base64Image);
-        } catch (error) {
-          console.error('Error converting image to base64:', error);
-          // Don't set the blob URL as it will cause errors later
-          setPetImage(null);
-          Alert.alert('Image Error', 'Failed to process the selected image. Please try again.');
-        }
-      } else {
-        setPetImage(imageUri);
-      }
+      setPetImage(result.assets[0].uri);
     }
   };
 
-  const removeImage = () => {
-    setPetImage(null);
+  const handleDateChange = (text: string) => {
+    // Remove all non-numeric characters
+    const cleaned = text.replace(/\D/g, '');
+    
+    // Format as MM/DD/YYYY
+    let formatted = cleaned;
+    if (cleaned.length >= 2) {
+      formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2);
+    }
+    if (cleaned.length >= 4) {
+      formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4) + '/' + cleaned.slice(4, 8);
+    }
+    
+    setFormData({ ...formData, dateOfBirth: formatted });
   };
 
   const handleSubmit = async () => {
+    // Validation
     if (!formData.name.trim()) {
       Alert.alert('Error', 'Please enter your pet\'s name');
       return;
     }
-
     if (!formData.species.trim()) {
       Alert.alert('Error', 'Please select your pet\'s species');
       return;
     }
-
     if (!formData.gender.trim()) {
       Alert.alert('Error', 'Please select your pet\'s gender');
       return;
@@ -147,52 +108,40 @@ export default function AddPetScreen() {
     setIsSubmitting(true);
     
     try {
-      // Ensure we have a valid image URL (base64 or null)
-      let finalImageUrl = null;
-      if (petImage) {
-        if (petImage.startsWith('data:image/')) {
-          // Already base64, use as is
-          finalImageUrl = petImage;
-        } else if (petImage.startsWith('blob:') && Platform.OS === 'web') {
-          // Convert blob to base64
-          try {
-            finalImageUrl = await convertUriToBase64(petImage);
-          } catch (error) {
-            console.error('Error converting blob to base64:', error);
-            Alert.alert('Image Error', 'Failed to process the selected image. Please try again.');
-            setIsSubmitting(false);
-            return;
+      // Convert MM/DD/YYYY to ISO format
+      let dateOfBirthISO = new Date().toISOString();
+      if (formData.dateOfBirth) {
+        const [month, day, year] = formData.dateOfBirth.split('/');
+        if (month && day && year) {
+          const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+          if (!isNaN(date.getTime())) {
+            dateOfBirthISO = date.toISOString();
           }
-        } else {
-          // Regular URL or mobile URI
-          finalImageUrl = petImage;
         }
       }
 
       const petData = {
-        ...formData,
+        name: formData.name,
+        species: formData.species,
+        breed: formData.breed || 'Mixed Breed',
+        gender: formData.gender as 'male' | 'female',
+        dateOfBirth: dateOfBirthISO,
         weight: formData.weight ? parseFloat(formData.weight) : undefined,
-        allergies: formData.allergies.split(',').map(a => a.trim()).filter(a => a),
-        dietaryRestrictions: formData.dietaryRestrictions.split(',').map(d => d.trim()).filter(d => d),
-        imageUrl: finalImageUrl
+        allergies: formData.allergies.split(',').map(a => a.trim()).filter(Boolean),
+        dietaryRestrictions: formData.dietaryRestrictions.split(',').map(d => d.trim()).filter(Boolean),
+        imageUrl: petImage || undefined
       };
 
       if (isEditMode && existingPet) {
         await updatePet(existingPet.id, petData);
-        Alert.alert('Success', 'Pet updated successfully!', [
-          { text: 'OK', onPress: () => router.back() }
-        ]);
+        router.back();
       } else {
         await addPet(petData);
-        Alert.alert('Success', 'Pet added successfully!', [
-          { text: 'OK', onPress: () => {
-            resetForm(); // Reset form after successful addition
-            router.back();
-          }}
-        ]);
+        router.back();
       }
     } catch (error) {
-      Alert.alert('Error', isEditMode ? 'Failed to update pet. Please try again.' : 'Failed to add pet. Please try again.');
+      const message = isEditMode ? 'Failed to update pet' : 'Failed to add pet';
+      Alert.alert('Error', `${message}. Please try again.`);
     } finally {
       setIsSubmitting(false);
     }
@@ -217,7 +166,10 @@ export default function AddPetScreen() {
               {petImage ? (
                 <View style={styles.imagePreviewContainer}>
                   <Image source={{ uri: petImage }} style={styles.petImage} />
-                  <TouchableOpacity style={styles.removeImageButton} onPress={removeImage}>
+                  <TouchableOpacity 
+                    style={styles.removeImageButton} 
+                    onPress={() => setPetImage(null)}
+                  >
                     <X size={16} color="#FFFFFF" />
                   </TouchableOpacity>
                 </View>
@@ -231,9 +183,9 @@ export default function AddPetScreen() {
             </View>
           </View>
 
-          {/* Basic Information */}
+          {/* Required Information */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Basic Information</Text>
+            <Text style={styles.sectionTitle}>Required Information</Text>
             
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Pet Name *</Text>
@@ -249,7 +201,7 @@ export default function AddPetScreen() {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Species *</Text>
               <View style={styles.speciesContainer}>
-                {['Dog', 'Cat', 'Bird', 'Rabbit', 'Other'].map((species) => (
+                {['Dog', 'Cat', 'Other'].map((species) => (
                   <TouchableOpacity
                     key={species}
                     style={[
@@ -270,22 +222,11 @@ export default function AddPetScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Breed</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.breed}
-                onChangeText={(text) => setFormData({ ...formData, breed: text })}
-                placeholder="Enter breed"
-                placeholderTextColor="#9CA3AF"
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
               <Text style={styles.label}>Gender *</Text>
               <View style={styles.speciesContainer}>
                 {[
-                  { value: 'male', label: 'Male ♂', icon: '♂' },
-                  { value: 'female', label: 'Female ♀', icon: '♀' }
+                  { value: 'male', label: 'Male ♂' },
+                  { value: 'female', label: 'Female ♀' }
                 ].map((gender) => (
                   <TouchableOpacity
                     key={gender.value}
@@ -305,25 +246,43 @@ export default function AddPetScreen() {
                 ))}
               </View>
             </View>
+          </View>
+
+          {/* Optional Information */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Optional Information</Text>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Breed</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.breed}
+                onChangeText={(text) => setFormData({ ...formData, breed: text })}
+                placeholder="Enter breed"
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Date of Birth</Text>
               <TextInput
                 style={styles.input}
                 value={formData.dateOfBirth}
-                onChangeText={(text) => setFormData({ ...formData, dateOfBirth: text })}
-                placeholder="YYYY-MM-DD"
+                onChangeText={handleDateChange}
+                placeholder="MM/DD/YYYY"
                 placeholderTextColor="#9CA3AF"
+                keyboardType="numeric"
+                maxLength={10}
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Weight (kg)</Text>
+              <Text style={styles.label}>Weight (lbs)</Text>
               <TextInput
                 style={styles.input}
                 value={formData.weight}
                 onChangeText={(text) => setFormData({ ...formData, weight: text })}
-                placeholder="Enter weight"
+                placeholder="Enter weight in pounds"
                 placeholderTextColor="#9CA3AF"
                 keyboardType="numeric"
               />
@@ -333,17 +292,6 @@ export default function AddPetScreen() {
           {/* Health Information */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Health Information</Text>
-            
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Microchip ID</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.microchipId}
-                onChangeText={(text) => setFormData({ ...formData, microchipId: text })}
-                placeholder="Enter microchip ID"
-                placeholderTextColor="#9CA3AF"
-              />
-            </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Allergies</Text>
@@ -364,20 +312,6 @@ export default function AddPetScreen() {
                 onChangeText={(text) => setFormData({ ...formData, dietaryRestrictions: text })}
                 placeholder="Enter dietary restrictions (comma separated)"
                 placeholderTextColor="#9CA3AF"
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Additional Notes</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={formData.notes}
-                onChangeText={(text) => setFormData({ ...formData, notes: text })}
-                placeholder="Any additional information about your pet"
-                placeholderTextColor="#9CA3AF"
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
               />
             </View>
           </View>

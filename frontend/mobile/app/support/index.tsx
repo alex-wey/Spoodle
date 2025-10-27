@@ -4,12 +4,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { TouchableOpacity } from "react-native";
 import { ArrowLeft, Send, Bug, AlertTriangle, Info, AlertCircle } from "lucide-react-native";
-import { useAuth } from '@clerk/clerk-expo';
 import { clerkApiClient } from "../lib/api";
 
 export default function SupportScreen() {
   const router = useRouter();
-  const { getToken } = useAuth();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState('medium');
@@ -38,7 +36,7 @@ export default function SupportScreen() {
         category,
         deviceInfo: `Mobile App - ${Platform.OS}`,
         appVersion: '1.0.0'
-      }, getToken);
+      });
 
           if (response.success) {
             Alert.alert(

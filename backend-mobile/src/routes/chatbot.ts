@@ -84,7 +84,7 @@ router.post('/chat',
       const pet = await prisma.pet.findFirst({
         where: {
           id: petId as string,
-          ownerId: req.auth!.userId
+          ownerId: req.user!.id
         }
       });
 
@@ -143,7 +143,7 @@ router.get('/history/:petId',
       const pet = await prisma.pet.findFirst({
         where: {
           id: petId as string,
-          ownerId: req.auth!.userId
+          ownerId: req.user!.id
         }
       });
 

@@ -80,7 +80,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         name: documentData.file.name,
       } as any);
       
-      const response = await apiClient.uploadDocument(formData);
+      const response = await clerkApiClient.uploadDocument(formData);
       
       if (response.success) {
         const newDocument = response.data;
@@ -110,7 +110,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
-      const response = await apiClient.getDocuments();
+      const response = await clerkApiClient.getDocuments();
       
       if (response.success) {
         set({
@@ -131,7 +131,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
-      const response = await apiClient.getDocumentsByCategory(category);
+      const response = await clerkApiClient.getDocumentsByCategory(category);
       
       if (response.success) {
         set({ isLoading: false });
@@ -156,7 +156,6 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   clearDocuments: () => {
     set({ 
       documents: [], 
-      selectedCategory: null,
       error: null 
     });
   },

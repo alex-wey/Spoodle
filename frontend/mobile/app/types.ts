@@ -19,7 +19,6 @@ export interface Pet {
   gender: "male" | "female";
   spayedNeutered: boolean;
   weight: number;
-  microchipId?: string;
   allergies: string[];
   dietaryRestrictions: string[];
   notes?: string;
@@ -36,7 +35,6 @@ export interface CreatePet {
   gender?: "male" | "female";
   spayedNeutered?: boolean;
   weight?: number;
-  microchipId?: string;
   allergies?: string[];
   dietaryRestrictions?: string[];
   notes?: string;
@@ -51,7 +49,6 @@ export interface UpdatePet {
   gender?: "male" | "female";
   spayedNeutered?: boolean;
   weight?: number;
-  microchipId?: string;
   allergies?: string[];
   dietaryRestrictions?: string[];
   notes?: string;

@@ -14,8 +14,8 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Upload, FileText, Calendar, MapPin, StickyNote, ChevronDown, Trash2 } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import { useAuth } from '@clerk/clerk-expo';
 import { usePetStore } from '../../../../store/pets';
+import { clerkApiClient } from '../../../../lib/api';
 
 export default function UploadDocumentScreen() {
   // Get category and petId from URL params
@@ -53,7 +53,6 @@ export default function UploadDocumentScreen() {
     }
   }, []);
 
-  const { getToken } = useAuth();
   const { pets, fetchPets } = usePetStore();
 
   // Function to reset the form
@@ -80,7 +79,7 @@ export default function UploadDocumentScreen() {
   ];
 
   React.useEffect(() => {
-    fetchPets(getToken);
+    fetchPets();
   }, []);
 
   // Auto-select the pet based on petId from URL
@@ -188,18 +187,7 @@ export default function UploadDocumentScreen() {
       console.log('  File Type:', fileType);
       console.log('  Sending request to backend...');
 
-      const token = await getToken();
-      const response = await fetch(`http://localhost:3002/api/documents/upload`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      console.log('  Response status:', response.status);
-
-      const data = await response.json();
+      const data = await clerkApiClient.uploadDocument(formData);
       console.log('  Response data:', data);
 
       if (data.success) {

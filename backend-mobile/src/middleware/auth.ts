@@ -1,16 +1,28 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken } from '@clerk/backend';
+import { createClerkClient, verifyToken } from '@clerk/backend';
+import { getOrCreateUser } from '../utils/userSync';
+
+// Initialize Clerk client once
+const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! });
 
 // Extend Express Request type to include Clerk auth
 declare global {
   namespace Express {
     interface Request {
-      auth?: {
+      auth: {
         userId: string;
+        sessionToken: string;
+      };
+      user?: {
+        id: string;
+        clerkUserId: string;
         email: string;
         firstName: string;
         lastName: string;
-        sessionId: string;
+        phone: string | null;
+        address: string | null;
+        createdAt: Date;
+        updatedAt: Date;
       };
     }
   }
@@ -30,18 +42,43 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
     }
 
     // Verify Clerk session token
-    const payload = await verifyToken(sessionToken, {
+    const { sub: userId } = await verifyToken(sessionToken, {
       secretKey: process.env.CLERK_SECRET_KEY!
     });
+ 
+    // Get the user ID from the token
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid token',
+        message: 'User ID not found in token'
+      });
+    }
 
-    // Extract user info from Clerk token
     req.auth = {
-      userId: payload.sub || '', // Clerk user ID
-      email: (payload.email as string) || '',
-      firstName: (payload.first_name as string) || '',
-      lastName: (payload.last_name as string) || '',
-      sessionId: (payload.sid as string) || ''
+      userId: userId,
+      sessionToken: sessionToken
     };
+
+    // Fetch full user data from Clerk
+    const { id, firstName, lastName, primaryEmailAddress, primaryPhoneNumber } = await clerk.users.getUser(userId);
+
+    // Sync user to database (creates User + PetOwner if doesn't exist)
+    try {
+      const user = await getOrCreateUser({
+        clerkUserId: id,
+        email: primaryEmailAddress?.emailAddress!,
+        firstName: firstName!,
+        lastName: lastName!,
+        phone: primaryPhoneNumber?.phoneNumber ?? null,
+      });
+      
+      // Attach full user object to request
+      req.user = user;
+    } catch (syncError) {
+      console.error('User sync error:', syncError);
+      // Continue anyway - the auth is still valid even if sync fails
+    }
 
     return next();
   } catch (error) {
@@ -51,34 +88,5 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
       error: 'Invalid session token',
       message: 'Clerk session token is invalid or expired'
     });
-  }
-};
-
-export const optionalClerkAuth = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const authHeader = req.headers['authorization'];
-    const sessionToken = authHeader && authHeader.split(' ')[1];
-
-    if (!sessionToken) {
-      return next(); // Continue without authentication
-    }
-
-    // Try to verify token, but don't fail if invalid
-    const payload = await verifyToken(sessionToken, {
-      secretKey: process.env.CLERK_SECRET_KEY!
-    });
-
-    req.auth = {
-      userId: payload.sub || '',
-      email: (payload.email as string) || '',
-      firstName: (payload.first_name as string) || '',
-      lastName: (payload.last_name as string) || '',
-      sessionId: (payload.sid as string) || ''
-    };
-
-    next();
-  } catch (error) {
-    // Continue without authentication if token is invalid
-    next();
   }
 };

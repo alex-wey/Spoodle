@@ -1,18 +1,32 @@
 /**
  * API Client for making authenticated requests to the backend using Clerk
- * This version requires getToken to be passed to each method call
+ * Set the token getter once using setTokenGetter(), then all requests automatically include auth
  */
 class ClerkApiClient {
   private baseUrl: string;
+  private tokenGetter: (() => Promise<string | null>) | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
   }
 
+  /**
+   * Set the token getter function (call this once at app initialization)
+   */
+  setTokenGetter(getToken: () => Promise<string | null>) {
+    this.tokenGetter = getToken;
+  }
+
+  /**
+   * Clear the token getter (call this on logout)
+   */
+  clearTokenGetter() {
+    this.tokenGetter = null;
+  }
+
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {},
-    getToken?: () => Promise<string | null>
+    options: RequestInit = {}
   ): Promise<T> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -20,8 +34,8 @@ class ClerkApiClient {
     };
 
     // Add Clerk session token if available
-    if (getToken) {
-      const token = await getToken();
+    if (this.tokenGetter) {
+      const token = await this.tokenGetter();
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }
@@ -56,7 +70,7 @@ class ClerkApiClient {
   }
 
   // Auth endpoints - these work with Clerk
-  async getProfile(getToken: () => Promise<string | null>) {
+  async getProfile() {
     return this.request<{
       success: boolean;
       data: {
@@ -69,18 +83,15 @@ class ClerkApiClient {
         createdAt: string;
         updatedAt: string;
       };
-    }>("/auth/me", {}, getToken);
+    }>("/auth/me");
   }
 
-  async updateProfile(
-    data: {
-      firstName?: string;
-      lastName?: string;
-      phone?: string;
-      address?: string;
-    },
-    getToken: () => Promise<string | null>
-  ) {
+  async updateProfile(data: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    address?: string;
+  }) {
     return this.request<{
       success: boolean;
       data: {
@@ -96,20 +107,20 @@ class ClerkApiClient {
     }>("/auth/me", {
       method: "PUT",
       body: JSON.stringify(data),
-    }, getToken);
+    });
   }
 
-  async deleteAccount(getToken: () => Promise<string | null>) {
+  async deleteAccount() {
     return this.request<{
       success: boolean;
       message: string;
     }>("/auth/me", {
       method: "DELETE",
-    }, getToken);
+    });
   }
 
   // Pet endpoints
-  async getPets(getToken: () => Promise<string | null>) {
+  async getPets() {
     return this.request<{
       success: boolean;
       data: Array<{
@@ -127,10 +138,10 @@ class ClerkApiClient {
         createdAt: string;
         updatedAt: string;
       }>;
-    }>("/pets", {}, getToken);
+    }>("/pets");
   }
 
-  async getPetById(petId: string, getToken: () => Promise<string | null>) {
+  async getPetById(petId: string) {
     return this.request<{
       success: boolean;
       data: {
@@ -148,28 +159,25 @@ class ClerkApiClient {
         createdAt: string;
         updatedAt: string;
       };
-    }>(`/pets/${petId}`, {}, getToken);
+    }>(`/pets/${petId}`);
   }
 
   // Alias for getPetById
-  async getPet(petId: string, getToken: () => Promise<string | null>) {
-    return this.getPetById(petId, getToken);
+  async getPet(petId: string) {
+    return this.getPetById(petId);
   }
 
-  async createPet(
-    data: {
-      name: string;
-      species: string;
-      breed?: string;
-      dateOfBirth?: string;
-      gender?: string;
-      weight?: number;
-      spayedNeutered?: boolean;
-      allergies?: string[];
-      dietaryRestrictions?: string[];
-    },
-    getToken: () => Promise<string | null>
-  ) {
+  async createPet(data: {
+    name: string;
+    species: string;
+    breed?: string;
+    dateOfBirth?: string;
+    gender?: string;
+    weight?: number;
+    spayedNeutered?: boolean;
+    allergies?: string[];
+    dietaryRestrictions?: string[];
+  }) {
     return this.request<{
       success: boolean;
       data: {
@@ -190,7 +198,7 @@ class ClerkApiClient {
     }>("/pets", {
       method: "POST",
       body: JSON.stringify(data),
-    }, getToken);
+    });
   }
 
   async updatePet(
@@ -204,8 +212,7 @@ class ClerkApiClient {
       spayedNeutered?: boolean;
       allergies?: string[];
       dietaryRestrictions?: string[];
-    },
-    getToken: () => Promise<string | null>
+    }
   ) {
     return this.request<{
       success: boolean;
@@ -226,20 +233,20 @@ class ClerkApiClient {
     }>(`/pets/${petId}`, {
       method: "PUT",
       body: JSON.stringify(data),
-    }, getToken);
+    });
   }
 
-  async deletePet(petId: string, getToken: () => Promise<string | null>) {
+  async deletePet(petId: string) {
     return this.request<{
       success: boolean;
       message: string;
     }>(`/pets/${petId}`, {
       method: "DELETE",
-    }, getToken);
+    });
   }
 
   // Document endpoints
-  async getDocuments(getToken: () => Promise<string | null>) {
+  async getDocuments() {
     return this.request<{
       success: boolean;
       data: Array<{
@@ -263,10 +270,10 @@ class ClerkApiClient {
           breed: string;
         };
       }>;
-    }>("/documents", {}, getToken);
+    }>("/documents");
   }
 
-  async getDocumentsByCategory(category: string, getToken: () => Promise<string | null>) {
+  async getDocumentsByCategory(category: string) {
     return this.request<{
       success: boolean;
       data: Array<{
@@ -290,15 +297,18 @@ class ClerkApiClient {
           breed: string;
         };
       }>;
-    }>(`/documents/category/${category}`, {}, getToken);
+    }>(`/documents/category/${category}`);
   }
 
-  async uploadDocument(formData: FormData, getToken: () => Promise<string | null>) {
-    const token = await getToken();
-    
+  async uploadDocument(formData: FormData) {
     const headers: Record<string, string> = {};
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
+    
+    // Add token if available
+    if (this.tokenGetter) {
+      const token = await this.tokenGetter();
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
     }
 
     const response = await fetch(`${this.baseUrl}/documents`, {
@@ -318,17 +328,14 @@ class ClerkApiClient {
   }
 
   // Bug report endpoints
-  async submitBugReport(
-    data: {
-      title: string;
-      description: string;
-      severity: string;
-      category: string;
-      deviceInfo?: string;
-      appVersion?: string;
-    },
-    getToken: () => Promise<string | null>
-  ) {
+  async submitBugReport(data: {
+    title: string;
+    description: string;
+    severity: string;
+    category: string;
+    deviceInfo?: string;
+    appVersion?: string;
+  }) {
     return this.request<{
       success: boolean;
       data?: any;
@@ -336,7 +343,7 @@ class ClerkApiClient {
     }>('/bug-report', {
       method: 'POST',
       body: JSON.stringify(data),
-    }, getToken);
+    });
   }
 }
 

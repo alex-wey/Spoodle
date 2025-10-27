@@ -20,7 +20,6 @@ export const validationSchemas = {
     gender: z.string().optional(),
     spayedNeutered: z.boolean().optional(),
     weight: z.number().positive().optional(),
-    microchipId: z.string().optional(),
     allergies: z.array(z.string()).optional(),
     dietaryRestrictions: z.array(z.string()).optional(),
     imageUrl: z.string().optional()
@@ -34,24 +33,13 @@ export const validationSchemas = {
     gender: z.string().optional(),
     spayedNeutered: z.boolean().optional(),
     weight: z.number().positive().optional(),
-    microchipId: z.string().optional(),
     allergies: z.array(z.string()).optional(),
     dietaryRestrictions: z.array(z.string()).optional(),
     imageUrl: z.string().optional()
   }),
   
-  createTask: z.object({
-    petId: commonSchemas.id,
-    type: z.enum(['walk', 'feed', 'medicate', 'groom', 'training', 'checkup', 'other']),
-    title: commonSchemas.name,
-    description: z.string().max(500).optional(),
-    scheduledTime: z.string().datetime('Invalid scheduled time'),
-    recurring: z.boolean().optional(),
-    recurrencePattern: z.enum(['daily', 'weekly', 'monthly']).optional()
-  }),
-  
   createDocument: z.object({
-    category: z.enum(['past_appointments', 'x_ray_documents', 'diagnostic_reports', 'blood_test_reports', 'vaccination_history']),
+    category: z.enum(['x_ray_documents', 'diagnostic_reports', 'blood_test_reports', 'vaccination_history']),
     petId: commonSchemas.id.optional(),
     hospitalName: z.string().min(1, 'Hospital name is required'),
     fileName: z.string().min(1, 'File name is required'),
