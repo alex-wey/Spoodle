@@ -5,8 +5,8 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import { z } from 'zod';
 import { prisma } from '../index.js';
-import { validateRequest, commonSchemas } from '../middleware/validation';
-import { authenticateClerk } from '../middleware/auth';
+import { validateRequest, commonSchemas } from '../middleware/validation.js';
+import { authenticateClerk } from '../middleware/auth.js';
 
 const router = Router();
 

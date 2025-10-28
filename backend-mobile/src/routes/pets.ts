@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { prisma } from '../index';
-import pool from '../lib/db';
-import { validateRequest, validationSchemas, commonSchemas } from '../middleware/validation';
-import { authenticateClerk } from '../middleware/auth';
+import { prisma } from '../index.js';
+import pool from '../lib/db.js';
+import { validateRequest, validationSchemas, commonSchemas } from '../middleware/validation.js';
+import { authenticateClerk } from '../middleware/auth.js';
 
 const router = Router();
 

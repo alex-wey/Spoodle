@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { authenticateClerk } from '../middleware/auth';
-import { updateUserProfile, deleteUserData } from '../utils/userSync';
+import { authenticateClerk } from '../middleware/auth.js';
+import { updateUserProfile, deleteUserData } from '../utils/userSync.js';
 
 const router = Router();
 

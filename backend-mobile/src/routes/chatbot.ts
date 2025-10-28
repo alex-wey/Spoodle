@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { validateRequest } from '../middleware/validation';
-import { authenticateClerk } from '../middleware/auth';
+import { validateRequest } from '../middleware/validation.js';
+import { authenticateClerk } from '../middleware/auth.js';
 import { prisma } from '../index.js';
 import OpenAI from 'openai';
 

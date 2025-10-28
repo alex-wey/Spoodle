@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { createClerkClient, verifyToken } from '@clerk/backend';
-import { getOrCreateUser } from '../utils/userSync';
+import { getOrCreateUser } from '../utils/userSync.js';
 
 // Initialize Clerk client once
 const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! });
