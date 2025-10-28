@@ -15,12 +15,12 @@ export const SignOutButton = () => {
 
   const handleSignOut = async () => {
     Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
+      'Sign Out',
+      'Are you sure you want to sign out?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', onPress: async () => {
-          console.log('🚪 Starting logout process...');
+        { text: 'Sign Out', onPress: async () => {
+          console.log('🚪 Starting sign out process...');
           
           // Clear all stores first
           clearPets();
@@ -36,7 +36,7 @@ export const SignOutButton = () => {
             router.replace("/(auth)/landing");
           } catch (error) {
             console.error('❌ Clerk signOut error:', error);
-            // Even if logout fails, force redirect
+            // Even if sign out fails, force redirect
             router.replace("/(auth)/landing");
           }
         }},
@@ -46,20 +46,20 @@ export const SignOutButton = () => {
 
   return (
     <TouchableOpacity 
-      style={styles.logoutButton}
+      style={styles.signOutButton}
       onPress={handleSignOut}
       activeOpacity={0.5}
     >
       <View style={styles.iconContainer}>
         <LogOut size={20} color="#FFFFFF" />
       </View>
-      <Text style={styles.buttonText}>Logout</Text>
+      <Text style={styles.buttonText}>Sign Out</Text>
     </TouchableOpacity>
   );
 };
 
 const styles = {
-  logoutButton: {
+  signOutButton: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     backgroundColor: '#FFFFFF',
@@ -67,7 +67,7 @@ const styles = {
     borderWidth: 1.5,
     borderColor: '#4559A7',
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
     shadowColor: '#4559A7',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -89,7 +89,7 @@ const styles = {
     elevation: 1,
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600' as const,
     color: '#4559A7',
     letterSpacing: 0.2,

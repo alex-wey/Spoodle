@@ -23,15 +23,15 @@ model User {
 }
 
 model PetOwner {
-  id             String          @id @default(uuid())
-  clerkUserId    String          @unique
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  bugReports     BugReport[]
-  chatMessages   ChatMessage[]
-  user           User            @relation(fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
-  pets           Pet[]
-  userPreference UserPreference?
+  id           String       @id @default(uuid())
+  clerkUserId  String       @unique
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  bugReports   BugReport[]
+  chatMessages ChatMessage[]
+  user         User         @relation(fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
+  pets         Pet[]
+  settings     Settings?
 
   @@map("pet_owners")
 }
@@ -109,18 +109,18 @@ model ChatMessage {
   @@map("chat_messages")
 }
 
-model UserPreference {
-  id            String   @id @default(uuid())
-  petOwnerId    String   @unique
-  theme         String   @default("light")
-  language      String   @default("en")
-  notifications Boolean  @default(true)
-  biometricAuth Boolean  @default(false)
-  settings      Json?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  petOwner      PetOwner @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
+model Settings {
+  id              String   @id @default(uuid())
+  petOwnerId      String   @unique
+  theme           String   @default("light")
+  language        String   @default("en")
+  notifications   Boolean  @default(true)
+  biometricAuth   Boolean  @default(false)
+  profileImageUrl String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  petOwner        PetOwner @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
 
   @@index([petOwnerId])
-  @@map("user_preferences")
+  @@map("settings")
 }

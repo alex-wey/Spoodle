@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, Alert, TextInput, TouchableOpacity, Platform, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Calendar, Weight, Save, X, Dna, Syringe } from "lucide-react-native";
+import { ArrowLeft, Calendar, Weight, Save, X, Dna, Syringe, Trash2 } from "lucide-react-native";
 import { clerkApiClient } from "../../../lib/api";
 import { getSafeImageSource } from "../../../lib/imageUtils";
 import { usePetStore } from "../../../store/pets";
@@ -197,6 +197,53 @@ export default function PetProfileScreen() {
     setShowDatePicker(false);
     if (selectedDate) {
       setEditedPet(prev => ({ ...prev, dateOfBirth: selectedDate }));
+    }
+  };
+
+  const handleDelete = () => {
+    if (Platform.OS === 'web') {
+      if (confirm(`Are you sure you want to delete ${pet?.name}? This action cannot be undone.`)) {
+        performDelete();
+      }
+    } else {
+      Alert.alert(
+        'Delete Pet',
+        `Are you sure you want to delete ${pet?.name}? This action cannot be undone.`,
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: performDelete,
+          },
+        ]
+      );
+    }
+  };
+
+  const performDelete = async () => {
+    try {
+      const { deletePet, fetchPets } = usePetStore.getState();
+      await deletePet(id);
+      await fetchPets();
+      
+      if (Platform.OS === 'web') {
+        alert('Pet deleted successfully');
+      } else {
+        Alert.alert('Success', 'Pet deleted successfully');
+      }
+      
+      router.back();
+    } catch (error) {
+      console.error('Error deleting pet:', error);
+      if (Platform.OS === 'web') {
+        alert(`Error deleting pet: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      } else {
+        Alert.alert('Error', `Failed to delete pet: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   };
 
@@ -449,7 +496,7 @@ export default function PetProfileScreen() {
         </View>
 
         {/* System Information Section */}
-        <View style={[styles.section, styles.lastSection]}>
+        <View style={[styles.section, !isEditing && styles.lastSection]}>
           <Text style={styles.sectionTitle}>System Information</Text>
           
           <View style={styles.systemInfoContainer}>
@@ -478,6 +525,19 @@ export default function PetProfileScreen() {
             </View>
           </View>
         </View>
+
+        {/* Delete Pet Section - Only show in edit mode */}
+        {isEditing && (
+          <View style={[styles.section, styles.lastSection]}>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={handleDelete}
+            >
+              <Trash2 size={20} color="#FFFFFF" />
+              <Text style={styles.deleteButtonText}>Delete Pet</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
       </ScrollView>
       
@@ -718,5 +778,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ADD7EB",
     fontWeight: "600",
+  },
+  deleteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    backgroundColor: "#DC2626",
+    paddingVertical: 16,
+    borderRadius: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    marginTop: 10,
+  },
+  deleteButtonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "700",
   },
 });

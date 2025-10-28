@@ -49,26 +49,30 @@ export default function DocsScreen() {
   const { documents, fetchDocuments } = useDocumentStore();
   const { pets, fetchPets } = usePetStore();
 
-  // Load pets and select the current pet
+  // Load pets and select the current pet - only once on mount
   useEffect(() => {
     const loadPets = async () => {
       await fetchPets();
-      if (petId && pets.length > 0) {
-        const pet = pets.find((p) => p.id === petId);
-        if (pet) {
-          setSelectedPet(pet);
-        }
-      }
     };
     loadPets();
-  }, [petId, fetchPets, pets]);
+  }, []); // Only run once on mount
 
-  // Load documents when pet is selected
+  // Select pet when pets list or petId changes
+  useEffect(() => {
+    if (petId && pets.length > 0) {
+      const pet = pets.find((p) => p.id === petId);
+      if (pet) {
+        setSelectedPet(pet);
+      }
+    }
+  }, [petId, pets.length]); // Only depend on petId and pets array length
+
+  // Load documents when pet is selected - only once
   useEffect(() => {
     if (selectedPet) {
       fetchDocuments();
     }
-  }, [selectedPet, fetchDocuments]);
+  }, [selectedPet?.id]); // Only depend on the pet ID, not the whole object
 
   // Get document count for a specific category
   const getCategoryCount = (categoryId: string) => {

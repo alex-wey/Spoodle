@@ -52,6 +52,7 @@ export const usePetStore = create<PetState>((set, get) => ({
         spayedNeutered: petData.spayedNeutered || false,
         allergies: petData.allergies,
         dietaryRestrictions: petData.dietaryRestrictions,
+        imageUrl: petData.imageUrl,
       } as any);
       
       if (response.success) {
@@ -118,6 +119,7 @@ export const usePetStore = create<PetState>((set, get) => ({
         spayedNeutered: updates.spayedNeutered,
         allergies: updates.allergies,
         dietaryRestrictions: updates.dietaryRestrictions,
+        imageUrl: updates.imageUrl,
       });
       
       if (response.success) {

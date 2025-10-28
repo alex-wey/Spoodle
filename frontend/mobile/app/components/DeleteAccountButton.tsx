@@ -129,7 +129,7 @@ const styles = {
     borderWidth: 1.5,
     borderColor: '#EF4444',
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
     shadowColor: '#EF4444',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -151,7 +151,7 @@ const styles = {
     elevation: 1,
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600' as const,
     color: '#DC2626',
     letterSpacing: 0.2,

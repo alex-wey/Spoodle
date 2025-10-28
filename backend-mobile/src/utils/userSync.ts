@@ -125,11 +125,11 @@ export async function deleteUserData(clerkUserId: string) {
       });
       console.log(`✅ Deleted ${chatCount.count} chat messages`);
 
-      // 2. Delete user preferences
-      const prefCount = await tx.userPreference.deleteMany({
+      // 2. Delete settings
+      const settingsCount = await tx.settings.deleteMany({
         where: { petOwnerId }
       });
-      console.log(`✅ Deleted ${prefCount.count} user preferences`);
+      console.log(`✅ Deleted ${settingsCount.count} settings`);
 
       // 3. Delete bug reports
       const bugCount = await tx.bugReport.deleteMany({

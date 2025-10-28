@@ -93,10 +93,19 @@ export default function AddPetScreen() {
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
+      base64: true, // Request base64 encoding
     });
 
-    if (!result.canceled) {
-      setPetImage(result.assets[0].uri);
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      // If base64 is available, use it as a data URL; otherwise use the URI for preview
+      if (asset.base64) {
+        const base64Image = `data:image/jpeg;base64,${asset.base64}`;
+        setPetImage(base64Image);
+      } else {
+        // Fallback to URI if base64 is not available (shouldn't happen with base64: true)
+        setPetImage(asset.uri);
+      }
     }
   };
 
@@ -488,7 +497,7 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     borderRadius: 14,
     marginTop: 20,
-    marginBottom: 40,
+    marginBottom: 20,
   },
   submitButtonDisabled: {
     backgroundColor: "#ADD7EB",
@@ -500,7 +509,8 @@ const styles = StyleSheet.create({
   },
   imageUploadContainer: {
     alignItems: "center",
-    marginBottom: 24,
+    marginTop: 16,
+    marginBottom: 16,
   },
   imageUploadButton: {
     width: 140,

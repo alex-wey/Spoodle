@@ -135,6 +135,7 @@ class ClerkApiClient {
         spayedNeutered: boolean;
         allergies: string[];
         dietaryRestrictions: string[];
+        imageUrl?: string;
         createdAt: string;
         updatedAt: string;
       }[];
@@ -156,6 +157,7 @@ class ClerkApiClient {
         spayedNeutered: boolean;
         allergies: string[];
         dietaryRestrictions: string[];
+        imageUrl?: string;
         createdAt: string;
         updatedAt: string;
       };
@@ -177,6 +179,7 @@ class ClerkApiClient {
     spayedNeutered?: boolean;
     allergies?: string[];
     dietaryRestrictions?: string[];
+    imageUrl?: string;
   }) {
     return this.request<{
       success: boolean;
@@ -192,6 +195,7 @@ class ClerkApiClient {
         spayedNeutered: boolean;
         allergies: string[];
         dietaryRestrictions: string[];
+        imageUrl?: string;
         createdAt: string;
         updatedAt: string;
       };
@@ -212,6 +216,7 @@ class ClerkApiClient {
       spayedNeutered?: boolean;
       allergies?: string[];
       dietaryRestrictions?: string[];
+      imageUrl?: string;
     }
   ) {
     return this.request<{
@@ -227,6 +232,7 @@ class ClerkApiClient {
         spayedNeutered: boolean;
         allergies: string[];
         dietaryRestrictions: string[];
+        imageUrl?: string;
         createdAt: string;
         updatedAt: string;
       };
@@ -381,6 +387,52 @@ class ClerkApiClient {
       message: string;
     }>('/bug-report', {
       method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Settings endpoints
+  async getSettings() {
+    return this.request<{
+      success: boolean;
+      data: {
+        id: string;
+        petOwnerId: string;
+        theme: string;
+        language: string;
+        notifications: boolean;
+        biometricAuth: boolean;
+        profileImageUrl?: string | null;
+        createdAt: string;
+        updatedAt: string;
+      };
+      message: string;
+    }>('/settings');
+  }
+
+  async updateSettings(data: {
+    theme?: string;
+    language?: string;
+    notifications?: boolean;
+    biometricAuth?: boolean;
+    profileImageUrl?: string | null;
+  }) {
+    return this.request<{
+      success: boolean;
+      data: {
+        id: string;
+        petOwnerId: string;
+        theme: string;
+        language: string;
+        notifications: boolean;
+        biometricAuth: boolean;
+        profileImageUrl?: string | null;
+        createdAt: string;
+        updatedAt: string;
+      };
+      message: string;
+    }>('/settings', {
+      method: 'PUT',
       body: JSON.stringify(data),
     });
   }

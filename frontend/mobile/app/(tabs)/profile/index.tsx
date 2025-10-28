@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { 
   User, 
@@ -20,6 +21,7 @@ import { useUser } from '@clerk/clerk-expo';
 import { SignOutButton } from '../../components/SignOutButton';
 import { DeleteAccountButton } from '../../components/DeleteAccountButton';
 import * as ImagePicker from 'expo-image-picker';
+import { clerkApiClient } from '../../lib/api';
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState({
@@ -30,6 +32,7 @@ export default function ProfileScreen() {
     createdAt: null as Date | null,
   });
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const { user } = useUser();
 
@@ -44,6 +47,17 @@ export default function ProfileScreen() {
           address: null, // Clerk doesn't store address by default
           createdAt: user.createdAt ? new Date(user.createdAt) : null,
         });
+
+        // Fetch profile image from settings
+        try {
+          const settingsResponse = await clerkApiClient.getSettings();
+          if (settingsResponse.success && settingsResponse.data.profileImageUrl) {
+            setAvatarUri(settingsResponse.data.profileImageUrl);
+          }
+        } catch (settingsError) {
+          console.log('Settings not yet created or error fetching:', settingsError);
+          // This is fine - settings might not exist yet
+        }
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -75,20 +89,50 @@ export default function ProfileScreen() {
 
       // Launch image picker
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
+        mediaTypes: 'images',
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
+        base64: true, // Request base64 encoding
       });
 
       if (!result.canceled && result.assets[0]) {
-        setAvatarUri(result.assets[0].uri);
-        // Here you would typically upload the image to your backend
-        // For now, we'll just store it locally
+        const asset = result.assets[0];
+        
+        setIsUploadingImage(true);
+        
+        try {
+          // Convert to base64 data URL
+          let imageData: string;
+          if (asset.base64) {
+            imageData = `data:image/jpeg;base64,${asset.base64}`;
+          } else {
+            // Fallback to URI (shouldn't happen with base64: true)
+            imageData = asset.uri;
+          }
+
+          // Update avatar immediately for better UX
+          setAvatarUri(imageData);
+
+          // Save to backend
+          await clerkApiClient.updateSettings({
+            profileImageUrl: imageData
+          });
+
+          Alert.alert('Success', 'Profile picture updated successfully!');
+        } catch (uploadError) {
+          console.error('Error uploading image:', uploadError);
+          Alert.alert('Error', 'Failed to upload profile picture. Please try again.');
+          // Revert on error
+          fetchProfileData();
+        } finally {
+          setIsUploadingImage(false);
+        }
       }
     } catch (error) {
       console.error('Error picking image:', error);
       Alert.alert('Error', 'Failed to pick image. Please try again.');
+      setIsUploadingImage(false);
     }
   };
 
@@ -104,7 +148,11 @@ export default function ProfileScreen() {
         {/* Profile Card */}
         <View style={styles.profileCard}>
           <View style={styles.profileHeader}>
-            <TouchableOpacity style={styles.avatarContainer} onPress={pickImage}>
+            <TouchableOpacity 
+              style={styles.avatarContainer} 
+              onPress={pickImage}
+              disabled={isUploadingImage}
+            >
               <View style={styles.avatar}>
                 {avatarUri ? (
                   <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
@@ -113,7 +161,11 @@ export default function ProfileScreen() {
                 )}
               </View>
               <View style={styles.cameraButton}>
-                <Camera size={16} color="#FFFFFF" />
+                {isUploadingImage ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Camera size={16} color="#FFFFFF" />
+                )}
               </View>
             </TouchableOpacity>
             <View style={styles.profileInfo}>
@@ -330,19 +382,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contactValue: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '500',
     color: '#4559A7',
     marginBottom: 4,
   },
   contactValuePlaceholder: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#4559A7',
     fontStyle: 'italic',
     marginBottom: 4,
   },
   contactLabel: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#4559A7',
     opacity: 0.7,
   },
@@ -377,7 +429,7 @@ const styles = StyleSheet.create({
     color: '#4559A7',
   },
   accountValue: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '500',
     color: '#4559A7',
   },
