@@ -300,6 +300,45 @@ class ClerkApiClient {
     }>(`/documents/category/${category}`);
   }
 
+  async getDocumentsByPetAndCategory(petId: string, category: string) {
+    return this.request<{
+      success: boolean;
+      data: Array<{
+        id: string;
+        petId: string;
+        ownerId: string;
+        category: string;
+        hospitalName: string;
+        fileName: string;
+        originalFileName: string;
+        filePath: string;
+        fileSize: number;
+        mimeType: string;
+        date: string;
+        notes: string;
+        createdAt: string;
+        updatedAt: string;
+        pet: {
+          id: string;
+          name: string;
+          breed: string;
+        };
+      }>;
+    }>(`/documents/pet/${petId}/category/${category}`);
+  }
+
+  async downloadDocument(documentId: string) {
+    return this.request<{
+      success: boolean;
+      data: {
+        id: string;
+        fileName: string;
+        fileSize: number;
+        mimeType: string;
+      };
+    }>(`/documents/download/${documentId}`);
+  }
+
   async uploadDocument(formData: FormData) {
     const headers: Record<string, string> = {};
     

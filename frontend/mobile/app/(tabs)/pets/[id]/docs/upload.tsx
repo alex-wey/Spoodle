@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Upload, FileText, MapPin, ChevronDown, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Upload, FileText, ChevronDown, Trash2 } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { usePetStore } from '../../../../store/pets';
 import { clerkApiClient } from '../../../../lib/api';
@@ -23,10 +23,8 @@ export default function UploadDocumentScreen() {
   const preselectedCategory = params.category || '';
   const petId = params.id;
   
-  const [step, setStep] = useState(preselectedCategory ? 2 : 1); // Skip to step 2 if category provided
   const [selectedPet, setSelectedPet] = useState<any>(null);
   const [category, setCategory] = useState(preselectedCategory);
-  const [hospitalName, setHospitalName] = useState('');
   const [fileName, setFileName] = useState('');
   const [customFileName, setCustomFileName] = useState('');
   const [fileUri, setFileUri] = useState('');
@@ -40,12 +38,10 @@ export default function UploadDocumentScreen() {
     if (!preselectedCategory) {
       setSelectedPet(null);
       setCategory('');
-      setHospitalName('');
       setFileName('');
       setCustomFileName('');
       setFileUri('');
       setFileType('');
-      setStep(1);
     }
   }, []);
 
@@ -55,21 +51,19 @@ export default function UploadDocumentScreen() {
   const resetForm = () => {
     setSelectedPet(null);
     setCategory('');
-    setHospitalName('');
     setFileName('');
     setCustomFileName('');
     setFileUri('');
     setFileType('');
-    setStep(1);
     setIsSubmitting(false);
   };
 
   const categories = [
-    { id: 'past_appointments', title: 'Past Appointments', color: '#3BB272' },
-    { id: 'x_ray_documents', title: 'X-Ray Documents', color: '#E75325' },
-    { id: 'diagnostic_reports', title: 'Diagnostic Reports', color: '#FF5D91' },
+    { id: 'past_appointments', title: 'Past Visits', color: '#4559A7' },
+    { id: 'x_ray_documents', title: 'X-Ray Documents', color: '#4559A7' },
+    { id: 'diagnostic_reports', title: 'Diagnostic Reports', color: '#4559A7' },
     { id: 'blood_test_reports', title: 'Blood Test Reports', color: '#4559A7' },
-    { id: 'vaccination_history', title: 'Vaccination History', color: '#E75325' },
+    { id: 'vaccination_history', title: 'Vaccination History', color: '#4559A7' },
   ];
 
   React.useEffect(() => {
@@ -89,14 +83,6 @@ export default function UploadDocumentScreen() {
   const handleCategorySelect = (catId: string) => {
     setCategory(catId);
     setShowCategoryDropdown(false);
-  };
-
-  const handleNext = () => {
-    if (!category) {
-      Alert.alert('Missing Information', 'Please select a document category.');
-      return;
-    }
-    setStep(2);
   };
 
   const handlePickDocument = async () => {
@@ -125,15 +111,14 @@ export default function UploadDocumentScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedPet || !category || !hospitalName || !fileName || !fileUri) {
-      Alert.alert('Missing Information', 'Please fill in all required fields and select a file.');
+    if (!selectedPet || !category || !fileName || !fileUri) {
+      Alert.alert('Missing Information', 'Please select a category and file.');
       return;
     }
 
     console.log('📤 Starting upload...');
     console.log('  Pet:', selectedPet.id);
     console.log('  Category:', category);
-    console.log('  Hospital:', hospitalName);
     console.log('  File:', fileName);
     console.log('  File URI:', fileUri);
     console.log('  File Type:', fileType);
@@ -143,7 +128,7 @@ export default function UploadDocumentScreen() {
       const formData = new FormData();
       formData.append('petId', selectedPet.id);
       formData.append('category', category);
-      formData.append('hospitalName', hospitalName);
+      formData.append('hospitalName', ''); // Empty string as default
       formData.append('fileName', customFileName || fileName);
       
       // Append file - Handle both web (blob) and native formats
@@ -173,7 +158,6 @@ export default function UploadDocumentScreen() {
       console.log('📤 FormData contents:');
       console.log('  Pet ID:', selectedPet.id);
       console.log('  Category:', category);
-      console.log('  Hospital:', hospitalName);
       console.log('  File Name:', customFileName || fileName);
       console.log('  File URI:', fileUri);
       console.log('  File Type:', fileType);
@@ -207,41 +191,33 @@ export default function UploadDocumentScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity 
-            onPress={() => {
-              if (step === 1) {
-                // Go back to documents screen
-                router.push(`/(tabs)/pets/${petId}/docs` as any);
-              } else {
-                // Go back to step 1
-                setStep(1);
-              }
-            }} 
+            onPress={() => router.push(`/(tabs)/pets/${petId}/docs` as any)} 
             style={styles.backButton}
           >
             <ArrowLeft size={24} color="#4559A7" />
           </TouchableOpacity>
-          <Text style={styles.title}>
-            {step === 1 ? 'Choose Category' : 'Add Files'}
-          </Text>
-          <View style={styles.placeholder} />
+          <Text style={styles.title}>Upload Document</Text>
+          <View style={styles.headerSpacer} />
         </View>
 
-        {/* STEP 1: Category Selection */}
-        {step === 1 && (
-          <View style={styles.form}>
-            <Text style={styles.stepTitle}>Select Document Category</Text>
-            <Text style={styles.stepDescription}>
-              Choose the type of document you want to upload
-            </Text>
-
+        {/* Single Form */}
+        <View style={styles.form}>
+          {/* Category Selection */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Document Category *</Text>
             <TouchableOpacity
               style={styles.dropdownButton}
               onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
             >
-              <Text style={[styles.dropdownText, !category && styles.dropdownPlaceholder]}>
-                {selectedCategory ? selectedCategory.title : 'Choose an option...'}
-              </Text>
-              <ChevronDown size={20} color="#4559A7" />
+              <View style={styles.dropdownContent}>
+                {selectedCategory && (
+                  <View style={[styles.categoryDot, { backgroundColor: selectedCategory.color }]} />
+                )}
+                <Text style={[styles.dropdownText, !category && styles.dropdownPlaceholder]}>
+                  {selectedCategory ? selectedCategory.title : 'Choose a category...'}
+                </Text>
+              </View>
+              <ChevronDown size={22} color="#4559A7" />
             </TouchableOpacity>
 
             {showCategoryDropdown && (
@@ -262,137 +238,61 @@ export default function UploadDocumentScreen() {
                 ))}
               </View>
             )}
-
-            <TouchableOpacity
-              style={[styles.nextButton, !category && styles.nextButtonDisabled]}
-              onPress={handleNext}
-              disabled={!category}
-            >
-              <Text style={styles.nextButtonText}>Next</Text>
-            </TouchableOpacity>
           </View>
-        )}
 
-        {/* STEP 2: Details Form */}
-        {step === 2 && (
-          <View style={styles.form}>
-            <View style={styles.selectedCategoryBanner}>
-              <View style={[styles.categoryDot, { backgroundColor: selectedCategory?.color }]} />
-              <Text style={styles.selectedCategoryText}>{selectedCategory?.title}</Text>
-            </View>
-
-            {/* Pet Selection - Only show if no petId in URL */}
-            {!petId && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Select Pet</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.petsScroll}>
-                  {pets.map((pet: any) => (
-                    <TouchableOpacity
-                      key={pet.id}
-                      style={[
-                        styles.petCard,
-                        selectedPet?.id === pet.id && styles.selectedPetCard
-                      ]}
-                      onPress={() => setSelectedPet(pet)}
-                    >
-                      <View style={[
-                        styles.petAvatar,
-                        selectedPet?.id === pet.id && styles.selectedPetAvatar
-                      ]}>
-                        <Text style={styles.petInitial}>{pet.name.charAt(0).toUpperCase()}</Text>
-                      </View>
-                      <Text style={[
-                        styles.petName,
-                        selectedPet?.id === pet.id && styles.selectedPetName
-                      ]}>{pet.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-            
-            {/* Show selected pet info when petId is provided */}
-            {petId && selectedPet && (
-              <View style={styles.selectedPetInfo}>
-                <Text style={styles.selectedPetLabel}>Uploading for:</Text>
-                <View style={styles.selectedPetDisplay}>
-                  <View style={styles.selectedPetAvatarDisplay}>
-                    <Text style={styles.petInitial}>{selectedPet.name.charAt(0).toUpperCase()}</Text>
-                  </View>
-                  <Text style={styles.selectedPetNameDisplay}>{selectedPet.name}</Text>
+          {/* File Picker */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Document File *</Text>
+            {fileName ? (
+              <View style={styles.filePreview}>
+                <FileText size={24} color="#3BB272" />
+                <View style={styles.fileInfo}>
+                  <Text style={styles.fileName}>{fileName}</Text>
+                  <Text style={styles.fileSize}>Ready to upload</Text>
                 </View>
-              </View>
-            )}
-
-            {/* Hospital Name */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Hospital/Clinic Name *</Text>
-              <View style={styles.inputContainer}>
-                <MapPin size={20} color="#4559A7" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter hospital or clinic name"
-                  value={hospitalName}
-                  onChangeText={setHospitalName}
-                  placeholderTextColor="#ADD7EB"
-                />
-              </View>
-            </View>
-
-            {/* File Picker */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Document File *</Text>
-              {fileName ? (
-                <View style={styles.filePreview}>
-                  <FileText size={24} color="#3BB272" />
-                  <View style={styles.fileInfo}>
-                    <Text style={styles.fileName}>{fileName}</Text>
-                    <Text style={styles.fileSize}>Ready to upload</Text>
-                  </View>
-                  <TouchableOpacity onPress={() => { setFileName(''); setFileUri(''); }}>
-                    <Trash2 size={20} color="#E75325" />
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity style={styles.filePickerButton} onPress={handlePickDocument}>
-                  <Upload size={24} color="#4559A7" />
-                  <Text style={styles.filePickerText}>Choose File</Text>
+                <TouchableOpacity onPress={() => { setFileName(''); setFileUri(''); }}>
+                  <Trash2 size={20} color="#E75325" />
                 </TouchableOpacity>
-              )}
-            </View>
-
-            {/* Custom File Name */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Custom File Name (Optional)</Text>
-              <View style={styles.inputContainer}>
-                <FileText size={20} color="#4559A7" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter custom name for the file"
-                  value={customFileName}
-                  onChangeText={setCustomFileName}
-                  placeholderTextColor="#ADD7EB"
-                />
               </View>
-            </View>
-
-            {/* Submit Button */}
-            <TouchableOpacity
-              style={[styles.uploadButton, isSubmitting && styles.uploadButtonDisabled]}
-              onPress={handleSubmit}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <>
-                  <Upload size={20} color="#FFFFFF" />
-                  <Text style={styles.uploadButtonText}>Save & Finish</Text>
-                </>
-              )}
-            </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={styles.filePickerButton} onPress={handlePickDocument}>
+                <Upload size={24} color="#4559A7" />
+                <Text style={styles.filePickerText}>Choose File</Text>
+              </TouchableOpacity>
+            )}
           </View>
-        )}
+
+          {/* Custom File Name */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Custom File Name (Optional)</Text>
+            <View style={styles.inputContainer}>
+              <FileText size={20} color="#4559A7" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Enter custom name for the file"
+                value={customFileName}
+                onChangeText={setCustomFileName}
+                placeholderTextColor="#ADD7EB"
+              />
+            </View>
+          </View>
+
+          {/* Submit Button */}
+          <TouchableOpacity
+            style={[styles.uploadButton, (!category || !fileName || isSubmitting) && styles.uploadButtonDisabled]}
+            onPress={handleSubmit}
+            disabled={!category || !fileName || isSubmitting}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <>
+                <Upload size={20} color="#FFFFFF" />
+                <Text style={styles.uploadButtonText}>Upload Document</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -408,39 +308,48 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#ADD7EB',
   },
   backButton: {
     padding: 8,
   },
+  headerSpacer: {
+    width: 40,
+  },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#4559A7',
   },
-  placeholder: {
-    width: 40,
-  },
   form: {
-    padding: 20,
+    padding: 24,
   },
   stepTitle: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#4559A7',
-    marginBottom: 8,
+    marginBottom: 16,
   },
   stepDescription: {
-    fontSize: 16,
+    fontSize: 20,
     color: '#4559A7',
     opacity: 0.7,
-    marginBottom: 32,
+    marginBottom: 36,
+  },
+  inputGroup: {
+    marginBottom: 28,
+  },
+  label: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4559A7',
+    marginBottom: 12,
   },
   dropdownButton: {
     flexDirection: 'row',
@@ -450,12 +359,16 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#ADD7EB',
     borderRadius: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    marginBottom: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+  },
+  dropdownContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
   },
   dropdownText: {
-    fontSize: 16,
+    fontSize: 20,
     color: '#4559A7',
     fontWeight: '500',
   },
@@ -467,14 +380,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#ADD7EB',
-    marginBottom: 32,
+    marginTop: 10,
     overflow: 'hidden',
   },
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 24,
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
@@ -483,164 +396,37 @@ const styles = StyleSheet.create({
   },
   dropdownItemText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 20,
     color: '#4559A7',
-    marginLeft: 12,
+    marginLeft: 14,
   },
   categoryDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
   },
   checkmark: {
-    fontSize: 18,
+    fontSize: 24,
     color: '#3BB272',
     fontWeight: 'bold',
-  },
-  nextButton: {
-    backgroundColor: '#3BB272',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  nextButtonDisabled: {
-    backgroundColor: '#ADD7EB',
-  },
-  nextButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  selectedCategoryBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#DCEBF5',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginBottom: 24,
-  },
-  selectedCategoryText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#4559A7',
-    marginLeft: 12,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#4559A7',
-    marginBottom: 12,
-  },
-  petsScroll: {
-    flexDirection: 'row',
-  },
-  petCard: {
-    alignItems: 'center',
-    marginRight: 16,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#ADD7EB',
-    padding: 12,
-    borderRadius: 12,
-    minWidth: 80,
-  },
-  selectedPetCard: {
-    backgroundColor: '#DCEBF5',
-    borderColor: '#4559A7',
-  },
-  petAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#ADD7EB',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  selectedPetAvatar: {
-    backgroundColor: '#4559A7',
-  },
-  petInitial: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  petName: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#4559A7',
-    textAlign: 'center',
-  },
-  selectedPetName: {
-    color: '#4559A7',
-    fontWeight: 'bold',
-  },
-  selectedPetInfo: {
-    backgroundColor: '#DCEBF5',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#4559A7',
-  },
-  selectedPetLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4559A7',
-    marginBottom: 12,
-  },
-  selectedPetDisplay: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  selectedPetAvatarDisplay: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#4559A7',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  selectedPetNameDisplay: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#4559A7',
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4559A7',
-    marginBottom: 8,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: '#ADD7EB',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
   },
   inputIcon: {
-    marginRight: 12,
+    marginRight: 14,
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 20,
     color: '#4559A7',
-  },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
   },
   filePickerButton: {
     flexDirection: 'row',
@@ -651,11 +437,11 @@ const styles = StyleSheet.create({
     borderColor: '#ADD7EB',
     borderStyle: 'dashed',
     borderRadius: 12,
-    paddingVertical: 32,
-    gap: 12,
+    paddingVertical: 48,
+    gap: 14,
   },
   filePickerText: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: '600',
     color: '#4559A7',
   },
@@ -663,23 +449,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#DCEBF5',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: '#3BB272',
     borderRadius: 12,
-    padding: 16,
-    gap: 12,
+    padding: 24,
+    gap: 14,
   },
   fileInfo: {
     flex: 1,
   },
   fileName: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: '600',
     color: '#4559A7',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   fileSize: {
-    fontSize: 12,
+    fontSize: 16,
     color: '#3BB272',
   },
   uploadButton: {
@@ -687,17 +473,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#3BB272',
-    paddingVertical: 16,
+    paddingVertical: 24,
     borderRadius: 12,
-    marginTop: 20,
-    gap: 8,
+    marginTop: 24,
+    gap: 10,
   },
   uploadButtonDisabled: {
     backgroundColor: '#ADD7EB',
   },
   uploadButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: '600',
   },
 });
