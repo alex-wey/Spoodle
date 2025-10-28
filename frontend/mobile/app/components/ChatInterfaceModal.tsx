@@ -12,6 +12,10 @@ import {
 import { X, Send } from 'lucide-react-native';
 import { useAuth } from '@clerk/clerk-expo';
 import { useChatStore, Message } from '../store/chat';
+import { getApiBaseUrl } from '../lib/api';
+
+// Get API base URL from environment
+const API_BASE_URL = getApiBaseUrl();
 
 interface ChatInterfaceModalProps {
   visible: boolean;
@@ -82,7 +86,7 @@ export default function ChatInterfaceModal({
       try {
         const token = await getToken();
         // Send message to chatbot API
-        const response = await fetch(`http://localhost:3002/api/chatbot/chat`, {
+        const response = await fetch(`${API_BASE_URL}/api/chatbot/chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

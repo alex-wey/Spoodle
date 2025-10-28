@@ -2,6 +2,26 @@
  * API Client for making authenticated requests to the backend using Clerk
  * Set the token getter once using setTokenGetter(), then all requests automatically include auth
  */
+
+/**
+ * Get API base URL from environment variable or fallback to localhost
+ * @returns The API base URL (without /api suffix)
+ */
+export const getApiBaseUrl = (): string => {
+  // Use environment variable if available
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (envUrl) {
+    console.log(`[API Client] Using API URL from env: ${envUrl}`);
+    return envUrl;
+  }
+  
+  // Fallback to localhost for development
+  console.log('[API Client] Using default localhost URL');
+  return 'http://localhost:3002';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
 class ClerkApiClient {
   private baseUrl: string;
   private tokenGetter: (() => Promise<string | null>) | null = null;
@@ -438,4 +458,4 @@ class ClerkApiClient {
   }
 }
 
-export const clerkApiClient = new ClerkApiClient(`http://localhost:3002/api`);
+export const clerkApiClient = new ClerkApiClient(`${API_BASE_URL}/api`);

@@ -19,12 +19,14 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3002;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const IS_PRODUCTION = NODE_ENV === 'production';
 
 // Initialize Prisma client with SSL configuration for AWS RDS
 export const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.MOBILE_DATABASE_URL || 'postgresql://localhost:5432/spoodle_mobile'
+      url: process.env.DATABASE_URL || 'postgresql://localhost:5432/spoodle'
     }
   },
   log: ['query', 'info', 'warn', 'error']
@@ -35,16 +37,23 @@ app.use(helmet());
 
 // CORS configuration for mobile app
 const corsOptions = {
-  origin: [
-    'http://localhost:8081',
-    'http://localhost:8082',
-    'http://localhost:8083', 
-    'http://localhost:19006',
-    'http://localhost:19000',
-    'exp://localhost:19000',
-    'exp://192.168.1.100:19000',
-    'exp://10.0.2.2:19000'
-  ],
+  origin: IS_PRODUCTION
+    ? (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+        // In production, allow all origins for mobile apps
+        // Mobile apps often send requests with null or file:// origins
+        callback(null, true);
+      }
+    : [
+        // Development origins
+        'http://localhost:8081',
+        'http://localhost:8082',
+        'http://localhost:8083',
+        'http://localhost:19006',
+        'http://localhost:19000',
+        'exp://localhost:19000',
+        'exp://192.168.1.100:19000',
+        'exp://10.0.2.2:19000'
+      ],
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -153,33 +162,49 @@ app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('Stop signal received, closing server...');
-  await prisma.$disconnect();
-  process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  console.log('Termination signal received, closing server...');
-  await prisma.$disconnect();
-  process.exit(0);
-});
-
 // Start server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log('🔑 Mobile Backend Environment variables loaded:');
+  console.log(`  - NODE_ENV: ${NODE_ENV}`);
   console.log(`  - PORT: ${PORT}`);
-  console.log(`  - MOBILE_DATABASE_URL: ${process.env.MOBILE_DATABASE_URL ? '✅ Set' : '❌ Not set'}`);
+  console.log(`  - DATABASE_URL: ${process.env.DATABASE_URL ? '✅ Set' : '❌ Not set'}`);
   console.log(`  - CLERK_SECRET_KEY: ${process.env.CLERK_SECRET_KEY ? '✅ Set' : '❌ Not set'}`);
-  console.log(`🚀 Spoodle MOBILE Backend API running on http://localhost:${PORT}`);
-  console.log(`📱 Mobile app should connect to: http://localhost:${PORT}`);
-  console.log(`🔍 Mobile API endpoints available at:`);
-  console.log(`  - Health: http://localhost:${PORT}/health`);
-  console.log(`  - Auth: http://localhost:${PORT}/api/auth/*`);
-  console.log(`  - Dashboard: http://localhost:${PORT}/api/dashboard/*`);
-  console.log(`  - Pets: http://localhost:${PORT}/api/pets/*`);
-  console.log(`  - Documents: http://localhost:${PORT}/api/documents/*`);
-  console.log(`  - Bug Reports: http://localhost:${PORT}/api/bug-report/*`);
-  console.log(`  - Chatbot: http://localhost:${PORT}/api/chatbot/*`);
+  
+  if (IS_PRODUCTION) {
+    const domain = process.env.RAILWAY_PUBLIC_DOMAIN;
+    console.log(`🚀 Spoodle MOBILE Backend API running in PRODUCTION`);
+    console.log(`📱 Mobile app should connect to: https://${domain}`);
+    console.log(`🔍 API Health Check: https://${domain}/health`);
+  } else {
+    console.log(`🚀 Spoodle MOBILE Backend API running on http://localhost:${PORT}`);
+    console.log(`📱 Mobile app should connect to: http://localhost:${PORT}`);
+    console.log(`🔍 Mobile API endpoints available at:`);
+    console.log(`  - Health: http://localhost:${PORT}/health`);
+    console.log(`  - Auth: http://localhost:${PORT}/api/auth/*`);
+    console.log(`  - Dashboard: http://localhost:${PORT}/api/dashboard/*`);
+    console.log(`  - Pets: http://localhost:${PORT}/api/pets/*`);
+    console.log(`  - Documents: http://localhost:${PORT}/api/documents/*`);
+    console.log(`  - Bug Reports: http://localhost:${PORT}/api/bug-report/*`);
+    console.log(`  - Chatbot: http://localhost:${PORT}/api/chatbot/*`);
+  }
 });
+
+// Graceful shutdown
+const shutdown = async () => {
+  console.log('Shutdown signal received, closing server gracefully...');
+  server.close(async () => {
+    console.log('HTTP server closed');
+    await prisma.$disconnect();
+    console.log('Database connection closed');
+    process.exit(0);
+  });
+  
+  // Force shutdown after 10 seconds
+  setTimeout(() => {
+    console.error('Forcing shutdown after timeout');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

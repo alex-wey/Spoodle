@@ -50,10 +50,6 @@ certs/
 node_modules/
 dist/
 
-# Local uploads (use cloud storage in production)
-uploads/**
-!uploads/.gitkeep
-
 # Setup instructions
 SETUP_INSTRUCTIONS.md
 

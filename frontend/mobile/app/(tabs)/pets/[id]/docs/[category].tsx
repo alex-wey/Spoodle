@@ -14,8 +14,11 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { ArrowLeft, FileText, Calendar, MapPin, Eye, Plus, X, Shield, Activity, Stethoscope, Zap } from 'lucide-react-native';
-import { clerkApiClient } from '../../../../lib/api';
+import { clerkApiClient, getApiBaseUrl } from '../../../../lib/api';
 import { Document } from '../../../../store/documents';
+
+// Get API base URL from environment
+const API_BASE_URL = getApiBaseUrl();
 
 // Category configuration
 const CATEGORY_CONFIG = {
@@ -289,7 +292,7 @@ export default function CategoryDocumentsScreen() {
           Alert.alert('Download Ready', `Document: ${response.data.fileName}\nSize: ${formatFileSize(response.data.fileSize)}`);
         }
       } else {
-        const fileUrl = `http://localhost:3002/api/documents/download/${document.id}`;
+        const fileUrl = `${API_BASE_URL}/api/documents/download/${document.id}`;
         const canOpen = await Linking.canOpenURL(fileUrl);
         
         if (canOpen) {
