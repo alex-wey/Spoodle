@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Modal,
   View,
@@ -37,6 +37,7 @@ export default function ChatInterfaceModal({
   
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // Get current chat session
   const currentSession = chatSessions[petId];
@@ -54,6 +55,15 @@ export default function ChatInterfaceModal({
       setCurrentPet(petId);
     }
   }, [visible, petId, petName, initializeChatSession, setCurrentPet]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [messages]);
 
   const handleSendMessage = async () => {
     if (inputText.trim() && !isLoading) {
@@ -138,7 +148,12 @@ export default function ChatInterfaceModal({
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.messagesContainer} showsVerticalScrollIndicator={false}>
+          <ScrollView 
+            ref={scrollViewRef}
+            style={styles.messagesContainer} 
+            showsVerticalScrollIndicator={false}
+            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+          >
             {messages.map((message) => (
               <View
                 key={message.id}
@@ -213,8 +228,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#4559A7',
     backgroundColor: '#FFFFFF',
   },
   modalTitle: {
@@ -290,12 +303,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    backgroundColor: '#ADD7EB',
   },
   textInput: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E5E7EB',
     borderRadius: 20,

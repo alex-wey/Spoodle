@@ -80,11 +80,24 @@ router.post('/chat',
     try {
       const { message, petId } = req.body;
       
+      // Get the PetOwner ID for this user
+      const petOwner = await prisma.petOwner.findUnique({
+        where: { clerkUserId: req.user!.clerkUserId }
+      });
+      
+      if (!petOwner) {
+        return res.status(500).json({
+          success: false,
+          error: 'Pet owner not found',
+          message: 'Unable to find pet owner record. Please contact support.'
+        });
+      }
+      
       // Verify the pet belongs to the user
       const pet = await prisma.pet.findFirst({
         where: {
           id: petId as string,
-          ownerId: req.user!.id
+          ownerId: petOwner.id
         }
       });
 
@@ -139,11 +152,24 @@ router.get('/history/:petId',
     try {
       const { petId } = req.params;
       
+      // Get the PetOwner ID for this user
+      const petOwner = await prisma.petOwner.findUnique({
+        where: { clerkUserId: req.user!.clerkUserId }
+      });
+      
+      if (!petOwner) {
+        return res.status(500).json({
+          success: false,
+          error: 'Pet owner not found',
+          message: 'Unable to find pet owner record. Please contact support.'
+        });
+      }
+      
       // Verify the pet belongs to the user
       const pet = await prisma.pet.findFirst({
         where: {
           id: petId as string,
-          ownerId: req.user!.id
+          ownerId: petOwner.id
         }
       });
 

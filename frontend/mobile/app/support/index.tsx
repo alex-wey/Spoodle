@@ -63,108 +63,106 @@ export default function SupportScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#1F2937" />
+          <ArrowLeft size={28} color="#4559A7" />
         </TouchableOpacity>
         <Text style={styles.title}>Bug Report</Text>
-        <View style={{ width: 24 }} />
+        <View style={{ width: 28 }} />
       </View>
       
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.formContainer}>
-          <Text style={styles.sectionTitle}>Report a Bug</Text>
-          <Text style={styles.sectionDescription}>
-            Help us improve Spoodle by reporting any issues you encounter.
-          </Text>
+        <Text style={styles.sectionTitle}>Report a Bug</Text>
+        <Text style={styles.sectionDescription}>
+          Help us improve Spoodle by reporting any issues you encounter.
+        </Text>
 
-          {/* Title Field */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Title *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Brief description of the issue"
-              value={title}
-              onChangeText={setTitle}
-              maxLength={200}
-            />
-          </View>
+        {/* Title Field */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Title *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Title of the issue"
+            value={title}
+            onChangeText={setTitle}
+            maxLength={200}
+          />
+        </View>
 
-          {/* Severity Selection */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Severity *</Text>
-            <View style={styles.severityContainer}>
-              {severityOptions.map((option) => {
-                const IconComponent = option.icon;
-                return (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.severityOption,
-                      severity === option.value && styles.severityOptionSelected,
-                      { borderColor: option.color }
-                    ]}
-                    onPress={() => setSeverity(option.value)}
-                  >
-                    <IconComponent size={16} color={option.color} />
-                    <Text style={[styles.severityText, { color: option.color }]}>
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
-          {/* Category Selection */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Category *</Text>
-            <View style={styles.categoryContainer}>
-              {['General', 'UI Issue', 'Performance', 'Sign-in/Auth', 'Data Sync', 'Other'].map((cat) => (
+        {/* Severity Selection */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Severity *</Text>
+          <View style={styles.severityContainer}>
+            {severityOptions.map((option) => {
+              const IconComponent = option.icon;
+              return (
                 <TouchableOpacity
-                  key={cat}
+                  key={option.value}
                   style={[
-                    styles.categoryButton,
-                    category === cat && styles.categoryButtonSelected
+                    styles.severityOption,
+                    severity === option.value && styles.severityOptionSelected,
+                    { borderColor: option.color }
                   ]}
-                  onPress={() => setCategory(cat)}
+                  onPress={() => setSeverity(option.value)}
                 >
-                  <Text style={[
-                    styles.categoryButtonText,
-                    category === cat && styles.categoryButtonTextSelected
-                  ]}>
-                    {cat}
+                  <IconComponent size={20} color={option.color} />
+                  <Text style={[styles.severityText, { color: option.color }]}>
+                    {option.label}
                   </Text>
                 </TouchableOpacity>
-              ))}
-            </View>
+              );
+            })}
           </View>
-
-          {/* Description Field */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Description *</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Please describe the issue in detail. Include steps to reproduce if possible."
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              numberOfLines={6}
-              maxLength={2000}
-              textAlignVertical="top"
-            />
-          </View>
-
-          {/* Submit Button */}
-          <TouchableOpacity
-            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-            onPress={handleSubmit}
-            disabled={isSubmitting}
-          >
-            <Send size={20} color="#FFFFFF" />
-            <Text style={styles.submitButtonText}>
-              {isSubmitting ? 'Submitting...' : 'Submit Bug Report'}
-            </Text>
-          </TouchableOpacity>
         </View>
+
+        {/* Category Selection */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Category *</Text>
+          <View style={styles.categoryContainer}>
+            {['General', 'UI Issue', 'Performance', 'Authentication', 'Data Sync', 'Other'].map((cat) => (
+              <TouchableOpacity
+                key={cat}
+                style={[
+                  styles.categoryButton,
+                  category === cat && styles.categoryButtonSelected
+                ]}
+                onPress={() => setCategory(cat)}
+              >
+                <Text style={[
+                  styles.categoryButtonText,
+                  category === cat && styles.categoryButtonTextSelected
+                ]}>
+                  {cat}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Description Field */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Description *</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Please describe the issue in detail. Include steps to reproduce if possible."
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            numberOfLines={6}
+            maxLength={2000}
+            textAlignVertical="top"
+          />
+        </View>
+
+        {/* Submit Button */}
+        <TouchableOpacity
+          style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+          onPress={handleSubmit}
+          disabled={isSubmitting}
+        >
+          <Send size={22} color="#FFFFFF" />
+          <Text style={styles.submitButtonText}>
+            {isSubmitting ? 'Submitting...' : 'Submit Bug Report'}
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -173,87 +171,85 @@ export default function SupportScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#FFFFFF",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 20,
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    paddingBottom: 12,
     backgroundColor: "white",
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: "#ADD7EB",
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "600",
-    color: "#1F2937",
+    color: "#4559A7",
   },
   content: {
     flex: 1,
-    padding: 20,
-  },
-  formContainer: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
+    padding: 24,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 28,
     fontWeight: "bold",
-    color: "#1F2937",
-    marginBottom: 8,
+    color: "#4559A7",
+    marginBottom: 12,
   },
   sectionDescription: {
-    fontSize: 14,
-    color: "#6B7280",
+    fontSize: 18,
+    color: "#4559A7",
+    opacity: 0.7,
     marginBottom: 24,
-    lineHeight: 20,
+    lineHeight: 26,
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   label: {
-    fontSize: 14,
+    fontSize: 17,
     fontWeight: "600",
-    color: "#374151",
-    marginBottom: 8,
+    color: "#4559A7",
+    marginBottom: 10,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#D1D5DB",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    borderColor: "#ADD7EB",
+    borderRadius: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    fontSize: 17,
     backgroundColor: "#FFFFFF",
-    color: "#1F2937",
+    color: "#4559A7",
   },
   textArea: {
-    height: 120,
+    height: 140,
     textAlignVertical: "top",
   },
   severityContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: 10,
   },
   severityOption: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 24,
+    borderWidth: 1.5,
     backgroundColor: "#FFFFFF",
   },
   severityOptionSelected: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "#DCEBF5",
   },
   severityText: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: "600",
-    marginLeft: 4,
+    marginLeft: 6,
   },
   categoryContainer: {
     flexDirection: "row",
@@ -261,11 +257,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    borderColor: "#ADD7EB",
     backgroundColor: "#FFFFFF",
   },
   categoryButtonSelected: {
@@ -273,9 +269,9 @@ const styles = StyleSheet.create({
     borderColor: "#3BB272",
   },
   categoryButtonText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#374151",
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#4559A7",
   },
   categoryButtonTextSelected: {
     color: "#FFFFFF",
@@ -284,18 +280,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#4559A7",
-    paddingVertical: 14,
-    borderRadius: 8,
-    marginTop: 8,
+    gap: 10,
+    backgroundColor: "#3BB272",
+    paddingVertical: 18,
+    borderRadius: 14,
+    marginTop: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   submitButtonDisabled: {
-    backgroundColor: "#9CA3AF",
+    backgroundColor: "#ADD7EB",
   },
   submitButtonText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 8,
+    fontSize: 18,
+    fontWeight: "700",
   },
 });

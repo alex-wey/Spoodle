@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     color: "#6B7280",
   },
   featuresSection: {
-    marginBottom: 40,
+    marginBottom: 20,
   },
   featuresTitle: {
     fontSize: 24,
