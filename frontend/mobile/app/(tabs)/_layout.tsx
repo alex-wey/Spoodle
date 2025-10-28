@@ -1,7 +1,6 @@
-import { Tabs } from "expo-router";
+import { Tabs, Redirect } from "expo-router";
 import { Dog, MessageCircle, User } from "lucide-react-native";
 import { useAuth } from '@clerk/clerk-expo';
-import { Redirect } from "expo-router";
 import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 

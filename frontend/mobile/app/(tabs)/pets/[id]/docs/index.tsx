@@ -8,7 +8,7 @@ import {
   SafeAreaView,
   RefreshControl,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { 
   FolderOpen,
   Upload,
@@ -22,7 +22,6 @@ import {
 } from 'lucide-react-native';
 import { useDocumentStore } from '../../../../store/documents';
 import { usePetStore } from '../../../../store/pets';
-import { useLocalSearchParams } from 'expo-router';
 import type { Pet } from '../../../../types';
 import { FAB } from '../../../../components/FAB';
 
@@ -62,14 +61,14 @@ export default function DocsScreen() {
       }
     };
     loadPets();
-  }, [petId]);
+  }, [petId, fetchPets, pets]);
 
   // Load documents when pet is selected
   useEffect(() => {
     if (selectedPet) {
       fetchDocuments();
     }
-  }, [selectedPet]);
+  }, [selectedPet, fetchDocuments]);
 
   // Get document count for a specific category
   const getCategoryCount = (categoryId: string) => {

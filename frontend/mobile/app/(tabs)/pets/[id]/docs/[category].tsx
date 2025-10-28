@@ -140,7 +140,7 @@ function DocumentViewerModal({ visible, document, category, onClose, onOpenExter
                   <IconComponent size={24} color="#FFFFFF" />
                 </View>
                 <Text style={styles.imagePreviewText}>Image Preview</Text>
-                <Text style={styles.imagePreviewSubtext}>Tap "View Document" to open</Text>
+                <Text style={styles.imagePreviewSubtext}>Tap &quot;View Document&quot; to open</Text>
               </View>
             ) : (
               <View style={styles.viewerIcon}>
@@ -234,18 +234,7 @@ export default function CategoryDocumentsScreen() {
 
   const categoryTitle = CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG]?.title || 'Documents';
 
-  useEffect(() => {
-    fetchDocuments();
-  }, [category]);
-
-  useFocusEffect(
-    React.useCallback(() => {
-      console.log('🔄 Screen focused, refreshing documents...');
-      fetchDocuments();
-    }, [category, petId])
-  );
-
-  const fetchDocuments = async () => {
+  const fetchDocuments = React.useCallback(async () => {
     if (!category) return;
     
     setLoading(true);
@@ -266,7 +255,18 @@ export default function CategoryDocumentsScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [category, petId]);
+
+  useEffect(() => {
+    fetchDocuments();
+  }, [fetchDocuments]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('🔄 Screen focused, refreshing documents...');
+      fetchDocuments();
+    }, [fetchDocuments])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);

@@ -180,7 +180,7 @@ export default function AddPetScreen() {
         resetForm();
         router.back();
       }
-    } catch (error) {
+    } catch {
       const message = isEditMode ? 'Failed to update pet' : 'Failed to add pet';
       Alert.alert('Error', `${message}. Please try again.`);
     } finally {

@@ -134,7 +134,7 @@ export default function VerifyContactScreen() {
         try {
           await setActive({ session: signUp.createdSessionId })
           router.replace('/')
-        } catch (activeErr) {
+        } catch {
           showErrorToast('Your phone number is already verified.')
         }
       } else if (err?.errors?.[0]?.code === 'form_code_incorrect') {

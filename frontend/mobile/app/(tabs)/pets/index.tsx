@@ -1,5 +1,5 @@
-import { ScrollView, View, Text, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, Platform, Alert, Image } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { ScrollView, View, Text, StyleSheet, TouchableOpacity, RefreshControl } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useState, useEffect } from "react";
 import { Plus, Bug, Dog } from "lucide-react-native";
 import { useRouter } from "expo-router";
@@ -9,12 +9,12 @@ import { FAB } from "../../components/FAB";
 
 export default function PetsScreen() {
   const router = useRouter();
-  const { pets, fetchPets, isLoading, error } = usePetStore();
+  const { pets, fetchPets, error } = usePetStore();
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchPets();
-  }, []);
+  }, [fetchPets]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -48,7 +48,7 @@ export default function PetsScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>My Pets</Text>
-          <Text style={styles.subtitle}>Manage your pet's health and records</Text>
+          <Text style={styles.subtitle}>Manage your pet&apos;s health and records</Text>
         </View>
 
         {/* Content */}

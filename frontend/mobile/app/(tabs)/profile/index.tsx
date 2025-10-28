@@ -14,18 +14,14 @@ import {
   Mail, 
   Phone, 
   MapPin, 
-  Heart,
   Camera,
 } from 'lucide-react-native';
 import { useUser } from '@clerk/clerk-expo';
-import { usePetStore } from '../../store/pets';
-import { useRouter } from 'expo-router';
 import { SignOutButton } from '../../components/SignOutButton';
 import { DeleteAccountButton } from '../../components/DeleteAccountButton';
 import * as ImagePicker from 'expo-image-picker';
 
 export default function ProfileScreen() {
-  const router = useRouter();
   const [profile, setProfile] = useState({
     name: '',
     email: '',
@@ -33,23 +29,12 @@ export default function ProfileScreen() {
     address: null as string | null,
     createdAt: null as Date | null,
   });
-  const [pets, setPets] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
 
   const { user } = useUser();
-  const { pets: petsFromStore } = usePetStore();
 
-  useEffect(() => {
-    fetchProfileData();
-    if (petsFromStore) {
-      setPets(petsFromStore as any);
-    }
-  }, [petsFromStore, user]);
-
-  const fetchProfileData = async () => {
+  const fetchProfileData = React.useCallback(async () => {
     try {
-      setLoading(true);
       // Use user data from Clerk if available
       if (user) {
         setProfile({
@@ -62,10 +47,12 @@ export default function ProfileScreen() {
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchProfileData();
+  }, [fetchProfileData]);
 
 
   const formatJoinDate = (date: Date | null) => {

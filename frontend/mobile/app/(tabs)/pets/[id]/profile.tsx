@@ -1,8 +1,8 @@
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, Alert, TextInput, TouchableOpacity, Platform, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Calendar, Weight, Save, X, Dna, Syringe } from "lucide-react-native";
-import { useEffect, useState } from "react";
 import { clerkApiClient } from "../../../lib/api";
 import { getSafeImageSource } from "../../../lib/imageUtils";
 import { usePetStore } from "../../../store/pets";
@@ -54,13 +54,28 @@ export default function PetProfileScreen() {
     dietaryRestrictions: [] as string[],
   });
 
+  const loadPetProfile = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await clerkApiClient.getPet(id);
+      if (response.success) {
+        setPet(response.data as unknown as PetProfile);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to load pet profile");
+      console.error("Error loading pet profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
   useEffect(() => {
     loadPetProfile();
     // Reset edit mode when component mounts or pet ID changes
     setIsEditing(false);
     setNewAllergy('');
     setNewDietaryRestriction('');
-  }, [id]);
+  }, [id, loadPetProfile]);
 
   useEffect(() => {
     if (pet) {
@@ -77,21 +92,6 @@ export default function PetProfileScreen() {
       });
     }
   }, [pet]);
-
-  const loadPetProfile = async () => {
-    try {
-      setLoading(true);
-      const response = await clerkApiClient.getPet(id);
-      if (response.success) {
-        setPet(response.data as unknown as PetProfile);
-      }
-    } catch (error) {
-      Alert.alert("Error", "Failed to load pet profile");
-      console.error("Error loading pet profile:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSave = async () => {
     try {

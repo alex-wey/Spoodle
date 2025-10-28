@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TextInput, Alert, Platform } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TextInput, Alert, TouchableOpacity, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { TouchableOpacity } from "react-native";
-import { ArrowLeft, Send, Bug, AlertTriangle, Info, AlertCircle } from "lucide-react-native";
+import { ArrowLeft, Send, AlertTriangle, Info, AlertCircle } from "lucide-react-native";
 import { clerkApiClient } from "../lib/api";
 
 export default function SupportScreen() {

@@ -8,7 +8,6 @@ import {
   SafeAreaView,
   Alert,
   TextInput,
-  Platform,
   ActivityIndicator,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -43,7 +42,7 @@ export default function UploadDocumentScreen() {
       setFileUri('');
       setFileType('');
     }
-  }, []);
+  }, [preselectedCategory]);
 
   const { pets, fetchPets } = usePetStore();
 
@@ -68,7 +67,7 @@ export default function UploadDocumentScreen() {
 
   React.useEffect(() => {
     fetchPets();
-  }, []);
+  }, [fetchPets]);
 
   // Auto-select the pet based on petId from URL
   React.useEffect(() => {

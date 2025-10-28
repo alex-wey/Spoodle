@@ -45,7 +45,7 @@ export default function ChatbotIntroModal({
             </View>
             <Text style={styles.greeting}>Hi there! 👋</Text>
             <Text style={styles.description}>
-              I'm Spoodle, your AI assistant for {petName}. I'm here to help you with questions about your pet's health, care, and any concerns you might have.
+              I&apos;m Spoodle, your AI assistant for {petName}. I&apos;m here to help you with questions about your pet&apos;s health, care, and any concerns you might have.
             </Text>
             <Text style={styles.description}>
               Feel free to ask me anything - from feeding schedules to behavioral questions!

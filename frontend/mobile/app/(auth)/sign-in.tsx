@@ -61,7 +61,7 @@ export default function Page() {
         // complete further steps.
         showErrorToast('Sign in incomplete. Please try again.')
       }
-    } catch (err: any) {
+    } catch {
       // See https://clerk.com/docs/guides/development/custom-flows/error-handling
       // for more info on error handling
       showErrorToast('Invalid email or password')
@@ -126,7 +126,7 @@ export default function Page() {
             </TouchableOpacity>
 
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Don't have an account? </Text>
+              <Text style={styles.footerText}>Don&apos;t have an account? </Text>
               <Link href="/(auth)/sign-up" asChild>
                 <TouchableOpacity>
                   <Text style={styles.linkText}>Sign Up</Text>

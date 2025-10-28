@@ -20,7 +20,7 @@ export default function ChatScreen() {
   useEffect(() => {
     // Load chat sessions when component mounts
     loadChatSessions();
-  }, []);
+  }, [loadChatSessions]);
 
   const handleStartChat = () => {
     if (pets.length === 0) {
@@ -66,7 +66,7 @@ export default function ChatScreen() {
           </View>
           <Text style={styles.heroTitle}>Chat with Spoodle</Text>
           <Text style={styles.heroDescription}>
-            Get instant answers about your pet's health, nutrition, behavior, and more from our AI assistant.
+            Get instant answers about your pet&apos;s health, nutrition, behavior, and more from our AI assistant.
           </Text>
           
           <TouchableOpacity 

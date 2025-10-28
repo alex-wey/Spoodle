@@ -1,9 +1,7 @@
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Image } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LinearGradient } from 'expo-linear-gradient';
-
-const { width } = Dimensions.get("window");
 
 export default function LandingScreen() {
   const router = useRouter();

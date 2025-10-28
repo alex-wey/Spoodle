@@ -8,17 +8,10 @@ import {
   TextInput,
   ScrollView,
   SafeAreaView,
-  Alert,
 } from 'react-native';
-import { X, Send, User } from 'lucide-react-native';
+import { X, Send } from 'lucide-react-native';
 import { useAuth } from '@clerk/clerk-expo';
 import { useChatStore, Message } from '../store/chat';
-
-interface Pet {
-  id: string;
-  name: string;
-  species: string;
-}
 
 interface ChatInterfaceModalProps {
   visible: boolean;
@@ -52,7 +45,7 @@ export default function ChatInterfaceModal({
   useEffect(() => {
     // Load chat sessions when component mounts
     loadChatSessions();
-  }, []);
+  }, [loadChatSessions]);
 
   useEffect(() => {
     if (visible && petId) {
@@ -60,7 +53,7 @@ export default function ChatInterfaceModal({
       initializeChatSession(petId, petName);
       setCurrentPet(petId);
     }
-  }, [visible, petId, petName]);
+  }, [visible, petId, petName, initializeChatSession, setCurrentPet]);
 
   const handleSendMessage = async () => {
     if (inputText.trim() && !isLoading) {

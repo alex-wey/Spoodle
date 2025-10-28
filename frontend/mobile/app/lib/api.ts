@@ -123,7 +123,7 @@ class ClerkApiClient {
   async getPets() {
     return this.request<{
       success: boolean;
-      data: Array<{
+      data: {
         id: string;
         ownerId: string;
         name: string;
@@ -137,7 +137,7 @@ class ClerkApiClient {
         dietaryRestrictions: string[];
         createdAt: string;
         updatedAt: string;
-      }>;
+      }[];
     }>("/pets");
   }
 
@@ -249,7 +249,7 @@ class ClerkApiClient {
   async getDocuments() {
     return this.request<{
       success: boolean;
-      data: Array<{
+      data: {
         id: string;
         petId: string;
         ownerId: string;
@@ -269,14 +269,14 @@ class ClerkApiClient {
           name: string;
           breed: string;
         };
-      }>;
+      }[];
     }>("/documents");
   }
 
   async getDocumentsByCategory(category: string) {
     return this.request<{
       success: boolean;
-      data: Array<{
+      data: {
         id: string;
         petId: string;
         ownerId: string;
@@ -296,14 +296,14 @@ class ClerkApiClient {
           name: string;
           breed: string;
         };
-      }>;
+      }[];
     }>(`/documents/category/${category}`);
   }
 
   async getDocumentsByPetAndCategory(petId: string, category: string) {
     return this.request<{
       success: boolean;
-      data: Array<{
+      data: {
         id: string;
         petId: string;
         ownerId: string;
@@ -323,7 +323,7 @@ class ClerkApiClient {
           name: string;
           breed: string;
         };
-      }>;
+      }[];
     }>(`/documents/pet/${petId}/category/${category}`);
   }
 
