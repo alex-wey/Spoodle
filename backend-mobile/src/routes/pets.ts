@@ -1,7 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../index.js';
-import pool from '../lib/db.js';
 import { validateRequest, validationSchemas, commonSchemas } from '../middleware/validation.js';
 import { authenticateClerk } from '../middleware/auth.js';
 
@@ -169,33 +167,23 @@ router.post('/',
       console.log('   Species:', petData.species);
       console.log('   Image URL:', cleanImageUrl ? 'Valid image URL provided' : 'No valid image URL');
       
-      // Use direct pg query to bypass Prisma's SSL issues with AWS RDS
-      const petId = uuidv4();
-      const result = await pool.query(
-        `INSERT INTO pets (
-          id, "ownerId", name, species, breed, "dateOfBirth", 
-          "biologicalSex", "spayedNeutered", weight, 
-          allergies, "dietaryRestrictions", "imageUrl", "createdAt", "updatedAt"
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()
-        ) RETURNING *`,
-        [
-          petId,
-          petOwner.id,
-          petData.name,
-          petData.species || 'Dog',
-          petData.breed || null,
-          petData.dateOfBirth || null,
-          petData.biologicalSex || null,
-          petData.spayedNeutered || false,
-          petData.weight || null,
-          petData.allergies || [],
-          petData.dietaryRestrictions || [],
-          cleanImageUrl
-        ]
-      );
+      // Create pet using Prisma
+      const newPet = await prisma.pet.create({
+        data: {
+          name: petData.name,
+          species: petData.species || 'Dog',
+          breed: petData.breed || null,
+          dateOfBirth: petData.dateOfBirth || null,
+          biologicalSex: petData.biologicalSex || null,
+          spayedNeutered: petData.spayedNeutered || false,
+          weight: petData.weight || null,
+          allergies: petData.allergies || [],
+          dietaryRestrictions: petData.dietaryRestrictions || [],
+          imageUrl: cleanImageUrl,
+          ownerId: petOwner.id
+        }
+      });
       
-      const newPet = result.rows[0];
       console.log('✅ Pet created successfully:', newPet.id);
       
       return res.status(201).json({

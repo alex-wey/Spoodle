@@ -22,7 +22,7 @@ const PORT = process.env.PORT || 3002;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const IS_PRODUCTION = NODE_ENV === 'production';
 
-// Initialize Prisma client with SSL configuration for AWS RDS
+// Initialize Prisma client
 export const prisma = new PrismaClient({
   datasources: {
     db: {
