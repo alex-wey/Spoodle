@@ -1,49 +1,50 @@
-# Docker Ignore File (in case Railway uses Docker builder)
-
-node_modules
+# Dependencies (rebuilt fresh)
+node_modules/
 npm-debug.log
-dist
-.git
+
+# Build output (rebuilt)
+dist/
+
+# Git
+.git/
 .gitignore
+
+# Environment (set via Railway)
 .env
-.env.local
-.env.*.local
-README.md
+.env.*
+
+# Documentation
 *.md
 
-# Development files
+# Tests
 test/
 tests/
 __tests__/
-*.test.ts
-*.spec.ts
+*.test.*
+*.spec.*
 
-# IDE files
+# IDE
 .vscode/
 .idea/
 *.swp
-*.swo
-*~
 .DS_Store
 
-# Temporary files
+# Temporary
 tmp/
 temp/
-*.tmp
 
-# Scripts
-check-*.ts
-check-*.cjs
-debug-*.ts
-fix-*.ts
-fix-*.cjs
-drop-*.cjs
-clean-*.cjs
-create-tables.js
-test-*.ts
-test-*.js
+# Debug scripts
+scripts/debug/
+scripts/test/
+check-*
+debug-*
+fix-*
+drop-*
+clean-*
+test-*
 
-# Uploads (use cloud storage)
-uploads/**
-!uploads/.gitkeep
-
+# Other
+certs/
+coverage/
+*.log
+logs/
