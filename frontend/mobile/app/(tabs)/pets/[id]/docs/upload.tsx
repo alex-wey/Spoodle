@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Upload, FileText, Calendar, MapPin, StickyNote, ChevronDown, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Upload, FileText, MapPin, ChevronDown, Trash2 } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { usePetStore } from '../../../../store/pets';
 import { clerkApiClient } from '../../../../lib/api';
@@ -31,8 +31,6 @@ export default function UploadDocumentScreen() {
   const [customFileName, setCustomFileName] = useState('');
   const [fileUri, setFileUri] = useState('');
   const [fileType, setFileType] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
@@ -47,8 +45,6 @@ export default function UploadDocumentScreen() {
       setCustomFileName('');
       setFileUri('');
       setFileType('');
-      setDate(new Date().toISOString().split('T')[0]);
-      setNotes('');
       setStep(1);
     }
   }, []);
@@ -64,8 +60,6 @@ export default function UploadDocumentScreen() {
     setCustomFileName('');
     setFileUri('');
     setFileType('');
-    setDate(new Date().toISOString().split('T')[0]);
-    setNotes('');
     setStep(1);
     setIsSubmitting(false);
   };
@@ -151,8 +145,6 @@ export default function UploadDocumentScreen() {
       formData.append('category', category);
       formData.append('hospitalName', hospitalName);
       formData.append('fileName', customFileName || fileName);
-      formData.append('date', date);
-      formData.append('notes', notes || '');
       
       // Append file - Handle both web (blob) and native formats
       if (fileUri.startsWith('blob:')) {
@@ -215,7 +207,15 @@ export default function UploadDocumentScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity 
-            onPress={() => step === 1 ? router.back() : setStep(1)} 
+            onPress={() => {
+              if (step === 1) {
+                // Go back to documents screen
+                router.push(`/(tabs)/pets/${petId}/docs` as any);
+              } else {
+                // Go back to step 1
+                setStep(1);
+              }
+            }} 
             style={styles.backButton}
           >
             <ArrowLeft size={24} color="#4559A7" />
@@ -281,33 +281,48 @@ export default function UploadDocumentScreen() {
               <Text style={styles.selectedCategoryText}>{selectedCategory?.title}</Text>
             </View>
 
-            {/* Pet Selection */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Select Pet</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.petsScroll}>
-                {pets.map((pet: any) => (
-                  <TouchableOpacity
-                    key={pet.id}
-                    style={[
-                      styles.petCard,
-                      selectedPet?.id === pet.id && styles.selectedPetCard
-                    ]}
-                    onPress={() => setSelectedPet(pet)}
-                  >
-                    <View style={[
-                      styles.petAvatar,
-                      selectedPet?.id === pet.id && styles.selectedPetAvatar
-                    ]}>
-                      <Text style={styles.petInitial}>{pet.name.charAt(0).toUpperCase()}</Text>
-                    </View>
-                    <Text style={[
-                      styles.petName,
-                      selectedPet?.id === pet.id && styles.selectedPetName
-                    ]}>{pet.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
+            {/* Pet Selection - Only show if no petId in URL */}
+            {!petId && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Select Pet</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.petsScroll}>
+                  {pets.map((pet: any) => (
+                    <TouchableOpacity
+                      key={pet.id}
+                      style={[
+                        styles.petCard,
+                        selectedPet?.id === pet.id && styles.selectedPetCard
+                      ]}
+                      onPress={() => setSelectedPet(pet)}
+                    >
+                      <View style={[
+                        styles.petAvatar,
+                        selectedPet?.id === pet.id && styles.selectedPetAvatar
+                      ]}>
+                        <Text style={styles.petInitial}>{pet.name.charAt(0).toUpperCase()}</Text>
+                      </View>
+                      <Text style={[
+                        styles.petName,
+                        selectedPet?.id === pet.id && styles.selectedPetName
+                      ]}>{pet.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+            
+            {/* Show selected pet info when petId is provided */}
+            {petId && selectedPet && (
+              <View style={styles.selectedPetInfo}>
+                <Text style={styles.selectedPetLabel}>Uploading for:</Text>
+                <View style={styles.selectedPetDisplay}>
+                  <View style={styles.selectedPetAvatarDisplay}>
+                    <Text style={styles.petInitial}>{selectedPet.name.charAt(0).toUpperCase()}</Text>
+                  </View>
+                  <Text style={styles.selectedPetNameDisplay}>{selectedPet.name}</Text>
+                </View>
+              </View>
+            )}
 
             {/* Hospital Name */}
             <View style={styles.inputGroup}>
@@ -356,38 +371,6 @@ export default function UploadDocumentScreen() {
                   placeholder="Enter custom name for the file"
                   value={customFileName}
                   onChangeText={setCustomFileName}
-                  placeholderTextColor="#ADD7EB"
-                />
-              </View>
-            </View>
-
-            {/* Date */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Date</Text>
-              <View style={styles.inputContainer}>
-                <Calendar size={20} color="#4559A7" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="YYYY-MM-DD"
-                  value={date}
-                  onChangeText={setDate}
-                  placeholderTextColor="#ADD7EB"
-                />
-              </View>
-            </View>
-
-            {/* Notes */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Notes</Text>
-              <View style={styles.inputContainer}>
-                <StickyNote size={20} color="#4559A7" style={styles.inputIcon} />
-                <TextInput
-                  style={[styles.input, styles.textArea]}
-                  placeholder="Additional notes (optional)"
-                  value={notes}
-                  onChangeText={setNotes}
-                  multiline
-                  numberOfLines={4}
                   placeholderTextColor="#ADD7EB"
                 />
               </View>
@@ -595,6 +578,38 @@ const styles = StyleSheet.create({
   selectedPetName: {
     color: '#4559A7',
     fontWeight: 'bold',
+  },
+  selectedPetInfo: {
+    backgroundColor: '#DCEBF5',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#4559A7',
+  },
+  selectedPetLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4559A7',
+    marginBottom: 12,
+  },
+  selectedPetDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  selectedPetAvatarDisplay: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#4559A7',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectedPetNameDisplay: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#4559A7',
   },
   inputGroup: {
     marginBottom: 20,

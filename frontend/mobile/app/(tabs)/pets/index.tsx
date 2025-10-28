@@ -6,7 +6,7 @@ import { useRouter } from "expo-router";
 import { usePetStore } from "../../store/pets";
 import { useUser } from '@clerk/clerk-expo';
 import { getGreeting } from "../../lib/utils";
-import { PetCard } from "./[id]/components/PetCard";
+import { PetCard } from "./components/PetCard";
 import { FAB } from "../../components/FAB";
 
 export default function PetsScreen() {
@@ -46,7 +46,7 @@ export default function PetsScreen() {
   // }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -61,11 +61,9 @@ export default function PetsScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <View>
-              <Text style={styles.greeting}>{getGreeting()},</Text>
-              <Text style={styles.userName}>{user?.firstName || "Pet Parent"}!</Text>
-            </View>
+          <View>
+            <Text style={styles.greeting}>{getGreeting()},</Text>
+            <Text style={styles.userName}>{user?.firstName || "Pet Parent"}!</Text>
           </View>
           <Text style={styles.subtitle}>How are your pets doing today?</Text>
         </View>
@@ -119,15 +117,13 @@ export default function PetsScreen() {
         </View>
       </ScrollView>
 
-      {/* Floating Action Button */}
-      <View style={styles.fabContainer}>
-        <FAB
-          icon={<Bug size={24} color="#FFFFFF" />}
-          onPress={() => router.push("/support")}
-          style={styles.fabBug}
-          size="large"
-        />
-      </View>
+      {/* Bug Report FAB */}
+      <FAB
+        icon={<Bug size={20} color="white" />}
+        onPress={() => router.push("/support")}
+        style={styles.fab}
+        size="small"
+      />
     </SafeAreaView>
   );
 }
@@ -139,7 +135,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
-    paddingBottom: Platform.OS === "ios" ? 100 : 80, // Extra padding for FAB and tab bar
+    paddingBottom: 20,
   },
   loadingContainer: {
     flex: 1,
@@ -154,12 +150,6 @@ const styles = StyleSheet.create({
   header: {
     paddingTop: 0,
     paddingBottom: 5,
-  },
-  headerTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 8,
   },
   greeting: {
     fontSize: 16,
@@ -245,24 +235,10 @@ const styles = StyleSheet.create({
     color: "#4559A7",
     fontWeight: "600",
   },
-  fabContainer: {
+  fab: {
     position: "absolute",
-    bottom: Platform.OS === "ios" ? 76 : 80,
+    top: 70,
     right: 20,
-  },
-  fabSecondary: {
-    backgroundColor: "white",
-  },
-  fabBug: {
-    backgroundColor: '#DC2626',
-    borderWidth: 1,
-    borderColor: '#DC2626',
-    shadowColor: '#DC2626',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    width: 64,
-    height: 64,
+    backgroundColor: "#DC2626",
   },
 });

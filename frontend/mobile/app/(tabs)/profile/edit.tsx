@@ -10,7 +10,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { ArrowLeft, Save, User, Mail, Phone, MapPin } from 'lucide-react-native';
+import { ArrowLeft, Save, User, Phone, MapPin } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { clerkApiClient } from '../../lib/api';
 import { useUser } from '@clerk/clerk-expo';
@@ -24,7 +24,6 @@ export default function EditProfileScreen() {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    email: '',
     phone: '',
     address: '',
   });
@@ -34,7 +33,6 @@ export default function EditProfileScreen() {
       setFormData({
         firstName: user.firstName || '',
         lastName: user.lastName || '',
-        email: user.email || '',
         phone: user.phoneNumber || '',
         address: user.address || '',
       });
@@ -85,7 +83,7 @@ export default function EditProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
@@ -137,21 +135,6 @@ export default function EditProfileScreen() {
               placeholder="Enter your last name"
               placeholderTextColor="#9CA3AF"
             />
-          </View>
-
-          {/* Email (Read-only) */}
-          <View style={styles.inputGroup}>
-            <View style={styles.inputLabelContainer}>
-              <Mail size={16} color="#6B7280" />
-              <Text style={styles.inputLabel}>Email</Text>
-            </View>
-            <TextInput
-              style={[styles.textInput, styles.textInputDisabled]}
-              value={formData.email}
-              editable={false}
-              placeholderTextColor="#9CA3AF"
-            />
-            <Text style={styles.inputHelperText}>Email cannot be changed</Text>
           </View>
 
           {/* Phone */}

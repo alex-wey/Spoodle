@@ -62,7 +62,7 @@ export default function CategoryDocumentsScreen() {
     React.useCallback(() => {
       console.log('🔄 Screen focused, refreshing documents...');
       fetchDocuments();
-    }, [category, petId, getToken])
+    }, [category, petId])
   );
 
   const fetchDocuments = async () => {
@@ -241,7 +241,10 @@ export default function CategoryDocumentsScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity 
+            onPress={() => router.push(`/(tabs)/pets/${petId}/docs` as any)} 
+            style={styles.backButton}
+          >
             <ArrowLeft size={24} color="#4559A7" />
           </TouchableOpacity>
           <Text style={styles.title}>{categoryTitles[category] || 'Documents'}</Text>

@@ -6,29 +6,25 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
-  TextInput,
   RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
 import { 
-  Plus, 
   FolderOpen,
   Upload,
   Calendar,
   Stethoscope,
-  Search,
   Shield,
   Activity,
   Zap,
   ArrowLeft,
   Bug
 } from 'lucide-react-native';
-import { useAuth } from '@clerk/clerk-expo';
 import { useDocumentStore } from '../../../../store/documents';
 import { usePetStore } from '../../../../store/pets';
-import { FAB } from '../../../../components/FAB';
 import { useLocalSearchParams } from 'expo-router';
 import type { Pet } from '../../../../types';
+import { FAB } from '../../../../components/FAB';
 
 const DOCUMENT_CATEGORIES = [
   { id: 'past_appointments', title: 'Past Appointments', color: '#3BB272' },
@@ -51,7 +47,6 @@ export default function DocsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
 
-  const { getToken } = useAuth();
   const { documents, fetchDocuments } = useDocumentStore();
   const { pets, fetchPets } = usePetStore();
 
@@ -100,6 +95,15 @@ export default function DocsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <ArrowLeft size={24} color="#4559A7" />
+        </TouchableOpacity>
+        <Text style={styles.title}>{selectedPet?.name}&apos;s Documents</Text>
+        <View style={styles.headerSpacer} />
+      </View>
+
       <ScrollView 
         style={styles.scrollView} 
         showsVerticalScrollIndicator={false}
@@ -112,15 +116,6 @@ export default function DocsScreen() {
           />
         }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color="#4559A7" />
-          </TouchableOpacity>
-          <Text style={styles.title}>{selectedPet?.name}'s Docs</Text>
-          <View style={styles.placeholder} />
-        </View>
-
         {/* Document Categories Grid */}
         <View style={styles.categoriesGrid}>
           {DOCUMENT_CATEGORIES.map((category) => {
@@ -164,14 +159,12 @@ export default function DocsScreen() {
       </ScrollView>
 
       {/* Bug Report FAB */}
-      <View style={styles.fabContainer}>
-        <FAB
-          icon={<Bug size={24} color="#FFFFFF" />}
-          onPress={() => router.push("/support")}
-          style={styles.fabBug}
-          size="large"
-        />
-      </View>
+      <FAB
+        icon={<Bug size={20} color="white" />}
+        onPress={() => router.push("/support")}
+        style={styles.fab}
+        size="small"
+      />
     </SafeAreaView>
   );
 }
@@ -189,15 +182,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#ADD7EB',
   },
   backButton: {
     padding: 8,
   },
-  placeholder: {
+  headerSpacer: {
     width: 40,
   },
   title: {
@@ -350,26 +343,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  fabContainer: {
+  fab: {
     position: 'absolute',
-    bottom: 20,
+    top: 70,
     right: 20,
-  },
-  fabSecondary: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#ADD7EB',
-  },
-  fabBug: {
     backgroundColor: '#DC2626',
-    borderWidth: 1,
-    borderColor: '#DC2626',
-    shadowColor: '#DC2626',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    width: 64,
-    height: 64,
   },
 });

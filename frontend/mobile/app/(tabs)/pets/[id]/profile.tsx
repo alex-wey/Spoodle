@@ -1,18 +1,22 @@
 import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, Alert, TextInput, TouchableOpacity, Platform, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Calendar, Weight, Syringe, AlertCircle, Heart, Save, X, Plus, Trash2 } from "lucide-react-native";
+import { ArrowLeft, Calendar, Weight, Save, X, Dna, Syringe } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { clerkApiClient } from "../../../lib/api";
-import { getPetAgeString, getGenderSymbol, calculateAge } from "../../../lib/utils";
 import { getSafeImageSource } from "../../../lib/imageUtils";
 import { usePetStore } from "../../../store/pets";
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { InfoRow } from "./components/InfoRow";
+import { SpeciesSelector, getSpeciesIcon } from "./components/SpeciesSelector";
+import { BiologicalSexSelector, getBiologicalSexIcon } from "./components/BiologicalSexSelector";
+import { EditableList, TagList } from "./components/EditableList";
 
 interface PetProfile {
   petId: string;
   ownerId: string;
   name: string;
+  species?: 'dog' | 'cat' | 'other';
   breed?: string;
   age?: number;
   dateOfBirth?: string;
@@ -40,6 +44,7 @@ export default function PetProfileScreen() {
   const [newDietaryRestriction, setNewDietaryRestriction] = useState('');
   const [editedPet, setEditedPet] = useState({
     name: '',
+    species: 'dog' as 'dog' | 'cat' | 'other',
     breed: '',
     weight: '',
     gender: 'male' as 'male' | 'female',
@@ -57,6 +62,7 @@ export default function PetProfileScreen() {
     if (pet) {
       setEditedPet({
         name: pet.name,
+        species: (pet.species?.toLowerCase() || 'dog') as 'dog' | 'cat' | 'other',
         breed: pet.breed || '',
         weight: pet.weight?.toString() || '',
         gender: pet.gender || 'male',
@@ -99,6 +105,7 @@ export default function PetProfileScreen() {
       // Prepare updated data
       const updatedData = {
         name: editedPet.name.trim(),
+        species: editedPet.species,
         breed: editedPet.breed.trim() || undefined,
         weight: weight,
         gender: editedPet.gender,
@@ -133,6 +140,7 @@ export default function PetProfileScreen() {
     if (pet) {
       setEditedPet({
         name: pet.name,
+        species: (pet.species?.toLowerCase() || 'dog') as 'dog' | 'cat' | 'other',
         breed: pet.breed || '',
         weight: pet.weight?.toString() || '',
         gender: pet.gender || 'male',
@@ -190,7 +198,7 @@ export default function PetProfileScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <ArrowLeft size={24} color="#1F2937" />
@@ -207,7 +215,7 @@ export default function PetProfileScreen() {
 
   if (!pet) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <ArrowLeft size={24} color="#1F2937" />
@@ -222,13 +230,11 @@ export default function PetProfileScreen() {
     );
   }
 
-  const genderColor = pet.gender === "female" ? "#EC4899" : "#3B82F6";
-
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#1F2937" />
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <ArrowLeft size={24} color="#4559A7" />
         </TouchableOpacity>
         <Text style={styles.title}>Pet Profile</Text>
         {isEditing ? (
@@ -264,290 +270,211 @@ export default function PetProfileScreen() {
               console.log('Image load error:', error);
             }}
           />
-          <View style={styles.nameContainer}>
-            {isEditing ? (
-              <TextInput
-                style={styles.nameInput}
-                value={editedPet.name}
-                onChangeText={(text) => setEditedPet(prev => ({ ...prev, name: text }))}
-                placeholder="Pet Name"
-                placeholderTextColor="#9CA3AF"
-              />
-            ) : (
-              <Text style={styles.petName}>{pet.name}</Text>
-            )}
-            {isEditing ? (
-              <TouchableOpacity
-                style={[styles.genderBadge, { backgroundColor: `${genderColor}15` }]}
-                onPress={() => setEditedPet(prev => ({ 
-                  ...prev, 
-                  gender: prev.gender === 'male' ? 'female' : 'male' 
-                }))}
-              >
-                <Text style={[styles.genderText, { color: genderColor }]}>
-                  {getGenderSymbol(editedPet.gender)}
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              pet.gender && (
-                <View style={[styles.genderBadge, { backgroundColor: `${genderColor}15` }]}>
-                  <Text style={[styles.genderText, { color: genderColor }]}>
-                    {getGenderSymbol(pet.gender)}
-                  </Text>
-                </View>
-              )
-            )}
-          </View>
           {isEditing ? (
             <TextInput
-              style={styles.breedInput}
-              value={editedPet.breed}
-              onChangeText={(text) => setEditedPet(prev => ({ ...prev, breed: text }))}
-              placeholder="Breed"
+              style={styles.nameInput}
+              value={editedPet.name}
+              onChangeText={(text) => setEditedPet(prev => ({ ...prev, name: text }))}
+              placeholder="Pet Name"
               placeholderTextColor="#9CA3AF"
             />
           ) : (
-            pet.breed && <Text style={styles.breed}>{pet.breed}</Text>
+            <Text style={styles.petName}>{pet.name}</Text>
           )}
         </View>
 
-        {/* Basic Info Section */}
+        {/* Pet Details Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Basic Information</Text>
+          <Text style={styles.sectionTitle}>Pet Details</Text>
           
-          {pet.age !== undefined && (
-            <View style={styles.infoRow}>
-              <View style={styles.iconContainer}>
-                <Calendar size={20} color="#4F46E5" />
-              </View>
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Age</Text>
-                {isEditing ? (
-                  <TouchableOpacity
-                    style={styles.dateButton}
-                    onPress={() => setShowDatePicker(true)}
-                  >
-                    <Text style={styles.dateButtonText}>
-                      {editedPet.dateOfBirth.toLocaleDateString()}
-                    </Text>
-                  </TouchableOpacity>
-                ) : (
-                  <Text style={styles.infoValue}>{getPetAgeString(pet.age)}</Text>
-                )}
-              </View>
-            </View>
-          )}
+          <InfoRow
+            icon={getSpeciesIcon(pet.species)}
+            label="Species"
+            value={isEditing ? (
+              <SpeciesSelector
+                selectedSpecies={editedPet.species}
+                onSelect={(species) => setEditedPet(prev => ({ ...prev, species }))}
+              />
+            ) : (
+              pet.species ? pet.species.charAt(0).toUpperCase() + pet.species.slice(1).toLowerCase() : 'Unknown'
+            )}
+          />
+
+          <InfoRow
+            icon={getBiologicalSexIcon(pet.gender)}
+            label="Biological Sex"
+            value={isEditing ? (
+              <BiologicalSexSelector
+                selectedSex={editedPet.gender}
+                onSelect={(sex) => setEditedPet(prev => ({ ...prev, gender: sex }))}
+              />
+            ) : (
+              pet.gender ? pet.gender.charAt(0).toUpperCase() + pet.gender.slice(1) : 'Unknown'
+            )}
+          />
+
+          <InfoRow
+            icon={<Dna size={20} color="#4F46E5" />}
+            label="Breed"
+            value={isEditing ? (
+              <TextInput
+                style={styles.infoEditInput}
+                value={editedPet.breed}
+                onChangeText={(text) => setEditedPet(prev => ({ ...prev, breed: text }))}
+                placeholder="Breed"
+                placeholderTextColor="#9CA3AF"
+              />
+            ) : (
+              pet.breed || 'Unknown'
+            )}
+          />
+        </View>
+
+        {/* Basic Info Section */}
+        <View style={[styles.section, styles.reducedTopPadding]}>
+          <Text style={styles.sectionTitle}>Basic Information</Text>
 
           {pet.dateOfBirth && (
-            <View style={styles.infoRow}>
-              <View style={styles.iconContainer}>
-                <Calendar size={20} color="#4F46E5" />
-              </View>
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Date of Birth</Text>
-                {isEditing ? (
-                  <TouchableOpacity
-                    style={styles.dateButton}
-                    onPress={() => setShowDatePicker(true)}
-                  >
-                    <Text style={styles.dateButtonText}>
-                      {editedPet.dateOfBirth.toLocaleDateString()}
-                    </Text>
-                  </TouchableOpacity>
-                ) : (
-                  <Text style={styles.infoValue}>
-                    {new Date(pet.dateOfBirth).toLocaleDateString()}
+            <InfoRow
+              icon={<Calendar size={20} color="#4F46E5" />}
+              label="Date of Birth"
+              value={isEditing ? (
+                <TouchableOpacity
+                  style={styles.dateButton}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={styles.dateButtonText}>
+                    {editedPet.dateOfBirth.toLocaleDateString()}
                   </Text>
-                )}
-              </View>
-            </View>
+                </TouchableOpacity>
+              ) : (
+                new Date(pet.dateOfBirth).toLocaleDateString()
+              )}
+            />
           )}
 
           {pet.weight !== undefined && (
-            <View style={styles.infoRow}>
-              <View style={styles.iconContainer}>
-                <Weight size={20} color="#4F46E5" />
-              </View>
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Weight</Text>
-                {isEditing ? (
-                  <View style={styles.weightInputContainer}>
-                    <TextInput
-                      style={styles.weightInput}
-                      value={editedPet.weight}
-                      onChangeText={(text) => setEditedPet(prev => ({ ...prev, weight: text }))}
-                      placeholder="Weight"
-                      placeholderTextColor="#9CA3AF"
-                      keyboardType="numeric"
-                    />
-                    <Text style={styles.weightUnit}>lbs</Text>
-                  </View>
-                ) : (
-                  <Text style={styles.infoValue}>{pet.weight} lbs</Text>
-                )}
-              </View>
-            </View>
+            <InfoRow
+              icon={<Weight size={20} color="#4F46E5" />}
+              label="Weight"
+              value={isEditing ? (
+                <View style={styles.weightInputContainer}>
+                  <TextInput
+                    style={styles.weightInput}
+                    value={editedPet.weight}
+                    onChangeText={(text) => setEditedPet(prev => ({ ...prev, weight: text }))}
+                    placeholder="Weight"
+                    placeholderTextColor="#9CA3AF"
+                    keyboardType="numeric"
+                  />
+                  <Text style={styles.weightUnit}>lbs</Text>
+                </View>
+              ) : (
+                `${pet.weight} lbs`
+              )}
+            />
           )}
 
           {pet.spayedNeutered !== undefined && (
-            <View style={styles.infoRow}>
-              <View style={styles.iconContainer}>
-                <Heart size={20} color="#4F46E5" />
-              </View>
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Spayed/Neutered</Text>
-                {isEditing ? (
-                  <View style={styles.switchContainer}>
-                    <Switch
-                      value={editedPet.spayedNeutered}
-                      onValueChange={(value) => setEditedPet(prev => ({ ...prev, spayedNeutered: value }))}
-                      trackColor={{ false: '#E5E7EB', true: '#10B981' }}
-                      thumbColor={editedPet.spayedNeutered ? '#FFFFFF' : '#FFFFFF'}
-                    />
-                    <Text style={styles.switchLabel}>
-                      {editedPet.spayedNeutered ? "Yes" : "No"}
-                    </Text>
-                  </View>
-                ) : (
-                  <Text style={styles.infoValue}>
-                    {pet.spayedNeutered ? "Yes" : "No"}
+            <InfoRow
+              icon={<Syringe size={20} color="#4F46E5" />}
+              label="Spayed/Neutered"
+              value={isEditing ? (
+                <View style={styles.switchContainer}>
+                  <Switch
+                    value={editedPet.spayedNeutered}
+                    onValueChange={(value) => setEditedPet(prev => ({ ...prev, spayedNeutered: value }))}
+                    trackColor={{ false: '#E5E7EB', true: '#10B981' }}
+                    thumbColor={editedPet.spayedNeutered ? '#FFFFFF' : '#FFFFFF'}
+                  />
+                  <Text style={styles.switchLabel}>
+                    {editedPet.spayedNeutered ? "Yes" : "No"}
                   </Text>
-                )}
-              </View>
-            </View>
+                </View>
+              ) : (
+                pet.spayedNeutered ? "Yes" : "No"
+              )}
+            />
           )}
         </View>
 
         {/* Allergies Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <AlertCircle size={20} color="#EF4444" />
-            <Text style={[styles.sectionTitle, { marginLeft: 8 }]}>Allergies</Text>
-          </View>
-          
+        <View style={[styles.section, styles.reducedTopPadding]}>
+          <Text style={styles.sectionTitle}>Allergies</Text>
           {isEditing ? (
-            <View style={styles.editableListContainer}>
-              {/* Add new allergy */}
-              <View style={styles.addItemContainer}>
-                <TextInput
-                  style={styles.addItemInput}
-                  value={newAllergy}
-                  onChangeText={setNewAllergy}
-                  placeholder="Add new allergy"
-                  placeholderTextColor="#9CA3AF"
-                />
-                <TouchableOpacity
-                  style={styles.addButton}
-                  onPress={addAllergy}
-                >
-                  <Plus size={20} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
-              
-              {/* List of allergies */}
-              {editedPet.allergies.map((allergy, index) => (
-                <View key={index} style={styles.editableItem}>
-                  <Text style={styles.editableItemText}>{allergy}</Text>
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => removeAllergy(index)}
-                  >
-                    <Trash2 size={16} color="#EF4444" />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </View>
+            <EditableList
+              items={editedPet.allergies}
+              newItem={newAllergy}
+              onNewItemChange={setNewAllergy}
+              onAddItem={addAllergy}
+              onRemoveItem={removeAllergy}
+              placeholder="Add new allergy"
+              emptyMessage="No allergies recorded"
+              tagStyle="allergy"
+            />
           ) : (
-            pet.allergies && pet.allergies.length > 0 ? (
-              <View style={styles.tagContainer}>
-                {pet.allergies.map((allergy, index) => (
-                  <View key={index} style={[styles.tag, styles.allergyTag]}>
-                    <Text style={styles.allergyTagText}>{allergy}</Text>
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <Text style={styles.noItemsText}>No allergies recorded</Text>
-            )
+            <TagList
+              items={pet.allergies || []}
+              tagStyle="allergy"
+              emptyMessage="No allergies recorded"
+            />
           )}
         </View>
 
         {/* Dietary Restrictions Section */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Syringe size={20} color="#10B981" />
-            <Text style={[styles.sectionTitle, { marginLeft: 8 }]}>Dietary Restrictions</Text>
-          </View>
-          
+          <Text style={styles.sectionTitle}>Dietary Restrictions</Text>
           {isEditing ? (
-            <View style={styles.editableListContainer}>
-              {/* Add new dietary restriction */}
-              <View style={styles.addItemContainer}>
-                <TextInput
-                  style={styles.addItemInput}
-                  value={newDietaryRestriction}
-                  onChangeText={setNewDietaryRestriction}
-                  placeholder="Add new dietary restriction"
-                  placeholderTextColor="#9CA3AF"
-                />
-                <TouchableOpacity
-                  style={styles.addButton}
-                  onPress={addDietaryRestriction}
-                >
-                  <Plus size={20} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
-              
-              {/* List of dietary restrictions */}
-              {editedPet.dietaryRestrictions.map((restriction, index) => (
-                <View key={index} style={styles.editableItem}>
-                  <Text style={styles.editableItemText}>{restriction}</Text>
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => removeDietaryRestriction(index)}
-                  >
-                    <Trash2 size={16} color="#EF4444" />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </View>
+            <EditableList
+              items={editedPet.dietaryRestrictions}
+              newItem={newDietaryRestriction}
+              onNewItemChange={setNewDietaryRestriction}
+              onAddItem={addDietaryRestriction}
+              onRemoveItem={removeDietaryRestriction}
+              placeholder="Add new dietary restriction"
+              emptyMessage="No dietary restrictions recorded"
+              tagStyle="diet"
+            />
           ) : (
-            pet.dietaryRestrictions && pet.dietaryRestrictions.length > 0 ? (
-              <View style={styles.tagContainer}>
-                {pet.dietaryRestrictions.map((restriction, index) => (
-                  <View key={index} style={[styles.tag, styles.dietTag]}>
-                    <Text style={styles.dietTagText}>{restriction}</Text>
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <Text style={styles.noItemsText}>No dietary restrictions recorded</Text>
-            )
+            <TagList
+              items={pet.dietaryRestrictions || []}
+              tagStyle="diet"
+              emptyMessage="No dietary restrictions recorded"
+            />
           )}
         </View>
 
-        {/* Additional Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Profile Information</Text>
-          <View style={styles.infoRow}>
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Created</Text>
-              <Text style={styles.infoValue}>
-                {new Date(pet.createdAt).toLocaleDateString()}
+        {/* System Information Section */}
+        <View style={[styles.section, styles.lastSection]}>
+          <Text style={styles.sectionTitle}>System Information</Text>
+          
+          <View style={styles.systemInfoContainer}>
+            <View style={styles.systemInfoRow}>
+              <Text style={styles.systemInfoLabel}>Created</Text>
+              <Text style={styles.systemInfoValue}>
+                {new Date(pet.createdAt).toLocaleDateString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric', 
+                  year: 'numeric' 
+                })}
               </Text>
             </View>
-          </View>
-          <View style={styles.infoRow}>
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Last Updated</Text>
-              <Text style={styles.infoValue}>
-                {new Date(pet.updatedAt).toLocaleDateString()}
+            
+            <View style={styles.systemInfoDivider} />
+            
+            <View style={styles.systemInfoRow}>
+              <Text style={styles.systemInfoLabel}>Last Updated</Text>
+              <Text style={styles.systemInfoValue}>
+                {new Date(pet.updatedAt).toLocaleDateString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric', 
+                  year: 'numeric' 
+                })}
               </Text>
             </View>
           </View>
         </View>
 
-        <View style={{ height: 40 }} />
       </ScrollView>
       
       {/* Date Picker Modal */}
@@ -567,21 +494,25 @@ export default function PetProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#FFFFFF",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 20,
-    backgroundColor: "white",
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: "#ADD7EB",
+  },
+  backButton: {
+    padding: 8,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1F2937",
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#4559A7",
   },
   loadingContainer: {
     flex: 1,
@@ -589,122 +520,61 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   errorText: {
-    fontSize: 16,
+    fontSize: 18,
     color: "#6B7280",
   },
   scrollView: {
     flex: 1,
   },
   profileCard: {
-    backgroundColor: "white",
     alignItems: "center",
-    paddingVertical: 32,
+    paddingVertical: 28,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    backgroundColor: "#F8FAFC",
   },
   profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "#F3F4F6",
-    marginBottom: 16,
-  },
-  nameContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 4,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: "#E2E8F0",
+    marginBottom: 20,
+    borderWidth: 4,
+    borderColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   petName: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: 36,
+    fontWeight: "800",
     color: "#1F2937",
-  },
-  genderBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  genderText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  breed: {
-    fontSize: 18,
-    color: "#6B7280",
+    letterSpacing: 0.5,
     marginTop: 4,
   },
   section: {
-    backgroundColor: "white",
-    marginTop: 12,
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  reducedTopPadding: {
+    paddingTop: 8,
+  },
+  lastSection: {
+    paddingBottom: 32,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 18,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 22,
+    fontWeight: "800",
     color: "#1F2937",
-    marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#EEF2FF",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  infoContent: {
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: 13,
-    color: "#6B7280",
-    marginBottom: 2,
-  },
-  infoValue: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#1F2937",
-  },
-  tagContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  tag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  allergyTag: {
-    backgroundColor: "#FEE2E2",
-  },
-  allergyTagText: {
-    color: "#DC2626",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  dietTag: {
-    backgroundColor: "#D1FAE5",
-  },
-  dietTagText: {
-    color: "#059669",
-    fontSize: 14,
-    fontWeight: "500",
+    marginBottom: 14,
+    letterSpacing: 0.3,
   },
   // Editing mode styles
   headerActions: {
@@ -713,41 +583,43 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   editButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "700",
     color: "#4F46E5",
   },
   saveButton: {
-    padding: 8,
-    borderRadius: 8,
+    padding: 10,
+    borderRadius: 10,
     backgroundColor: "#10B981",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   cancelButton: {
-    padding: 8,
-    borderRadius: 8,
+    padding: 10,
+    borderRadius: 10,
     backgroundColor: "#EF4444",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   nameInput: {
-    fontSize: 24,
-    fontWeight: "700",
+    fontSize: 36,
+    fontWeight: "800",
     color: "#1F2937",
-    backgroundColor: "#F3F4F6",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    minWidth: 150,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    minWidth: 200,
     textAlign: "center",
-  },
-  breedInput: {
-    fontSize: 16,
-    color: "#6B7280",
-    backgroundColor: "#F3F4F6",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginTop: 8,
-    minWidth: 150,
-    textAlign: "center",
+    borderWidth: 2,
+    borderColor: "#4F46E5",
+    letterSpacing: 0.5,
   },
   weightInputContainer: {
     flexDirection: "row",
@@ -755,30 +627,32 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   weightInput: {
-    fontSize: 16,
+    fontSize: 18,
     color: "#1F2937",
-    backgroundColor: "#F3F4F6",
-    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
     width: 80,
     textAlign: "center",
+    borderWidth: 1.5,
+    borderColor: "#4F46E5",
   },
   weightUnit: {
-    fontSize: 16,
+    fontSize: 18,
     color: "#6B7280",
   },
   // Additional editing styles
   dateButton: {
-    backgroundColor: "#F3F4F6",
-    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    paddingVertical: 10,
+    borderWidth: 1.5,
+    borderColor: "#4F46E5",
   },
   dateButtonText: {
-    fontSize: 16,
+    fontSize: 18,
     color: "#1F2937",
   },
   switchContainer: {
@@ -787,62 +661,46 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   switchLabel: {
-    fontSize: 16,
+    fontSize: 18,
     color: "#1F2937",
-    fontWeight: "500",
+    fontWeight: "600",
   },
-  editableListContainer: {
-    gap: 12,
+  // System Information styles
+  systemInfoContainer: {
+    backgroundColor: "#F8FAFC",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
   },
-  addItemContainer: {
+  systemInfoRow: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  addItemInput: {
-    flex: 1,
-    backgroundColor: "#F3F4F6",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 16,
-    color: "#1F2937",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  addButton: {
-    backgroundColor: "#10B981",
-    borderRadius: 8,
-    padding: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  editableItem: {
-    flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#F9FAFB",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    alignItems: "center",
+    paddingVertical: 14,
   },
-  editableItemText: {
-    flex: 1,
-    fontSize: 16,
-    color: "#1F2937",
-  },
-  removeButton: {
-    padding: 4,
-    borderRadius: 4,
-    backgroundColor: "#FEF2F2",
-  },
-  noItemsText: {
+  systemInfoLabel: {
     fontSize: 16,
     color: "#6B7280",
-    fontStyle: "italic",
-    textAlign: "center",
-    paddingVertical: 16,
+    fontWeight: "500",
+  },
+  systemInfoValue: {
+    fontSize: 16,
+    color: "#1F2937",
+    fontWeight: "600",
+  },
+  systemInfoDivider: {
+    height: 1,
+    backgroundColor: "#E5E7EB",
+  },
+  infoEditInput: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 18,
+    color: "#1F2937",
+    borderWidth: 1.5,
+    borderColor: "#4F46E5",
+    fontWeight: "600",
   },
 });

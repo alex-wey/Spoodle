@@ -18,7 +18,6 @@ export default function SupportScreen() {
     { value: 'low', label: 'Low', color: '#10B981', icon: Info },
     { value: 'medium', label: 'Medium', color: '#F59E0B', icon: AlertCircle },
     { value: 'high', label: 'High', color: '#EF4444', icon: AlertTriangle },
-    { value: 'critical', label: 'Critical', color: '#DC2626', icon: Bug },
   ];
 
   const handleSubmit = async () => {

@@ -1,13 +1,16 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState, useEffect } from "react";
-import { MessageCircle, Dog, Clock } from "lucide-react-native";
+import { MessageCircle, Dog, Clock, Bug } from "lucide-react-native";
+import { useRouter } from "expo-router";
 import { usePetStore } from "../../store/pets";
 import { useChatStore } from "../../store/chat";
 import PetSelectionModal from "../../components/PetSelectionModal";
 import ChatInterfaceModal from "../../components/ChatInterfaceModal";
+import { FAB } from "../../components/FAB";
 
 export default function ChatScreen() {
+  const router = useRouter();
   const { pets } = usePetStore();
   const { chatSessions, loadChatSessions } = useChatStore();
   const [petSelectionVisible, setPetSelectionVisible] = useState(false);
@@ -50,7 +53,7 @@ export default function ChatScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>Spoodle Chatbot</Text>
@@ -152,6 +155,14 @@ export default function ChatScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Bug Report FAB */}
+      <FAB
+        icon={<Bug size={20} color="white" />}
+        onPress={() => router.push("/support")}
+        style={styles.fab}
+        size="small"
+      />
 
       {/* Modals */}
       <PetSelectionModal
@@ -358,6 +369,12 @@ const styles = StyleSheet.create({
     color: "#4559A7",
     opacity: 0.7,
     lineHeight: 20,
+  },
+  fab: {
+    position: "absolute",
+    top: 70,
+    right: 20,
+    backgroundColor: "#DC2626",
   },
 });
 

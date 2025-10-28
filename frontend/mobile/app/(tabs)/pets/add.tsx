@@ -101,7 +101,19 @@ export default function AddPetScreen() {
       return;
     }
     if (!formData.gender.trim()) {
-      Alert.alert('Error', 'Please select your pet\'s gender');
+      Alert.alert('Error', 'Please select your pet\'s biological sex');
+      return;
+    }
+    if (!formData.breed.trim()) {
+      Alert.alert('Error', 'Please enter your pet\'s breed');
+      return;
+    }
+    if (!formData.dateOfBirth.trim()) {
+      Alert.alert('Error', 'Please enter your pet\'s date of birth');
+      return;
+    }
+    if (!formData.weight.trim()) {
+      Alert.alert('Error', 'Please enter your pet\'s weight');
       return;
     }
 
@@ -148,7 +160,7 @@ export default function AddPetScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <ArrowLeft size={24} color="#1F2937" />
@@ -161,7 +173,6 @@ export default function AddPetScreen() {
         <View style={styles.form}>
           {/* Pet Image Upload */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Pet Photo</Text>
             <View style={styles.imageUploadContainer}>
               {petImage ? (
                 <View style={styles.imagePreviewContainer}>
@@ -222,11 +233,11 @@ export default function AddPetScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Gender *</Text>
+              <Text style={styles.label}>Biological Sex *</Text>
               <View style={styles.speciesContainer}>
                 {[
-                  { value: 'male', label: 'Male ♂' },
-                  { value: 'female', label: 'Female ♀' }
+                  { value: 'male', label: 'Male' },
+                  { value: 'female', label: 'Female' }
                 ].map((gender) => (
                   <TouchableOpacity
                     key={gender.value}
@@ -246,14 +257,9 @@ export default function AddPetScreen() {
                 ))}
               </View>
             </View>
-          </View>
-
-          {/* Optional Information */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Optional Information</Text>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Breed</Text>
+              <Text style={styles.label}>Breed *</Text>
               <TextInput
                 style={styles.input}
                 value={formData.breed}
@@ -264,7 +270,7 @@ export default function AddPetScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Date of Birth</Text>
+              <Text style={styles.label}>Date of Birth *</Text>
               <TextInput
                 style={styles.input}
                 value={formData.dateOfBirth}
@@ -277,7 +283,7 @@ export default function AddPetScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Weight (lbs)</Text>
+              <Text style={styles.label}>Weight (lbs) *</Text>
               <TextInput
                 style={styles.input}
                 value={formData.weight}
@@ -351,7 +357,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#ADD7EB",
   },
   title: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "600",
     color: "#4559A7",
   },
@@ -362,47 +368,47 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "600",
     color: "#4559A7",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   label: {
-    fontSize: 14,
+    fontSize: 17,
     fontWeight: "500",
     color: "#4559A7",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   input: {
     backgroundColor: "white",
     borderWidth: 1,
     borderColor: "#ADD7EB",
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
+    borderRadius: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    fontSize: 17,
     color: "#4559A7",
   },
   textArea: {
-    height: 100,
-    paddingTop: 12,
+    height: 120,
+    paddingTop: 16,
   },
   speciesContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: 10,
   },
   speciesButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    borderWidth: 1.5,
     borderColor: "#ADD7EB",
     backgroundColor: "white",
   },
@@ -411,9 +417,9 @@ const styles = StyleSheet.create({
     borderColor: "#3BB272",
   },
   speciesButtonText: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#4559A7",
-    fontWeight: "500",
+    fontWeight: "600",
   },
   speciesButtonTextSelected: {
     color: "white",
@@ -422,10 +428,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 10,
     backgroundColor: "#3BB272",
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: 18,
+    borderRadius: 14,
     marginTop: 20,
     marginBottom: 40,
   },
@@ -434,20 +440,20 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     color: "white",
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "700",
   },
   imageUploadContainer: {
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 24,
   },
   imageUploadButton: {
-    width: 120,
-    height: 120,
-    borderWidth: 2,
+    width: 140,
+    height: 140,
+    borderWidth: 3,
     borderColor: "#ADD7EB",
     borderStyle: "dashed",
-    borderRadius: 60,
+    borderRadius: 70,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#F8F9FA",
@@ -456,30 +462,30 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   petImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
   },
   removeImageButton: {
     position: "absolute",
     top: -8,
     right: -8,
     backgroundColor: "#DC2626",
-    borderRadius: 12,
-    width: 24,
-    height: 24,
+    borderRadius: 16,
+    width: 32,
+    height: 32,
     alignItems: "center",
     justifyContent: "center",
   },
   imageUploadText: {
-    fontSize: 14,
-    fontWeight: "500",
+    fontSize: 16,
+    fontWeight: "600",
     color: "#4559A7",
-    marginTop: 8,
+    marginTop: 10,
     textAlign: "center",
   },
   imageUploadSubtext: {
-    fontSize: 12,
+    fontSize: 14,
     color: "#6B7280",
     marginTop: 4,
     textAlign: "center",
