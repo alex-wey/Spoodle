@@ -95,7 +95,7 @@ model BugReport {
 }
 
 model ChatMessage {
-  id          String   @id
+  id          String   @id @default(uuid())
   petOwnerId  String
   message     String
   isFromUser  Boolean
@@ -110,17 +110,17 @@ model ChatMessage {
 }
 
 model UserPreference {
-  id            String   @id
+  id            String   @id @default(uuid())
   petOwnerId    String   @unique
   theme         String   @default("light")
   language      String   @default("en")
   notifications Boolean  @default(true)
   biometricAuth Boolean  @default(false)
-  autoBackup    Boolean  @default(true)
   settings      Json?
   createdAt     DateTime @default(now())
-  updatedAt     DateTime
+  updatedAt     DateTime @updatedAt
   petOwner      PetOwner @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
 
+  @@index([petOwnerId])
   @@map("user_preferences")
 }

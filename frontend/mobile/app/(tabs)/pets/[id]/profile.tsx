@@ -56,6 +56,10 @@ export default function PetProfileScreen() {
 
   useEffect(() => {
     loadPetProfile();
+    // Reset edit mode when component mounts or pet ID changes
+    setIsEditing(false);
+    setNewAllergy('');
+    setNewDietaryRestriction('');
   }, [id]);
 
   useEffect(() => {
@@ -201,13 +205,13 @@ export default function PetProfileScreen() {
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
-            <ArrowLeft size={24} color="#1F2937" />
+            <ArrowLeft size={24} color="#4559A7" />
           </TouchableOpacity>
           <Text style={styles.title}>Pet Profile</Text>
           <View style={{ width: 24 }} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4F46E5" />
+          <ActivityIndicator size="large" color="#4559A7" />
         </View>
       </SafeAreaView>
     );
@@ -218,7 +222,7 @@ export default function PetProfileScreen() {
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
-            <ArrowLeft size={24} color="#1F2937" />
+            <ArrowLeft size={24} color="#4559A7" />
           </TouchableOpacity>
           <Text style={styles.title}>Pet Profile</Text>
           <View style={{ width: 24 }} />
@@ -314,7 +318,7 @@ export default function PetProfileScreen() {
           />
 
           <InfoRow
-            icon={<Dna size={20} color="#4F46E5" />}
+            icon={<Dna size={20} color="#4559A7" />}
             label="Breed"
             value={isEditing ? (
               <TextInput
@@ -336,7 +340,7 @@ export default function PetProfileScreen() {
 
           {pet.dateOfBirth && (
             <InfoRow
-              icon={<Calendar size={20} color="#4F46E5" />}
+              icon={<Calendar size={20} color="#4559A7" />}
               label="Date of Birth"
               value={isEditing ? (
                 <TouchableOpacity
@@ -355,7 +359,7 @@ export default function PetProfileScreen() {
 
           {pet.weight !== undefined && (
             <InfoRow
-              icon={<Weight size={20} color="#4F46E5" />}
+              icon={<Weight size={20} color="#4559A7" />}
               label="Weight"
               value={isEditing ? (
                 <View style={styles.weightInputContainer}>
@@ -377,7 +381,7 @@ export default function PetProfileScreen() {
 
           {pet.spayedNeutered !== undefined && (
             <InfoRow
-              icon={<Syringe size={20} color="#4F46E5" />}
+              icon={<Syringe size={20} color="#4559A7" />}
               label="Spayed/Neutered"
               value={isEditing ? (
                 <View style={styles.switchContainer}>
@@ -500,7 +504,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingTop: 8,
     paddingBottom: 12,
     borderBottomWidth: 1,
@@ -510,8 +514,8 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 24,
+    fontWeight: "600",
     color: "#4559A7",
   },
   loadingContainer: {
@@ -528,15 +532,23 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     alignItems: "center",
-    paddingVertical: 28,
-    paddingHorizontal: 20,
-    backgroundColor: "#F8FAFC",
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    backgroundColor: "#DCEBF5",
+    marginHorizontal: 24,
+    marginTop: 24,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   profileImage: {
     width: 140,
     height: 140,
     borderRadius: 70,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
     marginBottom: 20,
     borderWidth: 4,
     borderColor: "#FFFFFF",
@@ -544,17 +556,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 4,
   },
   petName: {
-    fontSize: 36,
-    fontWeight: "800",
-    color: "#1F2937",
-    letterSpacing: 0.5,
-    marginTop: 4,
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#4559A7",
+    textAlign: "center",
   },
   section: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 8,
   },
@@ -570,11 +581,10 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   sectionTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#1F2937",
-    marginBottom: 14,
-    letterSpacing: 0.3,
+    fontSize: 24,
+    fontWeight: "600",
+    color: "#4559A7",
+    marginBottom: 20,
   },
   // Editing mode styles
   headerActions: {
@@ -584,42 +594,41 @@ const styles = StyleSheet.create({
   },
   editButtonText: {
     fontSize: 18,
-    fontWeight: "700",
-    color: "#4F46E5",
+    fontWeight: "600",
+    color: "#4559A7",
   },
   saveButton: {
     padding: 10,
-    borderRadius: 10,
-    backgroundColor: "#10B981",
+    borderRadius: 12,
+    backgroundColor: "#3BB272",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   cancelButton: {
     padding: 10,
-    borderRadius: 10,
-    backgroundColor: "#EF4444",
+    borderRadius: 12,
+    backgroundColor: "#DC2626",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   nameInput: {
-    fontSize: 36,
-    fontWeight: "800",
-    color: "#1F2937",
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#4559A7",
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     minWidth: 200,
     textAlign: "center",
-    borderWidth: 2,
-    borderColor: "#4F46E5",
-    letterSpacing: 0.5,
+    borderWidth: 1,
+    borderColor: "#ADD7EB",
   },
   weightInputContainer: {
     flexDirection: "row",
@@ -628,15 +637,15 @@ const styles = StyleSheet.create({
   },
   weightInput: {
     fontSize: 18,
-    color: "#1F2937",
+    color: "#4559A7",
     backgroundColor: "#FFFFFF",
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
     width: 80,
     textAlign: "center",
-    borderWidth: 1.5,
-    borderColor: "#4F46E5",
+    borderWidth: 1,
+    borderColor: "#ADD7EB",
   },
   weightUnit: {
     fontSize: 18,
@@ -645,15 +654,15 @@ const styles = StyleSheet.create({
   // Additional editing styles
   dateButton: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderWidth: 1.5,
-    borderColor: "#4F46E5",
+    borderWidth: 1,
+    borderColor: "#ADD7EB",
   },
   dateButtonText: {
     fontSize: 18,
-    color: "#1F2937",
+    color: "#4559A7",
   },
   switchContainer: {
     flexDirection: "row",
@@ -662,15 +671,22 @@ const styles = StyleSheet.create({
   },
   switchLabel: {
     fontSize: 18,
-    color: "#1F2937",
+    color: "#4559A7",
     fontWeight: "600",
   },
   // System Information styles
   systemInfoContainer: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 12,
-    paddingHorizontal: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    paddingHorizontal: 24,
     paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: "#ADD7EB",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   systemInfoRow: {
     flexDirection: "row",
@@ -685,22 +701,22 @@ const styles = StyleSheet.create({
   },
   systemInfoValue: {
     fontSize: 16,
-    color: "#1F2937",
+    color: "#4559A7",
     fontWeight: "600",
   },
   systemInfoDivider: {
     height: 1,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: "#ADD7EB",
   },
   infoEditInput: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 8,
+    borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 18,
-    color: "#1F2937",
-    borderWidth: 1.5,
-    borderColor: "#4F46E5",
+    color: "#4559A7",
+    borderWidth: 1,
+    borderColor: "#ADD7EB",
     fontWeight: "600",
   },
 });
