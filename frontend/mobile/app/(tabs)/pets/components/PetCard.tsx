@@ -17,7 +17,7 @@ export function PetCard({ pet, onPress, onPetDocuments }: PetCardProps) {
     <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.container}>
       <View style={styles.header}>
         <Image
-          source={getSafeImageSource(pet.imageUrl, pet.name, pet.gender)}
+          source={getSafeImageSource(pet.imageUrl, pet.name, pet.biologicalSex)}
           style={styles.image}
           onError={(error) => {
             console.log('PetCard image load error:', error);
@@ -33,7 +33,7 @@ export function PetCard({ pet, onPress, onPetDocuments }: PetCardProps) {
             </Text>
             <Text style={styles.dividerText}>|</Text>
             <Text style={styles.detailText}>
-              {pet.gender.charAt(0).toUpperCase() + pet.gender.slice(1)}
+              {pet.biologicalSex ? pet.biologicalSex.charAt(0).toUpperCase() + pet.biologicalSex.slice(1) : 'Unknown'}
             </Text>
           </View>
         </View>

@@ -89,9 +89,13 @@ export async function deleteUserData(clerkUserId: string) {
       console.log('✅ Deleted bug reports');
     }
 
-    // 2. Delete documents (using user.id as ownerId)
+    // 2. Delete documents (through pet relationship)
     await prisma.document.deleteMany({
-      where: { ownerId: user.id }
+      where: { 
+        pet: {
+          ownerId: user.id
+        }
+      }
     });
     console.log('✅ Deleted documents');
 

@@ -5,17 +5,20 @@ import { useUser } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import { usePetStore } from '../store/pets';
 import { useDocumentStore } from '../store/documents';
+import { useChatStore } from '../store/chat';
+import { clerkApiClient } from '../lib/api';
 
 export const DeleteAccountButton = () => {
   const { user } = useUser();
   const router = useRouter();
   const { clearPets } = usePetStore();
   const { clearDocuments } = useDocumentStore();
+  const { clearAllChatSessions } = useChatStore();
 
   const handleDeleteAccount = async () => {
     Alert.alert(
       'Delete Account',
-      'Are you sure you want to permanently delete your account? This action cannot be undone and will remove all your data including pets, documents, and tasks.',
+      'Are you sure you want to permanently delete your account? This action cannot be undone and will remove all your data including pets, documents, medical records, bug reports, and chat history.',
       [
         { text: 'Cancel', style: 'cancel' },
         { 
@@ -48,14 +51,22 @@ export const DeleteAccountButton = () => {
         throw new Error('No user found. Please log in and try again.');
       }
       
-      // Use Clerk's native delete method
+      // Step 1: Delete all user data from our database via backend API
+      console.log('📡 Calling backend API to delete user data...');
+      await clerkApiClient.deleteAccount();
+      console.log('✅ Backend data deletion completed');
+      
+      // Step 2: Delete the user from Clerk (this will also trigger webhooks)
+      console.log('🔐 Deleting user from Clerk...');
       await user.delete();
+      console.log('✅ Clerk user deletion completed');
       
-      console.log('✅ Account deleted successfully');
-      
-      // Clear all stores
+      // Step 3: Clear all local stores
+      console.log('🧹 Clearing local stores...');
       clearPets();
       clearDocuments();
+      clearAllChatSessions();
+      console.log('✅ Local stores cleared');
       
       // Show success message and navigate to landing
       Alert.alert(
@@ -70,9 +81,25 @@ export const DeleteAccountButton = () => {
       );
     } catch (error) {
       console.error('❌ Account deletion error:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to delete account. Please try again or contact support.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else if (error.message.includes('401') || error.message.includes('unauthorized')) {
+          errorMessage = 'Authentication error. Please log in again and try deleting your account.';
+        } else if (error.message.includes('500')) {
+          errorMessage = 'Server error. Please try again later or contact support.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       Alert.alert(
         'Deletion Failed',
-        error instanceof Error ? error.message : 'Failed to delete account. Please try again or contact support.',
+        errorMessage,
         [{ text: 'OK' }]
       );
     }

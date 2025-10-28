@@ -62,7 +62,11 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     const documents = await prisma.document.findMany({
-      where: { ownerId: req.user.id },
+      where: {
+        pet: {
+          ownerId: req.user.id
+        }
+      },
       include: {
         pet: {
           select: {
@@ -111,7 +115,9 @@ router.get('/category/:category',
       
       const documents = await prisma.document.findMany({
         where: {
-          ownerId: req.user!.id,
+          pet: {
+            ownerId: req.user!.id
+          },
           category: category as string
         },
         include: {
@@ -181,8 +187,10 @@ router.get('/pet/:petId/category/:category',
       const documents = await prisma.document.findMany({
         where: { 
           petId: petId as string,
-          ownerId: req.user!.id,
-          category: category as string
+          category: category as string,
+          pet: {
+            ownerId: req.user!.id
+          }
         },
         include: {
           pet: {
@@ -238,7 +246,9 @@ router.get('/pet/:petId',
       const documents = await prisma.document.findMany({
         where: { 
           petId: petId as string,
-          ownerId: req.user!.id
+          pet: {
+            ownerId: req.user!.id
+          }
         },
         orderBy: { createdAt: 'desc' }
       });
@@ -269,7 +279,9 @@ router.get('/:id',
       const document = await prisma.document.findFirst({
         where: { 
           id: id as string,
-          ownerId: req.user!.id
+          pet: {
+            ownerId: req.user!.id
+          }
         },
         include: {
           pet: {
@@ -382,16 +394,11 @@ router.post('/upload',
       const documentData = {
         id: uuidv4(),
         petId: selectedPetId,
-        ownerId: req.user!.id,
         category,
-        hospitalName,
         fileName: req.file.filename,
-        originalFileName: req.file.originalname,
         filePath: path.join(process.env.UPLOAD_DIR || './uploads', 'documents', req.file.filename),
         fileSize: req.file.size,
-        mimeType: req.file.mimetype,
-        date: date ? new Date(date) : new Date(),
-        notes: notes || ''
+        mimeType: req.file.mimetype
       };
       
       console.log('📝 Creating document with data:', documentData);
@@ -457,7 +464,9 @@ router.put('/:id',
       const existingDocument = await prisma.document.findFirst({
         where: { 
           id: id as string,
-          ownerId: req.user!.id
+          pet: {
+            ownerId: req.user!.id
+          }
         }
       });
       
@@ -515,7 +524,9 @@ router.get('/download/:id',
       const document = await prisma.document.findFirst({
         where: { 
           id: id as string,
-          ownerId: req.user!.id
+          pet: {
+            ownerId: req.user!.id
+          }
         }
       });
       
@@ -533,7 +544,7 @@ router.get('/download/:id',
         
         // Set appropriate headers for file download
         res.setHeader('Content-Type', document.mimeType);
-        res.setHeader('Content-Disposition', `inline; filename="${document.originalFileName}"`);
+        res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
         res.setHeader('Content-Length', document.fileSize.toString());
         
         // Stream the file
@@ -570,7 +581,9 @@ router.delete('/:id',
       const existingDocument = await prisma.document.findFirst({
         where: { 
           id: id as string,
-          ownerId: req.user!.id
+          pet: {
+            ownerId: req.user!.id
+          }
         }
       });
       

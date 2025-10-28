@@ -46,8 +46,21 @@ router.get('/', async (req: Request, res: Response) => {
       });
     }
 
+    // Get the PetOwner ID for this user
+    const petOwner = await prisma.petOwner.findUnique({
+      where: { clerkUserId: req.user.clerkUserId }
+    });
+    
+    if (!petOwner) {
+      return res.status(500).json({
+        success: false,
+        error: 'Pet owner not found',
+        message: 'Unable to find pet owner record. Please contact support.'
+      });
+    }
+
     const pets = await prisma.pet.findMany({
-      where: { ownerId: req.user.id },
+      where: { ownerId: petOwner.id },
       orderBy: { createdAt: 'desc' }
     });
     
@@ -73,10 +86,23 @@ router.get('/:id',
     try {
       const { id } = req.params;
       
+      // Get the PetOwner ID for this user
+      const petOwner = await prisma.petOwner.findUnique({
+        where: { clerkUserId: req.user!.clerkUserId }
+      });
+      
+      if (!petOwner) {
+        return res.status(500).json({
+          success: false,
+          error: 'Pet owner not found',
+          message: 'Unable to find pet owner record. Please contact support.'
+        });
+      }
+
       const pet = await prisma.pet.findFirst({
         where: { 
           id: id as string,
-          ownerId: req.user!.id
+          ownerId: petOwner.id
         }
       });
       
@@ -122,9 +148,23 @@ router.post('/',
       // Validate and clean image URL
       const cleanImageUrl = validateImageUrl(petData.imageUrl);
       
+      // Get the PetOwner ID for this user
+      const petOwner = await prisma.petOwner.findUnique({
+        where: { clerkUserId: req.user.clerkUserId }
+      });
+      
+      if (!petOwner) {
+        return res.status(500).json({
+          success: false,
+          error: 'Pet owner not found',
+          message: 'Unable to find pet owner record. Please contact support.'
+        });
+      }
+
       // DEBUG: Log what we're trying to create
       console.log('🐕 Attempting to create pet:');
-      console.log('   Owner ID:', req.user.id);
+      console.log('   User ID:', req.user.id);
+      console.log('   PetOwner ID:', petOwner.id);
       console.log('   Pet Name:', petData.name);
       console.log('   Species:', petData.species);
       console.log('   Image URL:', cleanImageUrl ? 'Valid image URL provided' : 'No valid image URL');
@@ -134,19 +174,19 @@ router.post('/',
       const result = await pool.query(
         `INSERT INTO pets (
           id, "ownerId", name, species, breed, "dateOfBirth", 
-          gender, "spayedNeutered", weight, 
+          "biologicalSex", "spayedNeutered", weight, 
           allergies, "dietaryRestrictions", "imageUrl", "createdAt", "updatedAt"
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()
         ) RETURNING *`,
         [
           petId,
-          req.user.id,
+          petOwner.id,
           petData.name,
           petData.species || 'Dog',
           petData.breed || null,
           petData.dateOfBirth || null,
-          petData.gender || null,
+          petData.biologicalSex || null,
           petData.spayedNeutered || false,
           petData.weight || null,
           petData.allergies || [],
@@ -187,11 +227,24 @@ router.put('/:id',
     try {
       const { id } = req.params;
       
+      // Get the PetOwner ID for this user
+      const petOwner = await prisma.petOwner.findUnique({
+        where: { clerkUserId: req.user!.clerkUserId }
+      });
+      
+      if (!petOwner) {
+        return res.status(500).json({
+          success: false,
+          error: 'Pet owner not found',
+          message: 'Unable to find pet owner record. Please contact support.'
+        });
+      }
+
       // Check if pet exists and belongs to user
       const existingPet = await prisma.pet.findFirst({
         where: { 
           id: id as string,
-          ownerId: req.user!.id
+          ownerId: petOwner.id
         }
       });
       
@@ -242,11 +295,24 @@ router.delete('/:id',
     try {
       const { id } = req.params;
       
+      // Get the PetOwner ID for this user
+      const petOwner = await prisma.petOwner.findUnique({
+        where: { clerkUserId: req.user!.clerkUserId }
+      });
+      
+      if (!petOwner) {
+        return res.status(500).json({
+          success: false,
+          error: 'Pet owner not found',
+          message: 'Unable to find pet owner record. Please contact support.'
+        });
+      }
+
       // Check if pet exists and belongs to user
       const existingPet = await prisma.pet.findFirst({
         where: { 
           id: id as string,
-          ownerId: req.user!.id
+          ownerId: petOwner.id
         }
       });
       

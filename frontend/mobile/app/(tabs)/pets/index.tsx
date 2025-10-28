@@ -4,14 +4,11 @@ import { useState, useEffect } from "react";
 import { Plus, Bug, Dog } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { usePetStore } from "../../store/pets";
-import { useUser } from '@clerk/clerk-expo';
-import { getGreeting } from "../../lib/utils";
 import { PetCard } from "./components/PetCard";
 import { FAB } from "../../components/FAB";
 
 export default function PetsScreen() {
   const router = useRouter();
-  const { user } = useUser();
   const { pets, fetchPets, isLoading, error } = usePetStore();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -34,17 +31,6 @@ export default function PetsScreen() {
     router.push(`/(tabs)/pets/${petId}/docs` as any);
   };
 
-  // if (isLoading && pets.length === 0) {
-  //   return (
-  //     <SafeAreaView style={styles.container}>
-  //       <View style={styles.loadingContainer}>
-  //         <ActivityIndicator size="large" color="#4F46E5" />
-  //         <Text style={styles.loadingText}>Loading your pets...</Text>
-  //       </View>
-  //     </SafeAreaView>
-  //   );
-  // }
-
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView
@@ -61,11 +47,8 @@ export default function PetsScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>{getGreeting()},</Text>
-            <Text style={styles.userName}>{user?.firstName || "Pet Parent"}!</Text>
-          </View>
-          <Text style={styles.subtitle}>How are your pets doing today?</Text>
+          <Text style={styles.title}>My Pets</Text>
+          <Text style={styles.subtitle}>Manage your pet's health and records</Text>
         </View>
 
         {/* Content */}
@@ -134,8 +117,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 20,
+    padding: 24,
+    paddingBottom: 40,
   },
   loadingContainer: {
     flex: 1,
@@ -144,65 +127,78 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    fontSize: 16,
+    fontSize: 18,
     color: "#4559A7",
   },
   header: {
-    paddingTop: 0,
-    paddingBottom: 5,
+    marginBottom: 24,
   },
-  greeting: {
-    fontSize: 16,
-    color: "#4559A7",
-  },
-  userName: {
-    fontSize: 28,
+  title: {
+    fontSize: 32,
     fontWeight: "bold",
     color: "#4559A7",
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 18,
     color: "#4559A7",
-    marginTop: 4,
+    opacity: 0.7,
   },
   content: {
-    paddingTop: 10,
+    paddingTop: 0,
   },
   errorContainer: {
-    backgroundColor: "#ADD7EB",
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    padding: 20,
+    borderRadius: 20,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#ADD7EB",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   errorText: {
     color: "#4559A7",
-    fontSize: 14,
+    fontSize: 16,
   },
   emptyState: {
+    backgroundColor: "#FFF5F5",
+    borderRadius: 20,
+    padding: 32,
     alignItems: "center",
-    paddingVertical: 60,
+    marginBottom: 32,
+    borderWidth: 1,
+    borderColor: "#FED7D7",
   },
   emptyIconContainer: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: "#ADD7EB",
+    backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "600",
-    color: "#4559A7",
-    marginBottom: 8,
+    color: "#E75325",
+    marginBottom: 12,
   },
   emptyDescription: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#4559A7",
     textAlign: "center",
     marginBottom: 24,
-    paddingHorizontal: 40,
+    lineHeight: 24,
   },
   addFirstPetButton: {
     flexDirection: "row",
@@ -215,7 +211,7 @@ const styles = StyleSheet.create({
   },
   addFirstPetButtonText: {
     color: "white",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
   },
   addButton: {
@@ -223,15 +219,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "white",
-    paddingVertical: 16,
-    borderRadius: 12,
-    borderWidth: 2,
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 20,
+    borderRadius: 20,
+    borderWidth: 1,
     borderColor: "#ADD7EB",
     borderStyle: "dashed",
+    marginTop: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   addButtonText: {
-    fontSize: 16,
+    fontSize: 18,
     color: "#4559A7",
     fontWeight: "600",
   },

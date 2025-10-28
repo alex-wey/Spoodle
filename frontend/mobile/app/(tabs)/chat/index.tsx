@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState, useEffect } from "react";
-import { MessageCircle, Dog, Clock, Bug } from "lucide-react-native";
+import { MessageCircle, Dog, Clock, Bug, Heart, Apple, Activity, Bell } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { usePetStore } from "../../store/pets";
 import { useChatStore } from "../../store/chat";
@@ -80,7 +80,7 @@ export default function ChatScreen() {
 
         {pets.length === 0 && (
           <View style={styles.noPetsCard}>
-            <Dog size={32} color="#E75325" />
+            <Dog size={40} color="#E75325" />
             <Text style={styles.noPetsTitle}>No pets added yet</Text>
             <Text style={styles.noPetsDescription}>
               Add a pet to start chatting with Spoodle about their care
@@ -100,11 +100,11 @@ export default function ChatScreen() {
               >
                 <View style={styles.chatSessionInfo}>
                   <View style={styles.chatSessionHeader}>
-                    <Dog size={20} color="#4559A7" />
+                    <Dog size={24} color="#4559A7" />
                     <Text style={styles.chatSessionPetName}>{session.petName}</Text>
                   </View>
                   <View style={styles.chatSessionMeta}>
-                    <Clock size={14} color="#6B7280" />
+                    <Clock size={16} color="#6B7280" />
                     <Text style={styles.chatSessionTime}>
                       {formatLastActivity(session.lastActivity)}
                     </Text>
@@ -113,7 +113,7 @@ export default function ChatScreen() {
                     </Text>
                   </View>
                 </View>
-                <MessageCircle size={20} color="#4559A7" />
+                <MessageCircle size={24} color="#4559A7" />
               </TouchableOpacity>
             ))}
           </View>
@@ -123,32 +123,40 @@ export default function ChatScreen() {
           <Text style={styles.featuresTitle}>What can Spoodle help with?</Text>
           
           <View style={styles.featureCard}>
-            <Text style={styles.featureEmoji}>🏥</Text>
-            <Text style={styles.featureTitle}>Health Questions</Text>
+            <View style={styles.featureHeader}>
+              <Heart size={24} color="#4559A7" />
+              <Text style={styles.featureTitle}>Health Questions</Text>
+            </View>
             <Text style={styles.featureDescription}>
               Ask about symptoms, medications, and general health concerns
             </Text>
           </View>
 
           <View style={styles.featureCard}>
-            <Text style={styles.featureEmoji}>🍖</Text>
-            <Text style={styles.featureTitle}>Nutrition Advice</Text>
+            <View style={styles.featureHeader}>
+              <Apple size={24} color="#4559A7" />
+              <Text style={styles.featureTitle}>Nutrition Advice</Text>
+            </View>
             <Text style={styles.featureDescription}>
               Get recommendations on diet, treats, and feeding schedules
             </Text>
           </View>
 
           <View style={styles.featureCard}>
-            <Text style={styles.featureEmoji}>🎾</Text>
-            <Text style={styles.featureTitle}>Behavior Tips</Text>
+            <View style={styles.featureHeader}>
+              <Activity size={24} color="#4559A7" />
+              <Text style={styles.featureTitle}>Behavior Tips</Text>
+            </View>
             <Text style={styles.featureDescription}>
               Learn about training, socialization, and behavioral issues
             </Text>
           </View>
 
           <View style={styles.featureCard}>
-            <Text style={styles.featureEmoji}>📅</Text>
-            <Text style={styles.featureTitle}>Care Reminders</Text>
+            <View style={styles.featureHeader}>
+              <Bell size={24} color="#4559A7" />
+              <Text style={styles.featureTitle}>Care Reminders</Text>
+            </View>
             <Text style={styles.featureDescription}>
               Stay on top of vet visits, vaccinations, and grooming
             </Text>
@@ -189,7 +197,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: 24,
   },
   header: {
     marginBottom: 24,
@@ -201,7 +209,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 18,
     color: "#4559A7",
     opacity: 0.7,
   },
@@ -261,39 +269,39 @@ const styles = StyleSheet.create({
   },
   noPetsCard: {
     backgroundColor: "#FFF5F5",
-    borderRadius: 16,
-    padding: 24,
+    borderRadius: 20,
+    padding: 32,
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 32,
     borderWidth: 1,
     borderColor: "#FED7D7",
   },
   noPetsTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "600",
     color: "#E75325",
-    marginTop: 12,
-    marginBottom: 8,
+    marginTop: 16,
+    marginBottom: 12,
   },
   noPetsDescription: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#4559A7",
     textAlign: "center",
   },
   activeChatsSection: {
-    marginBottom: 32,
+    marginBottom: 5,
   },
   activeChatsTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "600",
     color: "#4559A7",
-    marginBottom: 16,
+    marginBottom: 20,
   },
   chatSessionCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: "#ADD7EB",
     shadowColor: "#000",
@@ -311,41 +319,41 @@ const styles = StyleSheet.create({
   chatSessionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: 8,
   },
   chatSessionPetName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
     color: "#4559A7",
-    marginLeft: 8,
+    marginLeft: 10,
   },
   chatSessionMeta: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 12,
   },
   chatSessionTime: {
-    fontSize: 12,
+    fontSize: 14,
     color: "#6B7280",
   },
   chatSessionCount: {
-    fontSize: 12,
+    fontSize: 14,
     color: "#6B7280",
   },
   featuresSection: {
-    marginBottom: 32,
+    marginBottom: 40,
   },
   featuresTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "600",
     color: "#4559A7",
-    marginBottom: 16,
+    marginBottom: 20,
   },
   featureCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 12,
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: "#ADD7EB",
     shadowColor: "#000",
@@ -354,21 +362,22 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  featureEmoji: {
-    fontSize: 32,
-    marginBottom: 8,
+  featureHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
   },
   featureTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
     color: "#4559A7",
-    marginBottom: 4,
+    marginLeft: 12,
   },
   featureDescription: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#4559A7",
     opacity: 0.7,
-    lineHeight: 20,
+    lineHeight: 24,
   },
   fab: {
     position: "absolute",

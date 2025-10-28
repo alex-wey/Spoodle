@@ -20,7 +20,7 @@ interface PetProfile {
   breed?: string;
   age?: number;
   dateOfBirth?: string;
-  gender?: 'male' | 'female';
+  biologicalSex?: 'male' | 'female';
   spayedNeutered?: boolean;
   weight?: number;
   allergies?: string[];
@@ -47,7 +47,7 @@ export default function PetProfileScreen() {
     species: 'dog' as 'dog' | 'cat' | 'other',
     breed: '',
     weight: '',
-    gender: 'male' as 'male' | 'female',
+    biologicalSex: 'male' as 'male' | 'female',
     dateOfBirth: new Date(),
     spayedNeutered: false,
     allergies: [] as string[],
@@ -65,7 +65,7 @@ export default function PetProfileScreen() {
         species: (pet.species?.toLowerCase() || 'dog') as 'dog' | 'cat' | 'other',
         breed: pet.breed || '',
         weight: pet.weight?.toString() || '',
-        gender: pet.gender || 'male',
+        biologicalSex: pet.biologicalSex || 'male',
         dateOfBirth: pet.dateOfBirth ? new Date(pet.dateOfBirth) : new Date(),
         spayedNeutered: pet.spayedNeutered || false,
         allergies: pet.allergies || [],
@@ -108,7 +108,7 @@ export default function PetProfileScreen() {
         species: editedPet.species,
         breed: editedPet.breed.trim() || undefined,
         weight: weight,
-        gender: editedPet.gender,
+        biologicalSex: editedPet.biologicalSex,
         dateOfBirth: editedPet.dateOfBirth,
         spayedNeutered: editedPet.spayedNeutered,
         allergies: editedPet.allergies,
@@ -143,7 +143,7 @@ export default function PetProfileScreen() {
         species: (pet.species?.toLowerCase() || 'dog') as 'dog' | 'cat' | 'other',
         breed: pet.breed || '',
         weight: pet.weight?.toString() || '',
-        gender: pet.gender || 'male',
+        biologicalSex: pet.biologicalSex || 'male',
         dateOfBirth: pet.dateOfBirth ? new Date(pet.dateOfBirth) : new Date(),
         spayedNeutered: pet.spayedNeutered || false,
         allergies: pet.allergies || [],
@@ -301,15 +301,15 @@ export default function PetProfileScreen() {
           />
 
           <InfoRow
-            icon={getBiologicalSexIcon(pet.gender)}
+            icon={getBiologicalSexIcon(pet.biologicalSex)}
             label="Biological Sex"
             value={isEditing ? (
               <BiologicalSexSelector
-                selectedSex={editedPet.gender}
-                onSelect={(sex) => setEditedPet(prev => ({ ...prev, gender: sex }))}
+                selectedSex={editedPet.biologicalSex}
+                onSelect={(sex) => setEditedPet(prev => ({ ...prev, biologicalSex: sex }))}
               />
             ) : (
-              pet.gender ? pet.gender.charAt(0).toUpperCase() + pet.gender.slice(1) : 'Unknown'
+              pet.biologicalSex ? pet.biologicalSex.charAt(0).toUpperCase() + pet.biologicalSex.slice(1) : 'Unknown'
             )}
           />
 

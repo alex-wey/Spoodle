@@ -16,7 +16,7 @@ export interface Pet {
   species: string;
   breed: string;
   dateOfBirth: Date | string;
-  gender: "male" | "female";
+  biologicalSex?: "male" | "female";
   spayedNeutered: boolean;
   weight: number;
   allergies: string[];
@@ -32,7 +32,7 @@ export interface CreatePet {
   species: string;
   breed: string;
   dateOfBirth: string | Date;
-  gender?: "male" | "female";
+  biologicalSex?: "male" | "female";
   spayedNeutered?: boolean;
   weight?: number;
   allergies?: string[];
@@ -46,7 +46,7 @@ export interface UpdatePet {
   species?: string;
   breed?: string;
   dateOfBirth?: string | Date;
-  gender?: "male" | "female";
+  biologicalSex?: "male" | "female";
   spayedNeutered?: boolean;
   weight?: number;
   allergies?: string[];

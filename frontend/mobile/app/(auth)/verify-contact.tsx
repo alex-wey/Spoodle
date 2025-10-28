@@ -290,6 +290,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#1F2937',
     minHeight: 56,
+    textAlign: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,

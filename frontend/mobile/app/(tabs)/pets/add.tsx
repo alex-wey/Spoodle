@@ -10,9 +10,10 @@ const INITIAL_FORM_STATE = {
   name: '',
   species: '',
   breed: '',
-  gender: '',
+  biologicalSex: '',
   dateOfBirth: '',
   weight: '',
+  spayedNeutered: false,
   allergies: '',
   dietaryRestrictions: ''
 };
@@ -48,18 +49,43 @@ export default function AddPetScreen() {
         name: existingPet.name || '',
         species: existingPet.species || '',
         breed: existingPet.breed || '',
-        gender: existingPet.gender || '',
+        biologicalSex: existingPet.biologicalSex || '',
         dateOfBirth: formattedDate,
         weight: existingPet.weight?.toString() || '',
+        spayedNeutered: existingPet.spayedNeutered || false,
         allergies: existingPet.allergies?.join(', ') || '',
         dietaryRestrictions: existingPet.dietaryRestrictions?.join(', ') || ''
       });
       setPetImage(existingPet.imageUrl || null);
     } else {
+      // Reset form completely for new pet
       setFormData(INITIAL_FORM_STATE);
       setPetImage(null);
     }
   }, [isEditMode, existingPet]);
+
+  // Additional reset when component mounts for new pet
+  useEffect(() => {
+    if (!isEditMode) {
+      setFormData(INITIAL_FORM_STATE);
+      setPetImage(null);
+    }
+  }, [isEditMode]);
+
+  // Reset form function
+  const resetForm = () => {
+    setFormData(INITIAL_FORM_STATE);
+    setPetImage(null);
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (!isEditMode) {
+        resetForm();
+      }
+    };
+  }, [isEditMode]);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -100,7 +126,7 @@ export default function AddPetScreen() {
       Alert.alert('Error', 'Please select your pet\'s species');
       return;
     }
-    if (!formData.gender.trim()) {
+    if (!formData.biologicalSex.trim()) {
       Alert.alert('Error', 'Please select your pet\'s biological sex');
       return;
     }
@@ -136,9 +162,10 @@ export default function AddPetScreen() {
         name: formData.name,
         species: formData.species,
         breed: formData.breed || 'Mixed Breed',
-        gender: formData.gender as 'male' | 'female',
+        biologicalSex: formData.biologicalSex as 'male' | 'female',
         dateOfBirth: dateOfBirthISO,
         weight: formData.weight ? parseFloat(formData.weight) : undefined,
+        spayedNeutered: formData.spayedNeutered,
         allergies: formData.allergies.split(',').map(a => a.trim()).filter(Boolean),
         dietaryRestrictions: formData.dietaryRestrictions.split(',').map(d => d.trim()).filter(Boolean),
         imageUrl: petImage || undefined
@@ -149,6 +176,8 @@ export default function AddPetScreen() {
         router.back();
       } else {
         await addPet(petData);
+        // Reset form after successful creation
+        resetForm();
         router.back();
       }
     } catch (error) {
@@ -238,20 +267,20 @@ export default function AddPetScreen() {
                 {[
                   { value: 'male', label: 'Male' },
                   { value: 'female', label: 'Female' }
-                ].map((gender) => (
+                ].map((sex) => (
                   <TouchableOpacity
-                    key={gender.value}
+                    key={sex.value}
                     style={[
                       styles.speciesButton,
-                      formData.gender === gender.value && styles.speciesButtonSelected
+                      formData.biologicalSex === sex.value && styles.speciesButtonSelected
                     ]}
-                    onPress={() => setFormData({ ...formData, gender: gender.value })}
+                    onPress={() => setFormData({ ...formData, biologicalSex: sex.value })}
                   >
                     <Text style={[
                       styles.speciesButtonText,
-                      formData.gender === gender.value && styles.speciesButtonTextSelected
+                      formData.biologicalSex === sex.value && styles.speciesButtonTextSelected
                     ]}>
-                      {gender.label}
+                      {sex.label}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -298,6 +327,32 @@ export default function AddPetScreen() {
           {/* Health Information */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Health Information</Text>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Spayed/Neutered</Text>
+              <View style={styles.speciesContainer}>
+                {[
+                  { value: true, label: 'Yes' },
+                  { value: false, label: 'No' }
+                ].map((option) => (
+                  <TouchableOpacity
+                    key={option.value.toString()}
+                    style={[
+                      styles.speciesButton,
+                      formData.spayedNeutered === option.value && styles.speciesButtonSelected
+                    ]}
+                    onPress={() => setFormData({ ...formData, spayedNeutered: option.value })}
+                  >
+                    <Text style={[
+                      styles.speciesButtonText,
+                      formData.spayedNeutered === option.value && styles.speciesButtonTextSelected
+                    ]}>
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Allergies</Text>

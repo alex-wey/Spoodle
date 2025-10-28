@@ -8,32 +8,29 @@ datasource db {
 }
 
 model User {
-  id          String     @id @default(uuid())
-  clerkUserId String     @unique // Clerk user ID
+  id          String    @id @default(uuid())
+  clerkUserId String    @unique
   firstName   String
   lastName    String
-  email       String     @unique
+  email       String    @unique
   phone       String?
   address     String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  
-  // Relation to PetOwner
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   petOwner    PetOwner?
 
   @@map("users")
 }
 
 model PetOwner {
-  id             String           @id @default(uuid())
-  clerkUserId    String           @unique // Foreign key to User
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  
-  // Relations
-  user           User             @relation(fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
+  id             String          @id @default(uuid())
+  clerkUserId    String          @unique
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
   bugReports     BugReport[]
   chatMessages   ChatMessage[]
+  user           User            @relation(fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
+  pets           Pet[]
   userPreference UserPreference?
 
   @@map("pet_owners")
@@ -43,63 +40,52 @@ model Pet {
   id                  String     @id @default(uuid())
   name                String
   species             String
+  biologicalSex       String?
   breed               String?
-  gender              String?
-  weight              Float?
   dateOfBirth         DateTime?
+  weight              Float?
   spayedNeutered      Boolean    @default(false)
   allergies           String[]
   dietaryRestrictions String[]
-  profilePhoto        String?
   imageUrl            String?
   ownerId             String
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
   documents           Document[]
+  petOwner            PetOwner   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@index([ownerId])
   @@map("pets")
 }
 
 model Document {
-  id               String   @id @default(uuid())
-  category         String
-  hospitalName     String
-  fileName         String
-  originalFileName String
-  filePath         String
-  fileSize         Int
-  mimeType         String
-  date             DateTime
-  notes            String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  petId            String
-  ownerId          String
-  
-  // Relations
-  pet              Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  category  String
+  fileName  String
+  filePath  String
+  fileSize  Int
+  mimeType  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  petId     String
+  pet       Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
 
   @@map("documents")
 }
 
 model BugReport {
-  id          String     @id @default(uuid())
+  id          String   @id @default(uuid())
   petOwnerId  String
   title       String
-  description String
   severity    String
   category    String
+  description String
   deviceInfo  String?
   appVersion  String?
-  status      String     @default("pending")
-  priority    String     @default("medium")
-  assignedTo  String?
-  resolution  String?
-  resolvedAt  DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  petOwner    PetOwner   @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  petOwner    PetOwner @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
 
   @@index([category])
   @@index([petOwnerId])
@@ -109,14 +95,14 @@ model BugReport {
 }
 
 model ChatMessage {
-  id          String     @id
+  id          String   @id
   petOwnerId  String
   message     String
   isFromUser  Boolean
-  messageType String     @default("text")
+  messageType String   @default("text")
   metadata    Json?
-  createdAt   DateTime   @default(now())
-  petOwner    PetOwner   @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  petOwner    PetOwner @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
 
   @@index([createdAt])
   @@index([petOwnerId])
@@ -124,17 +110,17 @@ model ChatMessage {
 }
 
 model UserPreference {
-  id            String     @id
-  petOwnerId    String     @unique
-  theme         String     @default("light")
-  language      String     @default("en")
-  notifications Boolean    @default(true)
-  biometricAuth Boolean    @default(false)
-  autoBackup    Boolean    @default(true)
+  id            String   @id
+  petOwnerId    String   @unique
+  theme         String   @default("light")
+  language      String   @default("en")
+  notifications Boolean  @default(true)
+  biometricAuth Boolean  @default(false)
+  autoBackup    Boolean  @default(true)
   settings      Json?
-  createdAt     DateTime   @default(now())
+  createdAt     DateTime @default(now())
   updatedAt     DateTime
-  petOwner      PetOwner   @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
+  petOwner      PetOwner @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
 
   @@map("user_preferences")
 }

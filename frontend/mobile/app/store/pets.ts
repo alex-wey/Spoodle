@@ -47,7 +47,7 @@ export const usePetStore = create<PetState>((set, get) => ({
               ? petData.dateOfBirth.toISOString() 
               : petData.dateOfBirth)
           : new Date().toISOString(),
-        gender: petData.gender || "male",
+        biologicalSex: petData.biologicalSex || "male",
         weight: petData.weight || 0,
         spayedNeutered: petData.spayedNeutered || false,
         allergies: petData.allergies,
@@ -64,7 +64,7 @@ export const usePetStore = create<PetState>((set, get) => ({
           species: (backendPet as any).species || petData.species || "dog",
           breed: backendPet.breed,
           dateOfBirth: new Date(backendPet.dateOfBirth),
-          gender: backendPet.gender as "male" | "female",
+          biologicalSex: backendPet.biologicalSex as "male" | "female",
           weight: backendPet.weight,
           spayedNeutered: backendPet.spayedNeutered,
           allergies: backendPet.allergies,
@@ -113,12 +113,12 @@ export const usePetStore = create<PetState>((set, get) => ({
               ? updates.dateOfBirth.toISOString() 
               : updates.dateOfBirth)
           : undefined,
-        gender: updates.gender,
+        biologicalSex: updates.biologicalSex,
         weight: updates.weight,
         spayedNeutered: updates.spayedNeutered,
         allergies: updates.allergies,
         dietaryRestrictions: updates.dietaryRestrictions,
-      } as any);
+      });
       
       if (response.success) {
         const backendPet = response.data;
@@ -130,7 +130,7 @@ export const usePetStore = create<PetState>((set, get) => ({
           species: (backendPet as any).species || get().pets.find(p => p.id === id)?.species || "dog",
           breed: backendPet.breed,
           dateOfBirth: new Date(backendPet.dateOfBirth),
-          gender: backendPet.gender as "male" | "female",
+          biologicalSex: backendPet.biologicalSex as "male" | "female",
           weight: backendPet.weight,
           spayedNeutered: backendPet.spayedNeutered,
           allergies: backendPet.allergies,
@@ -224,7 +224,7 @@ export const usePetStore = create<PetState>((set, get) => ({
           species: (backendPet as any).species || "dog",
           breed: backendPet.breed,
           dateOfBirth: new Date(backendPet.dateOfBirth),
-          gender: backendPet.gender as "male" | "female",
+          biologicalSex: backendPet.biologicalSex as "male" | "female",
           weight: backendPet.weight,
           spayedNeutered: backendPet.spayedNeutered,
           allergies: backendPet.allergies,

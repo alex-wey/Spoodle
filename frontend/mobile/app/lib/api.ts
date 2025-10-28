@@ -130,7 +130,7 @@ class ClerkApiClient {
         species: string;
         breed: string;
         dateOfBirth: string;
-        gender: string;
+        biologicalSex: string;
         weight: number;
         spayedNeutered: boolean;
         allergies: string[];
@@ -151,7 +151,7 @@ class ClerkApiClient {
         species: string;
         breed: string;
         dateOfBirth: string;
-        gender: string;
+        biologicalSex: string;
         weight: number;
         spayedNeutered: boolean;
         allergies: string[];
@@ -172,7 +172,7 @@ class ClerkApiClient {
     species: string;
     breed?: string;
     dateOfBirth?: string;
-    gender?: string;
+    biologicalSex?: string;
     weight?: number;
     spayedNeutered?: boolean;
     allergies?: string[];
@@ -187,7 +187,7 @@ class ClerkApiClient {
         species: string;
         breed: string;
         dateOfBirth: string;
-        gender: string;
+        biologicalSex: string;
         weight: number;
         spayedNeutered: boolean;
         allergies: string[];
@@ -207,7 +207,7 @@ class ClerkApiClient {
       name?: string;
       breed?: string;
       dateOfBirth?: string;
-      gender?: string;
+      biologicalSex?: string;
       weight?: number;
       spayedNeutered?: boolean;
       allergies?: string[];
@@ -222,7 +222,7 @@ class ClerkApiClient {
         name: string;
         breed: string;
         dateOfBirth: string;
-        gender: string;
+        biologicalSex: string;
         weight: number;
         spayedNeutered: boolean;
         allergies: string[];
