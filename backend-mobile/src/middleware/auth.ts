@@ -29,10 +29,11 @@ declare global {
       };
       // Minimal profile snapshot from Clerk used for email/display
       userProfile?: {
-        email?: string;
-        firstName?: string;
-        lastName?: string;
-        phone?: string | null;
+        // With exactOptionalPropertyTypes enabled, allow possibly-undefined
+        email?: string | undefined;
+        firstName?: string | undefined;
+        lastName?: string | undefined;
+        phone?: string | null | undefined;
       };
     }
   }
@@ -87,12 +88,29 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
       // Backward-compat: keep req.user pointing to petOwner
       req.user = petOwner;
       req.petOwner = petOwner;
-      req.userProfile = {
-        email: primaryEmailAddress?.emailAddress,
-        firstName: firstName ?? undefined,
-        lastName: lastName ?? undefined,
-        phone: primaryPhoneNumber?.phoneNumber ?? null,
-      };
+
+      // Build userProfile without forcing undefined values
+      const userProfile: {
+        email?: string | undefined;
+        firstName?: string | undefined;
+        lastName?: string | undefined;
+        phone?: string | null | undefined;
+      } = {};
+
+      if (primaryEmailAddress?.emailAddress) {
+        userProfile.email = primaryEmailAddress.emailAddress;
+      }
+      if (typeof firstName === 'string' && firstName.length > 0) {
+        userProfile.firstName = firstName;
+      }
+      if (typeof lastName === 'string' && lastName.length > 0) {
+        userProfile.lastName = lastName;
+      }
+      if (primaryPhoneNumber?.phoneNumber !== undefined) {
+        userProfile.phone = primaryPhoneNumber.phoneNumber ?? null;
+      }
+
+      req.userProfile = userProfile;
     } catch (syncError) {
       console.error('User sync error:', syncError);
       // Continue anyway - the auth is still valid even if sync fails
