@@ -282,26 +282,20 @@ export default function CategoryDocumentsScreen() {
     try {
       setViewerVisible(false);
       
+      const fileUrl = `${API_BASE_URL}/api/documents/download/${document.id}`;
       if (Platform.OS === 'web') {
-        const response = await clerkApiClient.downloadDocument(document.id);
-        if (response.success) {
-          Alert.alert('Download Ready', `Document: ${response.data.fileName}\nSize: ${formatFileSize(response.data.fileSize)}`);
-        }
+        // Open in a new tab directly; backend will stream or redirect to S3
+        window.open(fileUrl, '_blank');
       } else {
-        const fileUrl = `${API_BASE_URL}/api/documents/download/${document.id}`;
         const canOpen = await Linking.canOpenURL(fileUrl);
         
         if (canOpen) {
           await Linking.openURL(fileUrl);
         } else {
-          Alert.alert(
-            'Open Document',
-            'Would you like to download and open this document?',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Open', onPress: () => Linking.openURL(fileUrl) }
-            ]
-          );
+          Alert.alert('Open Document', 'Would you like to download and open this document?', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open', onPress: () => Linking.openURL(fileUrl) }
+          ]);
         }
       }
     } catch (error) {

@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import multer from 'multer';
 import multerS3 from 'multer-s3';
-import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { z } from 'zod';
@@ -373,13 +373,22 @@ router.get('/:id',
 
 // Upload a new document
 router.post('/upload',
-  upload.single('document'),
+  // Accept both 'document' and legacy 'file' field names
+  upload.fields([{ name: 'document', maxCount: 1 }, { name: 'file', maxCount: 1 }]),
   async (req: Request, res: Response) => {
     try {
       console.log('📤 Upload request received');
       console.log('  User:', req.user?.id);
-      console.log('  File:', req.file ? req.file.originalname : 'NO FILE');
-      console.log('  File details:', req.file);
+      // Normalize uploaded file regardless of field name
+      const files: any = (req as any).files;
+      const normalizedFile: Express.Multer.File | undefined = (req as any).file
+        || (files?.document?.[0])
+        || (files?.file?.[0]);
+      if (normalizedFile && !(req as any).file) {
+        (req as any).file = normalizedFile;
+      }
+      console.log('  File:', (req as any).file ? (req as any).file.originalname : 'NO FILE');
+      console.log('  File details:', (req as any).file);
       console.log('  Body:', req.body);
       console.log('  Headers:', req.headers);
       
@@ -393,7 +402,7 @@ router.post('/upload',
       }
 
       // Check if file was uploaded
-      if (!req.file) {
+      if (!(req as any).file) {
         return res.status(400).json({
           success: false,
           error: 'No file uploaded',
@@ -482,19 +491,19 @@ router.post('/upload',
       let filePath: string;
       let fileName: string;
       
-      const file = req.file as any; // Type assertion for multer-s3
+      const file = (req as any).file as any; // Type assertion for multer-s3
       
       if (useS3 && file.location) {
         // S3 upload
         filePath = file.location;
-        fileName = file.key.split('/').pop() || req.file.originalname;
+        fileName = file.key.split('/').pop() || file.originalname;
       } else if (file.path) {
         // Local upload
         filePath = file.path;
-        fileName = req.file.filename;
+        fileName = file.filename;
       } else {
         filePath = '';
-        fileName = req.file.originalname;
+        fileName = file.originalname;
       }
 
       const documentData = {
@@ -503,8 +512,8 @@ router.post('/upload',
         category,
         fileName,
         filePath,
-        fileSize: req.file.size,
-        mimeType: req.file.mimetype
+        fileSize: file.size,
+        mimeType: file.mimetype
       };
       
       console.log('📝 Creating document with data:', documentData);
@@ -644,7 +653,49 @@ router.get('/download/:id',
         });
       }
 
-      // Check if file exists
+      // If filePath is a full URL, redirect regardless of USE_S3
+      if (/^https?:\/\//.test(document.filePath)) {
+        try {
+          res.setHeader('Content-Type', document.mimeType);
+          res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
+          return res.redirect(document.filePath);
+        } catch (e) {
+          console.error('URL redirect failed:', e);
+        }
+      } else if ((useS3 && s3Client) || /^documents\//.test(document.filePath)) {
+        try {
+          // Treat filePath as an S3 key and stream the object
+          const key = document.filePath.replace(/^\//, '');
+          // Use existing client or lazily create one if env creds exist
+          const lazyClient = s3Client || new S3Client({
+            region: process.env.AWS_REGION || 'us-east-2',
+            credentials: {
+              accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+              secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
+            }
+          });
+          const getRes: any = await lazyClient.send(new GetObjectCommand({
+            Bucket: s3BucketName,
+            Key: key,
+          }));
+          // Forward headers and stream body
+          res.setHeader('Content-Type', document.mimeType || (getRes.ContentType || 'application/octet-stream'));
+          res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
+          if (getRes.ContentLength) {
+            res.setHeader('Content-Length', String(getRes.ContentLength));
+          }
+          if (getRes.Body && typeof getRes.Body.pipe === 'function') {
+            return getRes.Body.pipe(res);
+          } else {
+            const buf = await getRes.Body?.transformToByteArray?.();
+            return res.send(Buffer.from(buf || []));
+          }
+        } catch (s3Err) {
+          console.error('S3 getObject failed:', s3Err);
+        }
+      }
+
+      // Local file storage: check if file exists
       try {
         await fs.access(document.filePath);
         

@@ -72,8 +72,8 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         formData.append('notes', documentData.notes);
       }
       
-      // Append file
-      formData.append('file', {
+      // Append file (backend accepts 'document' field)
+      formData.append('document', {
         uri: documentData.file.uri,
         type: documentData.file.type,
         name: documentData.file.name,
