@@ -12,7 +12,7 @@ import { FAB } from "../../components/FAB";
 export default function ChatScreen() {
   const router = useRouter();
   const { pets } = usePetStore();
-  const { chatSessions, loadChatSessions } = useChatStore();
+  const { chatSessions, loadChatSessions, startFreshChatSession } = useChatStore();
   const [petSelectionVisible, setPetSelectionVisible] = useState(false);
   const [chatInterfaceVisible, setChatInterfaceVisible] = useState(false);
   const [selectedPet, setSelectedPet] = useState<any>(null);
@@ -30,10 +30,11 @@ export default function ChatScreen() {
     setPetSelectionVisible(true);
   };
 
-  const handlePetSelect = (pet: any) => {
+  const handlePetSelect = async (pet: any) => {
     setSelectedPet(pet);
     setPetSelectionVisible(false);
-    // Skip intro modal and go directly to chat interface
+    // Always start a fresh session for the chosen pet (archive old one)
+    await startFreshChatSession(pet.id, pet.name);
     setChatInterfaceVisible(true);
   };
 

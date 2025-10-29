@@ -53,6 +53,7 @@ export default function UploadDocumentScreen() {
   }, [preselectedCategory]);
 
   const { pets, fetchPets } = usePetStore();
+  const petIconColors = ['#ADD7EB', '#FFD3B6', '#C3F0CA', '#FFECB3', '#D7C7FF', '#F8BBD0'];
 
   // Function to reset the form
   const resetForm = () => {
@@ -182,6 +183,14 @@ export default function UploadDocumentScreen() {
       console.log('  Response data:', data);
 
       if (data.success) {
+        // If a custom name was provided, immediately update the document's display name
+        if (customFileName && customFileName.trim()) {
+          try {
+            await clerkApiClient.updateDocument(data.data.id, { fileName: customFileName.trim() });
+          } catch (e) {
+            console.warn('Rename after upload failed (continuing):', e);
+          }
+        }
         // Reset the form first
         resetForm();
         // Go back to the pet's docs page after upload
@@ -217,6 +226,23 @@ export default function UploadDocumentScreen() {
 
         {/* Single Form */}
         <View style={styles.form}>
+          {/* Pet Selection */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Which Pet *</Text>
+            {/* Pet dropdown styled list with avatar */}
+            <View style={[styles.dropdownMenu, { marginTop: 0 }]}> 
+              {pets.map((p: any, idx: number) => (
+                <TouchableOpacity
+                  key={p.id}
+                  style={[styles.dropdownItem, selectedPet?.id === p.id && styles.dropdownItemSelected]}
+                  onPress={() => setSelectedPet(p)}
+                >
+                  <View style={[styles.categoryDot, { backgroundColor: petIconColors[idx % petIconColors.length], width: 28, height: 28, borderRadius: 14 }]} />
+                  <Text style={[styles.dropdownItemText, { marginLeft: 12 }]}>{p.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
           {/* Category Selection */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Document Category *</Text>

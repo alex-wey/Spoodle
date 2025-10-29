@@ -490,31 +490,47 @@ router.post('/upload',
       
       // Get file path or S3 location
       let filePath: string;
-      let fileName: string;
+      // The stored display name should prioritize the user's custom name (userFileName)
+      // We'll also persist the original uploaded filename for reference
+      let storedFileName: string;
+      let originalFileName: string;
       
       const file = (req as any).file as any; // Type assertion for multer-s3
       
       if (useS3 && file.location) {
         // S3 upload
         filePath = file.location;
-        fileName = file.key.split('/').pop() || file.originalname;
+        originalFileName = file.originalname;
+        storedFileName = (userFileName && String(userFileName).trim().length > 0)
+          ? String(userFileName).trim()
+          : (file.key.split('/').pop() || file.originalname);
       } else if (file.path) {
         // Local upload
         filePath = file.path;
-        fileName = file.filename;
+        originalFileName = file.originalname;
+        storedFileName = (userFileName && String(userFileName).trim().length > 0)
+          ? String(userFileName).trim()
+          : file.filename;
       } else {
         filePath = '';
-        fileName = file.originalname;
+        originalFileName = file.originalname;
+        storedFileName = (userFileName && String(userFileName).trim().length > 0)
+          ? String(userFileName).trim()
+          : file.originalname;
       }
 
       const documentData = {
         id: uuidv4(),
         petId: selectedPetId,
         category,
-        fileName,
+        fileName: storedFileName,
+        originalFileName,
         filePath,
         fileSize: file.size,
-        mimeType: file.mimetype
+        mimeType: file.mimetype,
+        hospitalName: hospitalName || undefined,
+        date: date ? new Date(date as string) : undefined,
+        notes: notes || undefined
       };
       
       console.log('📝 Creating document with data:', documentData);

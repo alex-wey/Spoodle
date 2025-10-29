@@ -22,6 +22,7 @@ interface ChatStore {
   
   // Actions
   initializeChatSession: (petId: string, petName: string) => void;
+  startFreshChatSession: (petId: string, petName: string) => Promise<void>;
   addMessage: (petId: string, message: Message) => void;
   setCurrentPet: (petId: string) => void;
   setCurrentUser: (userId: string | null) => void;
@@ -32,6 +33,7 @@ interface ChatStore {
 }
 
 const CHAT_SESSIONS_KEY = 'spoodle_chat_sessions';
+const CHAT_ARCHIVE_PREFIX = 'spoodle_chat_archive';
 
 export const useChatStore = create<ChatStore>((set, get) => ({
   chatSessions: {},
@@ -84,6 +86,42 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         currentPetId: petId,
       }));
     }
+  },
+
+  // Archive any existing session for the pet and start a fresh session with a welcome message
+  startFreshChatSession: async (petId: string, petName: string) => {
+    const { chatSessions, currentUserId } = get();
+    const existing = chatSessions[petId];
+    if (existing && existing.messages.length > 0) {
+      try {
+        const archiveKeyBase = currentUserId ? `${CHAT_ARCHIVE_PREFIX}:${currentUserId}:${petId}` : `${CHAT_ARCHIVE_PREFIX}:${petId}`;
+        const archiveKey = `${archiveKeyBase}:${Date.now()}`;
+        await AsyncStorage.setItem(archiveKey, JSON.stringify(existing));
+      } catch (e) {
+        // Non-fatal: proceed even if archiving fails
+        console.warn('Archive chat session failed:', e);
+      }
+    }
+
+    // Remove existing session and create a new one
+    set((state) => {
+      const welcomeMessage: Message = {
+        id: `welcome-${petId}-${Date.now()}`,
+        text: `Hello! I'm Spoodle, your AI assistant for ${petName}. How can I help you today?`,
+        isUser: false,
+        timestamp: new Date(),
+      };
+      const newSessions = { ...state.chatSessions };
+      newSessions[petId] = {
+        petId,
+        petName,
+        messages: [welcomeMessage],
+        lastActivity: new Date(),
+      };
+      return { chatSessions: newSessions, currentPetId: petId };
+    });
+
+    await get().saveChatSessions();
   },
 
   addMessage: (petId: string, message: Message) => {

@@ -423,6 +423,23 @@ class ClerkApiClient {
     return response.json();
   }
 
+  async updateDocument(documentId: string, data: {
+    fileName?: string;
+    category?: string;
+    hospitalName?: string;
+    date?: string;
+    notes?: string;
+  }) {
+    return this.request<{
+      success: boolean;
+      data: any;
+      message?: string;
+    }>(`/documents/${documentId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
   // Bug report endpoints
   async submitBugReport(data: {
     title: string;
