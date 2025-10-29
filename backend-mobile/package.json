@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.919.0",
+    "@aws-sdk/s3-request-presigner": "^3.919.0",
     "@clerk/backend": "^2.19.0",
     "@prisma/client": "^6.17.1",
     "@types/nodemailer": "^7.0.2",
