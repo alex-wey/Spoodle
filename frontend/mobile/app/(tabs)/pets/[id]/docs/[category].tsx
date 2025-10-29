@@ -13,6 +13,15 @@ import {
   Platform,
   Image,
 } from 'react-native';
+// WebView for native in-modal previews (only used on native)
+import { Platform as RNPlatform } from 'react-native';
+let WebViewComponent: any = null;
+if (RNPlatform.OS !== 'web') {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    WebViewComponent = require('react-native-webview').WebView;
+  } catch {}
+}
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { ArrowLeft, FileText, Calendar, MapPin, Eye, Plus, X, Shield, Activity, Stethoscope, Zap } from 'lucide-react-native';
 import { clerkApiClient, getApiBaseUrl } from '../../../../lib/api';
@@ -138,6 +147,10 @@ function DocumentViewerModal({ visible, document, category, onClose, onOpenExter
           <View style={styles.documentViewer}>
             {document.mimeType?.startsWith('image/') && previewUrl ? (
               <Image source={{ uri: previewUrl }} resizeMode="contain" style={{ width: '100%', height: 300, borderRadius: 12, backgroundColor: '#F8F9FA' }} />
+            ) : (Platform.OS !== 'web') && previewUrl && WebViewComponent ? (
+              <View style={{ width: '100%', height: 420, borderRadius: 12, overflow: 'hidden', backgroundColor: '#F8F9FA', borderWidth: 1, borderColor: '#E9ECEF' }}>
+                <WebViewComponent source={{ uri: previewUrl }} style={{ flex: 1 }} allowsBackForwardNavigationGestures />
+              </View>
             ) : Platform.OS === 'web' && previewUrl ? (
               // Web: show inline preview for any type via iframe (PDF/images/others if browser supports)
               <View style={{ width: '100%', height: 420, borderRadius: 12, overflow: 'hidden', backgroundColor: '#F8F9FA', borderWidth: 1, borderColor: '#E9ECEF' }}>
@@ -202,18 +215,7 @@ function DocumentViewerModal({ visible, document, category, onClose, onOpenExter
                 </View>
               )}
               
-              <View style={styles.technicalDetails}>
-                <Text style={styles.technicalLabel}>Technical Details:</Text>
-                <Text style={styles.technicalText}>
-                  File Path: {document.filePath}
-                </Text>
-                <Text style={styles.technicalText}>
-                  MIME Type: {document.mimeType || 'Unknown'}
-                </Text>
-                <Text style={styles.technicalText}>
-                  Created: {formatDate(document.createdAt)}
-                </Text>
-              </View>
+              {/* Technical details removed to avoid exposing raw S3 URLs */}
             </View>
           </View>
         </ScrollView>
@@ -326,16 +328,18 @@ export default function CategoryDocumentsScreen() {
           Alert.alert('Error', 'Unable to get a secure download link. Please sign in again and retry.');
         }
       } else {
-        setViewerVisible(false);
-        const canOpen = await Linking.canOpenURL(fileUrl);
-        
-        if (canOpen) {
-          await Linking.openURL(fileUrl);
-        } else {
-          Alert.alert('Open Document', 'Would you like to download and open this document?', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Open', onPress: () => Linking.openURL(fileUrl) }
-          ]);
+        // Native: fetch presigned URL and preview inline (no external browser)
+        try {
+          const json = await clerkApiClient.getDocumentPresignedUrl(document.id);
+          if (json.success && json.data?.url) {
+            setPreviewUrl(json.data.url);
+            setViewerVisible(true);
+            return;
+          }
+          Alert.alert('Error', 'Unable to get a secure download link. Please try again.');
+        } catch (e) {
+          console.error('Presign error (native):', e);
+          Alert.alert('Error', 'Unable to preview this file.');
         }
       }
     } catch (error) {

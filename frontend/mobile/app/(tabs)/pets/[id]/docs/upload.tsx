@@ -122,7 +122,7 @@ export default function UploadDocumentScreen() {
 
   const handleSubmit = async () => {
     if (!selectedPet || !category || !fileName || !fileUri) {
-      Alert.alert('Missing Information', 'Please select a category and file.');
+      Alert.alert('Missing Information', 'Please select a pet, category and file.');
       return;
     }
 
@@ -136,6 +136,7 @@ export default function UploadDocumentScreen() {
     setIsSubmitting(true);
     try {
       const formData = new FormData();
+      // Always bind the upload to the current pet from the route
       formData.append('petId', selectedPet.id);
       formData.append('category', category);
       formData.append('hospitalName', hospitalName);

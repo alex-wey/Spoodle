@@ -15,10 +15,24 @@ router.get('/me', authenticateClerk, async (req: Request, res: Response) => {
       });
     }
 
-    // User is already synced by authenticateClerk middleware
+    // Merge DB user (PetOwner) with Clerk profile fields for display
+    const merged = {
+      id: req.user.id,
+      clerkUserId: req.user.clerkUserId,
+      createdAt: (req.user as any).createdAt,
+      updatedAt: (req.user as any).updatedAt,
+      // Clerk profile fields when available
+      email: req.userProfile?.email ?? null,
+      firstName: req.userProfile?.firstName ?? null,
+      lastName: req.userProfile?.lastName ?? null,
+      phone: req.userProfile?.phone ?? null,
+      // Optional address may come from users table via PUT /me; include if present on req.user
+      address: (req.user as any).address ?? null,
+    };
+
     return res.json({
       success: true,
-      data: req.user,
+      data: merged,
       message: 'Profile retrieved successfully'
     });
   } catch (error) {
