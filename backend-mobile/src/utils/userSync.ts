@@ -12,25 +12,33 @@ export interface ClerkUserData {
 export async function getOrCreateUser(clerkUserData: ClerkUserData) {
   try {
     // Check if user exists in local database
-    const user = await prisma.user.findUnique({ where: { clerkUserId: clerkUserData.clerkUserId }});
+    const user = await prisma.user.findUnique({ 
+      where: { clerkUserId: clerkUserData.clerkUserId },
+      include: { petOwner: true }
+    });
 
     if (!user) {
       console.log('👤 Creating new user from Clerk:', clerkUserData.email);
       
       // Create user and petOwner in a transaction
-      const result = await prisma.$transaction(async (tx) => {
+      const newPetOwner = await prisma.$transaction(async (tx) => {
         const newUser = await tx.user.create({ data: clerkUserData });
-        await tx.petOwner.create({ data: { clerkUserId: clerkUserData.clerkUserId } });
+        const petOwner = await tx.petOwner.create({ data: { clerkUserId: clerkUserData.clerkUserId } });
 
         console.log('✅ Created User and PetOwner for:', clerkUserData.email);
         
-        return newUser;
+        return petOwner;
       });
 
-      return result;
+      return newPetOwner;
     }
 
-    return user;
+    // Return the PetOwner object (pets are linked to PetOwner, not User)
+    if (!user.petOwner) {
+      throw new Error('PetOwner not found for user');
+    }
+    
+    return user.petOwner;
   } catch (error) {
     console.error('Error syncing user with Clerk:', error);
     throw error;
