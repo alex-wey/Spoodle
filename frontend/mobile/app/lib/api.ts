@@ -11,8 +11,21 @@ export const getApiBaseUrl = (): string => {
   // Use environment variable if available
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
   if (envUrl) {
-    console.log(`[API Client] Using API URL from env: ${envUrl}`);
-    return envUrl;
+    // Sanitize malformed values (extra protocols, spaces, trailing slashes)
+    let url = envUrl.trim();
+    // If the value accidentally has protocol twice, keep from last http(s)
+    const lastHttpIndex = Math.max(url.lastIndexOf('https://'), url.lastIndexOf('http://'));
+    if (lastHttpIndex > 0) {
+      url = url.substring(lastHttpIndex);
+    }
+    // Remove double protocol remnants like 'httphttps://'
+    url = url.replace(/^(https?:\/\/)(https?:\/\/)/, '$2');
+    // Remove trailing slash
+    if (url.endsWith('/')) {
+      url = url.slice(0, -1);
+    }
+    console.log(`[API Client] Using API URL from env: ${url}`);
+    return url;
   }
   
   // Fallback to localhost for development
@@ -76,8 +89,13 @@ class ClerkApiClient {
         const error = await response.json().catch(() => ({
           message: "An error occurred",
         }));
-        console.error(`[API] Error:`, error);
-        throw new Error(error.message || `HTTP ${response.status}`);
+        console.error(`[API] Error Response (${response.status}):`, JSON.stringify(error, null, 2));
+        console.error(`[API] Error URL: ${url}`);
+        console.error(`[API] Error Details:`, error);
+        const errorObj = new Error(error.message || error.error || `HTTP ${response.status}`);
+        (errorObj as any).status = response.status;
+        (errorObj as any).statusCode = response.status;
+        throw errorObj;
       }
 
       const data = await response.json();
@@ -376,7 +394,7 @@ class ClerkApiClient {
       }
     }
 
-    const response = await fetch(`${this.baseUrl}/documents`, {
+    const response = await fetch(`${this.baseUrl}/documents/upload`, {
       method: "POST",
       headers,
       body: formData,

@@ -39,7 +39,7 @@ export const validationSchemas = {
   }),
   
   createDocument: z.object({
-    category: z.enum(['x_ray_documents', 'diagnostic_reports', 'blood_test_reports', 'vaccination_history']),
+    category: z.enum(['veterinary_notes', 'diagnostic_reports_and_imaging', 'lab_results', 'vaccine_record']),
     petId: commonSchemas.id.optional(),
     hospitalName: z.string().min(1, 'Hospital name is required'),
     fileName: z.string().min(1, 'File name is required'),
@@ -59,11 +59,38 @@ export const validateRequest = (schema: { body?: z.ZodSchema; params?: z.ZodSche
       
       // Validate params
       if (schema.params) {
-        // If params is a plain object of schemas, convert it to a z.object schema
-        const paramsSchema = schema.params instanceof z.ZodSchema 
-          ? schema.params 
-          : z.object(schema.params);
-        req.params = paramsSchema.parse(req.params);
+        // Accept either a Zod schema (with a parse function) or a plain map of field schemas
+        const maybeSchema: any = schema.params as any;
+        
+        // Check if it's already a Zod schema by checking for parse method
+        const isZodSchema = maybeSchema && typeof maybeSchema.parse === 'function';
+        
+        const paramsSchema = isZodSchema
+          ? (maybeSchema as z.ZodTypeAny)
+          : z.object(schema.params as Record<string, z.ZodSchema<any>>);
+        
+        console.log('🔍 [Validation] Validating params:', {
+          receivedParams: req.params,
+          paramsSchemaType: isZodSchema ? 'ZodSchema' : 'PlainObject',
+          paramsKeys: Object.keys(req.params || {}),
+          categoryValue: req.params?.category
+        });
+        
+        try {
+          const validatedParams = paramsSchema.parse(req.params);
+          req.params = validatedParams as any; // Type assertion needed for Express
+          console.log('✅ [Validation] Params validated successfully:', validatedParams);
+        } catch (parseError) {
+          console.error('❌ [Validation] Params validation failed:', {
+            receivedParams: req.params,
+            paramsType: typeof req.params,
+            categoryValue: req.params?.category,
+            categoryType: typeof req.params?.category,
+            error: parseError instanceof Error ? parseError.message : parseError,
+            zodErrorDetails: parseError instanceof z.ZodError ? parseError.errors : 'Not a ZodError'
+          });
+          throw parseError;
+        }
       }
       
       // Validate query
@@ -74,13 +101,29 @@ export const validateRequest = (schema: { body?: z.ZodSchema; params?: z.ZodSche
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error('❌ [Validation] Zod validation error:', {
+          errors: error.errors.map(err => ({
+            path: err.path.join('.'),
+            message: err.message,
+            code: err.code
+          })),
+          receivedData: {
+            params: req.params,
+            query: req.query,
+            body: req.body
+          }
+        });
+        
         return res.status(400).json({
           success: false,
           error: 'Validation error',
-          message: 'Invalid request data',
+          message: error.errors.length > 0 
+            ? error.errors[0]!.message 
+            : 'Invalid request data',
           details: error.errors.map(err => ({
             field: err.path.join('.'),
-            message: err.message
+            message: err.message,
+            code: err.code
           }))
         });
       }

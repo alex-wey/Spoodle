@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import multer from 'multer';
+import multerS3 from 'multer-s3';
+import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { z } from 'zod';
@@ -10,25 +12,57 @@ import { authenticateClerk } from '../middleware/auth.js';
 
 const router = Router();
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: async (req, file, cb) => {
-    const uploadDir = process.env.UPLOAD_DIR || './uploads';
-    const documentsDir = path.join(uploadDir, 'documents');
-    
-    try {
-      await fs.mkdir(documentsDir, { recursive: true });
-      cb(null, documentsDir);
-    } catch (error) {
-      cb(error as Error, '');
-    }
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, `doc-${uniqueSuffix}${ext}`);
-  }
-});
+// S3 Configuration
+const useS3 = process.env.USE_S3 === 'true';
+let s3Client: S3Client | null = null;
+let s3BucketName = '';
+
+if (useS3) {
+  s3Client = new S3Client({
+    region: process.env.AWS_REGION || 'us-east-2',
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+    },
+  });
+  s3BucketName = process.env.S3_BUCKET_NAME || 'spoodle-documents';
+  console.log('✅ S3 configured:', s3BucketName);
+} else {
+  console.log('📁 Using local file storage');
+}
+
+// Configure multer for file uploads (S3 or local)
+const storage = useS3 && s3Client
+  ? multerS3({
+      s3: s3Client,
+      bucket: s3BucketName,
+      metadata: (req: any, file: Express.Multer.File, cb: (error: any, metadata: any) => void) => {
+        cb(null, { fieldName: file.fieldname });
+      },
+      key: (req: any, file: Express.Multer.File, cb: (error: any, key: string) => void) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        cb(null, `documents/doc-${uniqueSuffix}${ext}`);
+      },
+    })
+  : multer.diskStorage({
+      destination: async (req: any, file: Express.Multer.File, cb: (error: any, destination: string) => void) => {
+        const uploadDir = process.env.UPLOAD_DIR || './uploads';
+        const documentsDir = path.join(uploadDir, 'documents');
+        
+        try {
+          await fs.mkdir(documentsDir, { recursive: true });
+          cb(null, documentsDir);
+        } catch (error) {
+          cb(error as Error, '');
+        }
+      },
+      filename: (req: any, file: Express.Multer.File, cb: (error: any, filename: string) => void) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        cb(null, `doc-${uniqueSuffix}${ext}`);
+      }
+    });
 
 const upload = multer({
   storage,
@@ -37,7 +71,18 @@ const upload = multer({
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = (process.env.ALLOWED_FILE_TYPES || 'pdf,jpg,jpeg,png,doc,docx').split(',');
-    const ext = path.extname(file.originalname).toLowerCase().substring(1);
+    const ext = path.extname(file.originalname).toLowerCase().replace('.', '');
+    
+    console.log('📋 File filter check:', {
+      originalname: file.originalname,
+      extractedExt: ext,
+      allowedTypes
+    });
+    
+    if (!ext) {
+      cb(new Error(`File has no extension. Allowed types: ${allowedTypes.join(', ')}`));
+      return;
+    }
     
     if (allowedTypes.includes(ext)) {
       cb(null, true);
@@ -98,11 +143,18 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/category/:category',
   validateRequest({ 
     params: z.object({ 
-      category: z.enum(['x_ray_documents', 'diagnostic_reports', 'blood_test_reports', 'vaccination_history'])
+      category: z.enum(['veterinary_notes', 'diagnostic_reports_and_imaging', 'lab_results', 'vaccine_record'], {
+        errorMap: () => ({ message: 'Invalid category. Must be one of: veterinary_notes, diagnostic_reports_and_imaging, lab_results, vaccine_record' })
+      })
     })
   }),
   async (req: Request, res: Response) => {
     try {
+      console.log('📂 [Documents] GET /category/:category - Route matched');
+      console.log('📂 [Documents] Received params:', JSON.stringify(req.params, null, 2));
+      console.log('📂 [Documents] Received query:', JSON.stringify(req.query, null, 2));
+      console.log('📂 [Documents] User authenticated:', !!req.user);
+      
       if (!req.user) {
         return res.status(401).json({
           success: false,
@@ -112,6 +164,7 @@ router.get('/category/:category',
       }
 
       const { category } = req.params;
+      console.log('📂 [Documents] Fetching documents for category:', category);
       
       const documents = await prisma.document.findMany({
         where: {
@@ -153,7 +206,7 @@ router.get('/pet/:petId/category/:category',
   validateRequest({ 
     params: z.object({ 
       petId: commonSchemas.id,
-      category: z.enum(['x_ray_documents', 'diagnostic_reports', 'blood_test_reports', 'vaccination_history'])
+      category: z.enum(['veterinary_notes', 'diagnostic_reports_and_imaging', 'lab_results', 'vaccine_record'])
     })
   }),
   async (req: Request, res: Response) => {
@@ -348,25 +401,58 @@ router.post('/upload',
         });
       }
 
-      const { category, petId, hospitalName, fileName, date, notes } = req.body;
+      const { category, petId, hospitalName, fileName: userFileName, date, notes } = req.body;
       console.log('  Category:', category);
       console.log('  PetId:', petId);
       console.log('  Hospital:', hospitalName);
-      console.log('  FileName:', fileName);
+      console.log('  FileName:', userFileName);
       console.log('  File details:', req.file);
-      console.log('  File path:', req.file.path);
       
       // If petId is provided, verify pet belongs to the user
+      // Note: req.user is actually a PetOwner object from userSync
       let selectedPetId = petId;
       if (petId) {
-        const pet = await prisma.pet.findFirst({
-        where: {
-          id: petId as string,
-          ownerId: req.user!.id
-        }
+        const petOwnerId = req.user!.id; // This is the PetOwner ID
+        console.log('🔍 Pet lookup:', {
+          petId,
+          petOwnerId,
+          clerkUserId: req.user!.clerkUserId,
+          userObject: req.user
         });
         
+        // First, verify the PetOwner exists and get their pets
+        const petOwner = await prisma.petOwner.findUnique({
+          where: { id: petOwnerId },
+          include: { pets: true }
+        });
+        
+        if (!petOwner) {
+          console.error('❌ PetOwner not found:', petOwnerId);
+          return res.status(500).json({
+            success: false,
+            error: 'Account error',
+            message: 'Unable to verify pet ownership. Please try again.'
+          });
+        }
+        
+        console.log(`📋 PetOwner found with ${petOwner.pets.length} pets`);
+        
+        // Now check if the requested pet belongs to this PetOwner
+        const pet = await prisma.pet.findFirst({
+          where: {
+            id: petId as string,
+            ownerId: petOwnerId
+          }
+        });
+        
+        console.log('🔍 Pet lookup result:', pet ? { id: pet.id, name: pet.name } : 'NOT FOUND');
+        
         if (!pet) {
+          console.error('❌ Pet not found or does not belong to user:', {
+            requestedPetId: petId,
+            petOwnerId,
+            availablePets: petOwner.pets.map(p => ({ id: p.id, name: p.name }))
+          });
           return res.status(400).json({
             success: false,
             error: 'Invalid pet',
@@ -375,8 +461,9 @@ router.post('/upload',
         }
       } else {
         // If no petId provided, get the user's first pet
+        const petOwnerId = req.user!.id;
         const userPets = await prisma.pet.findMany({
-          where: { ownerId: req.user!.id },
+          where: { ownerId: petOwnerId },
           take: 1
         });
         
@@ -391,12 +478,31 @@ router.post('/upload',
         }
       }
       
+      // Get file path or S3 location
+      let filePath: string;
+      let fileName: string;
+      
+      const file = req.file as any; // Type assertion for multer-s3
+      
+      if (useS3 && file.location) {
+        // S3 upload
+        filePath = file.location;
+        fileName = file.key.split('/').pop() || req.file.originalname;
+      } else if (file.path) {
+        // Local upload
+        filePath = file.path;
+        fileName = req.file.filename;
+      } else {
+        filePath = '';
+        fileName = req.file.originalname;
+      }
+
       const documentData = {
         id: uuidv4(),
         petId: selectedPetId,
         category,
-        fileName: req.file.filename,
-        filePath: path.join(process.env.UPLOAD_DIR || './uploads', 'documents', req.file.filename),
+        fileName,
+        filePath,
         fileSize: req.file.size,
         mimeType: req.file.mimetype
       };
@@ -425,10 +531,10 @@ router.post('/upload',
         message: 'Document uploaded successfully'
       });
     } catch (error) {
-      // Clean up uploaded file if document creation fails
-      if (req.file) {
+      // Clean up uploaded file if document creation fails (only for local storage)
+      if (req.file && !useS3 && 'path' in req.file) {
         try {
-          await fs.unlink(req.file.path);
+          await fs.unlink(req.file.path as string);
         } catch (unlinkError) {
           console.error('Error cleaning up uploaded file:', unlinkError);
         }
@@ -449,7 +555,7 @@ router.put('/:id',
   validateRequest({ 
     params: z.object({ id: commonSchemas.id }),
     body: z.object({
-      category: z.enum(['x_ray_documents', 'diagnostic_reports', 'blood_test_reports', 'vaccination_history']).optional(),
+      category: z.enum(['veterinary_notes', 'diagnostic_reports_and_imaging', 'lab_results', 'vaccine_record']).optional(),
       hospitalName: z.string().min(1).optional(),
       fileName: z.string().min(1).optional(),
       date: z.string().datetime().optional(),
@@ -595,9 +701,22 @@ router.delete('/:id',
         });
       }
 
-      // Delete the file from filesystem
+      // Delete the file from S3 or filesystem
       try {
-        await fs.unlink(existingDocument.filePath);
+        if (useS3 && s3Client) {
+          // S3 deletion - extract key from URL
+          const url = new URL(existingDocument.filePath);
+          const key = url.pathname.substring(1); // Remove leading /
+          await s3Client.send(new DeleteObjectCommand({
+            Bucket: s3BucketName,
+            Key: key,
+          }));
+          console.log('✅ Deleted file from S3:', key);
+        } else {
+          // Local file deletion
+          await fs.unlink(existingDocument.filePath);
+          console.log('✅ Deleted file from local storage:', existingDocument.filePath);
+        }
       } catch (fileError) {
         console.error('Error deleting file:', fileError);
         // Continue with database deletion even if file deletion fails
