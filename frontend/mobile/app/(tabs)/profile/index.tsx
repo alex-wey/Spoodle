@@ -18,8 +18,8 @@ import {
   Camera,
 } from 'lucide-react-native';
 import { useUser } from '@clerk/clerk-expo';
-import { SignOutButton } from '../../components/SignOutButton';
-import { DeleteAccountButton } from '../../components/DeleteAccountButton';
+import { SignOutButton } from './components/SignOutButton';
+import { DeleteAccountButton } from './components/DeleteAccountButton';
 import * as ImagePicker from 'expo-image-picker';
 import { clerkApiClient } from '../../lib/api';
 

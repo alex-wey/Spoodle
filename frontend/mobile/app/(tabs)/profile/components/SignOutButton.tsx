@@ -3,8 +3,8 @@ import { useClerk } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import { Text, TouchableOpacity, View, Alert } from 'react-native';
 import { LogOut } from 'lucide-react-native';
-import { usePetStore } from '../store/pets';
-import { useDocumentStore } from '../store/documents';
+import { usePetStore } from '../../../store/pets';
+import { useDocumentStore } from '../../../store/documents';
 
 export const SignOutButton = () => {
   // Use `useClerk()` to access the `signOut()` function

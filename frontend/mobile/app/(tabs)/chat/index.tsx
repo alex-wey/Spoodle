@@ -5,8 +5,8 @@ import { MessageCircle, Dog, Clock, Bug, Heart, Apple, Activity, Bell } from "lu
 import { useRouter } from "expo-router";
 import { usePetStore } from "../../store/pets";
 import { useChatStore } from "../../store/chat";
-import PetSelectionModal from "../../components/PetSelectionModal";
-import ChatInterfaceModal from "../../components/ChatInterfaceModal";
+import PetSelectionModal from "../pets/components/PetSelectionModal";
+import ChatInterfaceModal from "./components/ChatInterfaceModal";
 import { FAB } from "../../components/FAB";
 
 export default function ChatScreen() {

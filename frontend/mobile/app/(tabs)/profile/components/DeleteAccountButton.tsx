@@ -3,10 +3,10 @@ import { TouchableOpacity, Text, Alert, View } from 'react-native';
 import { Trash2 } from 'lucide-react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
-import { usePetStore } from '../store/pets';
-import { useDocumentStore } from '../store/documents';
-import { useChatStore } from '../store/chat';
-import { clerkApiClient } from '../lib/api';
+import { usePetStore } from '../../../store/pets';
+import { useDocumentStore } from '../../../store/documents';
+import { useChatStore } from '../../../store/chat';
+import { clerkApiClient } from '../../../lib/api';
 
 export const DeleteAccountButton = () => {
   const { user } = useUser();

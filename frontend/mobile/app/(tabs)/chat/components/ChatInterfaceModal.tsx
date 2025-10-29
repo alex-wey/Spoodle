@@ -8,11 +8,13 @@ import {
   TextInput,
   ScrollView,
   SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { X, Send } from 'lucide-react-native';
 import { useAuth } from '@clerk/clerk-expo';
-import { useChatStore, Message } from '../store/chat';
-import { getApiBaseUrl } from '../lib/api';
+import { useChatStore, Message } from '../../../store/chat';
+import { getApiBaseUrl } from '../../../lib/api';
 
 // Get API base URL from environment
 const API_BASE_URL = getApiBaseUrl();
@@ -140,79 +142,85 @@ export default function ChatInterfaceModal({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <SafeAreaView style={styles.container}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Chat with Spoodle - {petName}</Text>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <X size={24} color="#4559A7" />
-            </TouchableOpacity>
-          </View>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <SafeAreaView style={styles.container}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Chat with Spoodle - {petName}</Text>
+              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                <X size={24} color="#4559A7" />
+              </TouchableOpacity>
+            </View>
 
-          <ScrollView 
-            ref={scrollViewRef}
-            style={styles.messagesContainer} 
-            showsVerticalScrollIndicator={false}
-            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-          >
-            {messages.map((message) => (
-              <View
-                key={message.id}
-                style={[
-                  styles.messageContainer,
-                  message.isUser ? styles.userMessageContainer : styles.aiMessageContainer,
-                ]}
-              >
+            <ScrollView 
+              ref={scrollViewRef}
+              style={styles.messagesContainer} 
+              contentContainerStyle={{ paddingBottom: 80 }}
+              showsVerticalScrollIndicator={false}
+              onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+            >
+              {messages.map((message) => (
                 <View
+                  key={message.id}
                   style={[
-                    styles.messageBubble,
-                    message.isUser ? styles.userMessage : styles.aiMessage,
+                    styles.messageContainer,
+                    message.isUser ? styles.userMessageContainer : styles.aiMessageContainer,
                   ]}
                 >
-                  <Text
+                  <View
                     style={[
-                      styles.messageText,
-                      message.isUser ? styles.userMessageText : styles.aiMessageText,
+                      styles.messageBubble,
+                      message.isUser ? styles.userMessage : styles.aiMessage,
                     ]}
                   >
-                    {message.text}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.timeText,
-                      message.isUser ? styles.userTimeText : styles.aiTimeText,
-                    ]}
-                  >
-                    {formatTime(message.timestamp)}
-                  </Text>
+                    <Text
+                      style={[
+                        styles.messageText,
+                        message.isUser ? styles.userMessageText : styles.aiMessageText,
+                      ]}
+                    >
+                      {message.text}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.timeText,
+                        message.isUser ? styles.userTimeText : styles.aiTimeText,
+                      ]}
+                    >
+                      {formatTime(message.timestamp)}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            ))}
-          </ScrollView>
+              ))}
+            </ScrollView>
 
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.textInput}
-              value={inputText}
-              onChangeText={setInputText}
-              placeholder="Ask me anything about your pet..."
-              placeholderTextColor="#9CA3AF"
-              multiline
-              maxLength={500}
-            />
-            <TouchableOpacity 
-              style={[styles.sendButton, isLoading && styles.sendButtonDisabled]} 
-              onPress={handleSendMessage}
-              disabled={isLoading}
-            >
-              <Send size={20} color={isLoading ? "#9CA3AF" : "#FFFFFF"} />
-            </TouchableOpacity>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.textInput}
+                value={inputText}
+                onChangeText={setInputText}
+                placeholder="Ask me anything about your pet..."
+                placeholderTextColor="#9CA3AF"
+                multiline
+                maxLength={500}
+              />
+              <TouchableOpacity 
+                style={[styles.sendButton, isLoading && styles.sendButtonDisabled]} 
+                onPress={handleSendMessage}
+                disabled={isLoading}
+              >
+                <Send size={20} color={isLoading ? "#9CA3AF" : "#FFFFFF"} />
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -297,12 +305,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   userTimeText: {
-    color: '#4559A7',
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   aiTimeText: {
-    color: '#4559A7',
+    color: '#6B7280',
   },
   inputContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: 16,
