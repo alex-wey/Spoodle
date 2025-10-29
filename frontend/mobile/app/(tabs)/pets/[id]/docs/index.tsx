@@ -350,6 +350,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 70,
     right: 20,
-    backgroundColor: '#DC2626',
+    backgroundColor: '#C62828',
   },
 });

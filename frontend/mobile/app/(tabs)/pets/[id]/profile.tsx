@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, Alert, TextInput, TouchableOpacity, Platform, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Calendar, Weight, Save, X, Dna, Syringe, Trash2 } from "lucide-react-native";
+import { ArrowLeft, Calendar, Weight, Save, X, Dna, Syringe, Trash2, Camera } from "lucide-react-native";
+import * as ImagePicker from 'expo-image-picker';
 import { clerkApiClient } from "../../../lib/api";
 import { getSafeImageSource } from "../../../lib/imageUtils";
 import { usePetStore } from "../../../store/pets";
@@ -42,6 +43,7 @@ export default function PetProfileScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [newAllergy, setNewAllergy] = useState('');
   const [newDietaryRestriction, setNewDietaryRestriction] = useState('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [editedPet, setEditedPet] = useState({
     name: '',
     species: 'dog' as 'dog' | 'cat' | 'other',
@@ -92,6 +94,66 @@ export default function PetProfileScreen() {
       });
     }
   }, [pet]);
+
+  const pickImage = async () => {
+    try {
+      // Request permissions
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (permissionResult.granted === false) {
+        Alert.alert('Permission Required', 'Please allow access to your photos to upload a photo.');
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'images',
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+        base64: true, // Request base64 encoding
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        
+        setIsUploadingImage(true);
+        
+        try {
+          // Convert to base64 data URL
+          let imageData: string;
+          if (asset.base64) {
+            imageData = `data:image/jpeg;base64,${asset.base64}`;
+          } else {
+            // Fallback to URI (shouldn't happen with base64: true)
+            imageData = asset.uri;
+          }
+
+          // Update pet profile with new image
+          await updatePet(id, {
+            imageUrl: imageData
+          });
+
+          // Reload pet data to show new image
+          await loadPetProfile();
+          await fetchPets();
+
+          Alert.alert('Success', 'Profile picture updated successfully!');
+        } catch (uploadError) {
+          console.error('Error uploading image:', uploadError);
+          Alert.alert('Error', 'Failed to upload profile picture. Please try again.');
+          // Reload to revert on error
+          await loadPetProfile();
+        } finally {
+          setIsUploadingImage(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+      setIsUploadingImage(false);
+    }
+  };
 
   const handleSave = async () => {
     try {
@@ -314,13 +376,29 @@ export default function PetProfileScreen() {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Pet Profile Card */}
         <View style={styles.profileCard}>
-          <Image
-            source={getSafeImageSource(pet.imageUrl || pet.profilePhoto, pet.name)}
-            style={styles.profileImage}
-            onError={(error) => {
-              console.log('Image load error:', error);
-            }}
-          />
+          <TouchableOpacity 
+            style={styles.profileImageContainer}
+            onPress={isEditing ? pickImage : undefined}
+            disabled={!isEditing || isUploadingImage}
+            activeOpacity={isEditing ? 0.8 : 1}
+          >
+            <Image
+              source={getSafeImageSource(pet.imageUrl || pet.profilePhoto, pet.name)}
+              style={styles.profileImage}
+              onError={(error) => {
+                console.log('Image load error:', error);
+              }}
+            />
+            {isEditing && (
+              <View style={styles.cameraButtonOverlay}>
+                {isUploadingImage ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Camera size={20} color="#FFFFFF" />
+                )}
+              </View>
+            )}
+          </TouchableOpacity>
           {isEditing ? (
             <TextInput
               style={styles.nameInput}
@@ -604,12 +682,15 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
+  profileImageContainer: {
+    position: 'relative',
+    marginBottom: 20,
+  },
   profileImage: {
     width: 140,
     height: 140,
     borderRadius: 70,
     backgroundColor: "#FFFFFF",
-    marginBottom: 20,
     borderWidth: 4,
     borderColor: "#FFFFFF",
     shadowColor: "#000",
@@ -617,6 +698,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+  },
+  cameraButtonOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#3BB272',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
   },
   petName: {
     fontSize: 32,
