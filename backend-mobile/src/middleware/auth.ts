@@ -13,11 +13,26 @@ declare global {
         userId: string;
         sessionToken: string;
       };
+      // Backward-compat: historically used in routes for ownership checks
       user?: {
         id: string;
         clerkUserId: string;
         createdAt: Date;
         updatedAt: Date;
+      };
+      // Explicit DB owner used for authorization/ownership checks
+      petOwner?: {
+        id: string;
+        clerkUserId: string;
+        createdAt: Date;
+        updatedAt: Date;
+      };
+      // Minimal profile snapshot from Clerk used for email/display
+      userProfile?: {
+        email?: string;
+        firstName?: string;
+        lastName?: string;
+        phone?: string | null;
       };
     }
   }
@@ -60,7 +75,7 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
 
     // Sync user to database (creates User + PetOwner if doesn't exist)
     try {
-      const user = await getOrCreateUser({
+      const petOwner = await getOrCreateUser({
         clerkUserId: id,
         email: primaryEmailAddress?.emailAddress!,
         firstName: firstName!,
@@ -68,8 +83,16 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
         phone: primaryPhoneNumber?.phoneNumber ?? null,
       });
       
-      // Attach full user object to request
-      req.user = user;
+      // Attach objects to request
+      // Backward-compat: keep req.user pointing to petOwner
+      req.user = petOwner;
+      req.petOwner = petOwner;
+      req.userProfile = {
+        email: primaryEmailAddress?.emailAddress,
+        firstName: firstName ?? undefined,
+        lastName: lastName ?? undefined,
+        phone: primaryPhoneNumber?.phoneNumber ?? null,
+      };
     } catch (syncError) {
       console.error('User sync error:', syncError);
       // Continue anyway - the auth is still valid even if sync fails

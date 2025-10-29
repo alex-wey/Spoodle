@@ -66,12 +66,15 @@ router.post('/',
       // Send email notification
       try {
         console.log('📧 Attempting to send email for bug report:', title);
+        const reporterEmail = req.userProfile?.email || 'unknown@spoodle.co';
+        const reporterName = `${req.userProfile?.firstName || 'Unknown'} ${req.userProfile?.lastName || 'User'}`.trim();
+
         const emailSent = await emailService.sendBugReport({
           title,
           description,
           severity,
-          reporterEmail: req.user?.email!,
-          reporterName: `${req.user?.firstName!} ${req.user?.lastName!}`,
+          reporterEmail,
+          reporterName,
           timestamp: new Date().toLocaleString()
         });
 
