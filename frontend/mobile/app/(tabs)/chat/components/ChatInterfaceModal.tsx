@@ -8,13 +8,11 @@ import {
   TextInput,
   ScrollView,
   SafeAreaView,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { X, Send } from 'lucide-react-native';
-import { useAuth } from '@clerk/clerk-expo';
-import { useChatStore, Message } from '../../../store/chat';
-import { getApiBaseUrl } from '../../../lib/api';
+import { useAuth, useUser } from '@clerk/clerk-expo';
+import { useChatStore, Message } from '../store/chat';
+import { getApiBaseUrl } from '../lib/api';
 
 // Get API base URL from environment
 const API_BASE_URL = getApiBaseUrl();
@@ -33,12 +31,14 @@ export default function ChatInterfaceModal({
   petId,
 }: ChatInterfaceModalProps) {
   const { getToken } = useAuth();
+  const { user } = useUser();
   const { 
     chatSessions, 
     initializeChatSession,  
     addMessage, 
     setCurrentPet,
-    loadChatSessions 
+    loadChatSessions,
+    setCurrentUser
   } = useChatStore();
   
   const [inputText, setInputText] = useState('');
@@ -50,9 +50,10 @@ export default function ChatInterfaceModal({
   const messages = currentSession?.messages || [];
 
   useEffect(() => {
-    // Load chat sessions when component mounts
+    // Set user namespace and then load chat sessions
+    setCurrentUser(user?.id ?? null);
     loadChatSessions();
-  }, [loadChatSessions]);
+  }, [user?.id, setCurrentUser, loadChatSessions]);
 
   useEffect(() => {
     if (visible && petId) {
@@ -142,85 +143,79 @@ export default function ChatInterfaceModal({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="fullScreen"
+      presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <SafeAreaView style={styles.container}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Chat with Spoodle - {petName}</Text>
-              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                <X size={24} color="#4559A7" />
-              </TouchableOpacity>
-            </View>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Chat with Spoodle - {petName}</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <X size={24} color="#4559A7" />
+            </TouchableOpacity>
+          </View>
 
-            <ScrollView 
-              ref={scrollViewRef}
-              style={styles.messagesContainer} 
-              contentContainerStyle={{ paddingBottom: 80 }}
-              showsVerticalScrollIndicator={false}
-              onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-            >
-              {messages.map((message) => (
+          <ScrollView 
+            ref={scrollViewRef}
+            style={styles.messagesContainer} 
+            showsVerticalScrollIndicator={false}
+            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+          >
+            {messages.map((message) => (
+              <View
+                key={message.id}
+                style={[
+                  styles.messageContainer,
+                  message.isUser ? styles.userMessageContainer : styles.aiMessageContainer,
+                ]}
+              >
                 <View
-                  key={message.id}
                   style={[
-                    styles.messageContainer,
-                    message.isUser ? styles.userMessageContainer : styles.aiMessageContainer,
+                    styles.messageBubble,
+                    message.isUser ? styles.userMessage : styles.aiMessage,
                   ]}
                 >
-                  <View
+                  <Text
                     style={[
-                      styles.messageBubble,
-                      message.isUser ? styles.userMessage : styles.aiMessage,
+                      styles.messageText,
+                      message.isUser ? styles.userMessageText : styles.aiMessageText,
                     ]}
                   >
-                    <Text
-                      style={[
-                        styles.messageText,
-                        message.isUser ? styles.userMessageText : styles.aiMessageText,
-                      ]}
-                    >
-                      {message.text}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.timeText,
-                        message.isUser ? styles.userTimeText : styles.aiTimeText,
-                      ]}
-                    >
-                      {formatTime(message.timestamp)}
-                    </Text>
-                  </View>
+                    {message.text}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.timeText,
+                      message.isUser ? styles.userTimeText : styles.aiTimeText,
+                    ]}
+                  >
+                    {formatTime(message.timestamp)}
+                  </Text>
                 </View>
-              ))}
-            </ScrollView>
+              </View>
+            ))}
+          </ScrollView>
 
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.textInput}
-                value={inputText}
-                onChangeText={setInputText}
-                placeholder="Ask me anything about your pet..."
-                placeholderTextColor="#9CA3AF"
-                multiline
-                maxLength={500}
-              />
-              <TouchableOpacity 
-                style={[styles.sendButton, isLoading && styles.sendButtonDisabled]} 
-                onPress={handleSendMessage}
-                disabled={isLoading}
-              >
-                <Send size={20} color={isLoading ? "#9CA3AF" : "#FFFFFF"} />
-              </TouchableOpacity>
-            </View>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.textInput}
+              value={inputText}
+              onChangeText={setInputText}
+              placeholder="Ask me anything about your pet..."
+              placeholderTextColor="#9CA3AF"
+              multiline
+              maxLength={500}
+            />
+            <TouchableOpacity 
+              style={[styles.sendButton, isLoading && styles.sendButtonDisabled]} 
+              onPress={handleSendMessage}
+              disabled={isLoading}
+            >
+              <Send size={20} color={isLoading ? "#9CA3AF" : "#FFFFFF"} />
+            </TouchableOpacity>
           </View>
-        </SafeAreaView>
-      </KeyboardAvoidingView>
+        </View>
+      </SafeAreaView>
     </Modal>
   );
 }
@@ -305,16 +300,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   userTimeText: {
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: '#4559A7',
   },
   aiTimeText: {
-    color: '#6B7280',
+    color: '#4559A7',
   },
   inputContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: 16,

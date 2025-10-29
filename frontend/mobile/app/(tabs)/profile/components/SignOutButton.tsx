@@ -1,10 +1,11 @@
 import React from 'react';
 import { useClerk } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
-import { Text, TouchableOpacity, View, Alert } from 'react-native';
+import { Text, TouchableOpacity, View, Alert, Platform } from 'react-native';
 import { LogOut } from 'lucide-react-native';
-import { usePetStore } from '../../../store/pets';
-import { useDocumentStore } from '../../../store/documents';
+import { usePetStore } from '../store/pets';
+import { useDocumentStore } from '../store/documents';
+import { useChatStore } from '../store/chat';
 
 export const SignOutButton = () => {
   // Use `useClerk()` to access the `signOut()` function
@@ -12,32 +13,45 @@ export const SignOutButton = () => {
   const router = useRouter();
   const { clearPets } = usePetStore();
   const { clearDocuments } = useDocumentStore();
+  const { clearAllChatSessions } = useChatStore();
 
   const handleSignOut = async () => {
+    const proceed = Platform.OS === 'web'
+      ? window.confirm('Are you sure you want to sign out?')
+      : null;
+
+    if (Platform.OS === 'web') {
+      if (!proceed) return;
+      // web flow (no multi-button Alert support)
+      try {
+        clearPets();
+        clearDocuments();
+        clearAllChatSessions();
+        await signOut();
+      } catch (e) {
+        console.error('❌ Clerk signOut error:', e);
+      } finally {
+        router.replace('/(auth)/landing');
+      }
+      return;
+    }
+
+    // native flow with Alert buttons
     Alert.alert(
       'Sign Out',
       'Are you sure you want to sign out?',
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Sign Out', onPress: async () => {
-          console.log('🚪 Starting sign out process...');
-          
-          // Clear all stores first
-          clearPets();
-          clearDocuments();
-          console.log('✅ All stores cleared');
-          
-          // Sign out from Clerk
           try {
+            clearPets();
+            clearDocuments();
+            clearAllChatSessions();
             await signOut();
-            console.log('✅ Clerk signOut completed');
-            // Force redirect to landing page
-            console.log('🚪 Redirecting to landing page...');
-            router.replace("/(auth)/landing");
-          } catch (error) {
-            console.error('❌ Clerk signOut error:', error);
-            // Even if sign out fails, force redirect
-            router.replace("/(auth)/landing");
+          } catch (e) {
+            console.error('❌ Clerk signOut error:', e);
+          } finally {
+            router.replace('/(auth)/landing');
           }
         }},
       ]

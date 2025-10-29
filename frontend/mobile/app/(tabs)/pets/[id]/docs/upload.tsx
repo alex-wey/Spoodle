@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Upload, FileText, ChevronDown, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Upload, FileText, ChevronDown, Trash2, Calendar, MapPin, Stethoscope, FileEdit } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { usePetStore } from '../../../../store/pets';
 import { clerkApiClient } from '../../../../lib/api';
@@ -30,6 +30,10 @@ export default function UploadDocumentScreen() {
   const [fileType, setFileType] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [hospitalName, setHospitalName] = useState('');
+  const [vetName, setVetName] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [notes, setNotes] = useState('');
 
   // Reset form when component mounts
   React.useEffect(() => {
@@ -41,6 +45,10 @@ export default function UploadDocumentScreen() {
       setCustomFileName('');
       setFileUri('');
       setFileType('');
+      setHospitalName('');
+      setVetName('');
+      setDate(new Date().toISOString().split('T')[0]);
+      setNotes('');
     }
   }, [preselectedCategory]);
 
@@ -54,15 +62,18 @@ export default function UploadDocumentScreen() {
     setCustomFileName('');
     setFileUri('');
     setFileType('');
+    setHospitalName('');
+    setVetName('');
+    setDate(new Date().toISOString().split('T')[0]);
+    setNotes('');
     setIsSubmitting(false);
   };
 
   const categories = [
-    { id: 'past_appointments', title: 'Past Visits', color: '#4559A7' },
-    { id: 'x_ray_documents', title: 'X-Ray Documents', color: '#4559A7' },
-    { id: 'diagnostic_reports', title: 'Diagnostic Reports', color: '#4559A7' },
-    { id: 'blood_test_reports', title: 'Blood Test Reports', color: '#4559A7' },
-    { id: 'vaccination_history', title: 'Vaccination History', color: '#4559A7' },
+    { id: 'veterinary_notes', title: 'Veterinary Notes', color: '#4559A7' },
+    { id: 'diagnostic_reports_and_imaging', title: 'Diagnostic Reports & Imaging', color: '#4559A7' },
+    { id: 'lab_results', title: 'Lab Results', color: '#4559A7' },
+    { id: 'vaccine_record', title: 'Vaccine Record', color: '#4559A7' },
   ];
 
   React.useEffect(() => {
@@ -127,8 +138,12 @@ export default function UploadDocumentScreen() {
       const formData = new FormData();
       formData.append('petId', selectedPet.id);
       formData.append('category', category);
-      formData.append('hospitalName', ''); // Empty string as default
+      formData.append('hospitalName', hospitalName);
       formData.append('fileName', customFileName || fileName);
+      formData.append('date', date);
+      if (notes) {
+        formData.append('notes', notes);
+      }
       
       // Append file - Handle both web (blob) and native formats
       if (fileUri.startsWith('blob:')) {
@@ -271,6 +286,73 @@ export default function UploadDocumentScreen() {
                 placeholder="Enter custom name for the file"
                 value={customFileName}
                 onChangeText={setCustomFileName}
+                placeholderTextColor="#ADD7EB"
+              />
+            </View>
+          </View>
+
+          {/* Date */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Date *</Text>
+            <View style={styles.inputContainer}>
+              <Calendar size={20} color="#4559A7" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={date}
+                onChangeText={setDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor="#ADD7EB"
+              />
+            </View>
+          </View>
+
+          {/* Hospital Name - Only for Veterinary Notes */}
+          {category === 'veterinary_notes' && (
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Hospital/Clinic Name</Text>
+              <View style={styles.inputContainer}>
+                <MapPin size={20} color="#4559A7" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter hospital or clinic name"
+                  value={hospitalName}
+                  onChangeText={setHospitalName}
+                  placeholderTextColor="#ADD7EB"
+                />
+              </View>
+            </View>
+          )}
+
+          {/* Vet Name - Only for Veterinary Notes */}
+          {category === 'veterinary_notes' && (
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Veterinarian Name (Optional)</Text>
+              <View style={styles.inputContainer}>
+                <Stethoscope size={20} color="#4559A7" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter veterinarian name"
+                  value={vetName}
+                  onChangeText={setVetName}
+                  placeholderTextColor="#ADD7EB"
+                />
+              </View>
+            </View>
+          )}
+
+          {/* Notes - For all categories */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Notes (Optional)</Text>
+            <View style={styles.inputContainer}>
+              <FileEdit size={20} color="#4559A7" style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Add any additional notes"
+                value={notes}
+                onChangeText={setNotes}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
                 placeholderTextColor="#ADD7EB"
               />
             </View>
@@ -426,6 +508,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 20,
     color: '#4559A7',
+  },
+  textArea: {
+    minHeight: 100,
+    paddingTop: 12,
   },
   filePickerButton: {
     flexDirection: 'row',

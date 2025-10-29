@@ -41,7 +41,8 @@
       "typedRoutes": true
     },
     "extra": {
-      "API_BASE_URL": "http://localhost:3002"
+      "API_BASE_URL": "http://localhost:3002",
+      "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_aW50ZXJuYWwtaGVycmluZy00MS5jbGVyay5hY2NvdW50cy5kZXYk"
     }
   }
 }

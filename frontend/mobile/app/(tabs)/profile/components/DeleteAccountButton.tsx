@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, Alert, View } from 'react-native';
+import { TouchableOpacity, Text, Alert, View, Platform } from 'react-native';
 import { Trash2 } from 'lucide-react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
@@ -16,6 +16,16 @@ export const DeleteAccountButton = () => {
   const { clearAllChatSessions } = useChatStore();
 
   const handleDeleteAccount = async () => {
+    if (Platform.OS === 'web') {
+      const first = window.confirm('Are you sure you want to permanently delete your account? This cannot be undone.');
+      if (!first) return;
+      const second = window.confirm('Final confirmation: delete your account and all data forever?');
+      if (!second) return;
+      await executeDeletion();
+      return;
+    }
+
+    // native flow with Alert buttons
     Alert.alert(
       'Delete Account',
       'Are you sure you want to permanently delete your account? This action cannot be undone and will remove all your data including pets, documents, medical records, bug reports, and chat history.',

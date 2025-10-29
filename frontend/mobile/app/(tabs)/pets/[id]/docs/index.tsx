@@ -26,19 +26,17 @@ import type { Pet } from '../../../../types';
 import { FAB } from '../../../../components/FAB';
 
 const DOCUMENT_CATEGORIES = [
-  { id: 'past_appointments', title: 'Past Appointments', color: '#3BB272' },
-  { id: 'x_ray_documents', title: 'X-Ray Documents', color: '#E75325' },
-  { id: 'diagnostic_reports', title: 'Diagnostic Reports', color: '#FF5D91' },
-  { id: 'blood_test_reports', title: 'Blood Test Reports', color: '#4559A7' },
-  { id: 'vaccination_history', title: 'Vaccination History', color: '#E75325' },
+  { id: 'veterinary_notes', title: 'Veterinary Notes', color: '#3BB272' },
+  { id: 'diagnostic_reports_and_imaging', title: 'Diagnostic Reports & Imaging', color: '#E75325' },
+  { id: 'lab_results', title: 'Lab Results', color: '#4559A7' },
+  { id: 'vaccine_record', title: 'Vaccine Record', color: '#3BB272' },
 ];
 
 const CATEGORY_ICONS: Record<string, any> = {
-  'past_appointments': Calendar,
-  'x_ray_documents': Zap,
-  'diagnostic_reports': Stethoscope,
-  'blood_test_reports': Activity,
-  'vaccination_history': Shield,
+  'veterinary_notes': Calendar,
+  'diagnostic_reports_and_imaging': Zap,
+  'lab_results': Activity,
+  'vaccine_record': Shield,
 };
 
 export default function DocsScreen() {
@@ -132,7 +130,7 @@ export default function DocsScreen() {
                 activeOpacity={0.7}
               >
                 <View style={styles.categoryHeader}>
-                  <View style={[styles.categoryIconContainer, { backgroundColor: category.color }]}>
+                  <View style={[styles.categoryIconContainer, { backgroundColor: category.color }]}> 
                     <IconComponent size={24} color="#FFFFFF" />
                   </View>
                   <Text style={styles.categoryTitle}>{category.title}</Text>

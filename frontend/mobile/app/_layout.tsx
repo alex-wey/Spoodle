@@ -7,6 +7,7 @@ import { StatusBar } from "expo-status-bar";
 import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import { tokenCache } from '@clerk/clerk-expo/token-cache';
 import { clerkApiClient } from './lib/api';
+import Constants from 'expo-constants';
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -44,8 +45,23 @@ export default function RootLayout() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Read Clerk publishable key from env, with fallback to app config
+  const clerkPublishableKey =
+    process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+    (Constants?.expoConfig?.extra as any)?.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+    // Final fallback to the provided key to unblock dev if env/config fail
+    'pk_test_aW50ZXJuYWwtaGVycmluZy00MS5jbGVyay5hY2NvdW50cy5kZXYk';
+
+  if (!clerkPublishableKey) {
+    // Helpful diagnostic in dev
+    console.warn('[Clerk] Missing EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY at runtime');
+  } else {
+    // Minimal confirmation without leaking the full key
+    console.log('[Clerk] Publishable key loaded:', clerkPublishableKey.slice(0, 12) + '...');
+  }
+
   return (
-    <ClerkProvider tokenCache={tokenCache}>
+    <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <QueryClientProvider client={queryClient}>
           <ApiInitializer>

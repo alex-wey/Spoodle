@@ -17,7 +17,7 @@ model User {
   address     String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  petOwner    PetOwner?
+  petOwner    PetOwner? @relation("UserPetOwner")
 
   @@map("users")
 }
@@ -29,7 +29,7 @@ model PetOwner {
   updatedAt    DateTime     @updatedAt
   bugReports   BugReport[]
   chatMessages ChatMessage[]
-  user         User         @relation(fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
+  user         User         @relation("UserPetOwner", fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
   pets         Pet[]
   settings     Settings?
 

@@ -18,11 +18,13 @@ export interface ChatSession {
 interface ChatStore {
   chatSessions: Record<string, ChatSession>;
   currentPetId: string | null;
+  currentUserId: string | null;
   
   // Actions
   initializeChatSession: (petId: string, petName: string) => void;
   addMessage: (petId: string, message: Message) => void;
   setCurrentPet: (petId: string) => void;
+  setCurrentUser: (userId: string | null) => void;
   clearChatSession: (petId: string) => void;
   clearAllChatSessions: () => void;
   loadChatSessions: () => Promise<void>;
@@ -34,6 +36,11 @@ const CHAT_SESSIONS_KEY = 'spoodle_chat_sessions';
 export const useChatStore = create<ChatStore>((set, get) => ({
   chatSessions: {},
   currentPetId: null,
+  currentUserId: null,
+
+  setCurrentUser: (userId: string | null) => {
+    set({ currentUserId: userId });
+  },
 
   initializeChatSession: (petId: string, petName: string) => {
     const { chatSessions } = get();
@@ -116,15 +123,17 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
 
   clearAllChatSessions: () => {
+    const { currentUserId } = get();
     set({ chatSessions: {}, currentPetId: null });
-    
-    // Clear from storage
-    AsyncStorage.removeItem(CHAT_SESSIONS_KEY);
+    const storageKey = currentUserId ? `${CHAT_SESSIONS_KEY}:${currentUserId}` : CHAT_SESSIONS_KEY;
+    AsyncStorage.removeItem(storageKey);
   },
 
   loadChatSessions: async () => {
     try {
-      const stored = await AsyncStorage.getItem(CHAT_SESSIONS_KEY);
+      const { currentUserId } = get();
+      const storageKey = currentUserId ? `${CHAT_SESSIONS_KEY}:${currentUserId}` : CHAT_SESSIONS_KEY;
+      const stored = await AsyncStorage.getItem(storageKey);
       if (stored) {
         const parsedSessions = JSON.parse(stored);
         
@@ -151,8 +160,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
   saveChatSessions: async () => {
     try {
-      const { chatSessions } = get();
-      await AsyncStorage.setItem(CHAT_SESSIONS_KEY, JSON.stringify(chatSessions));
+      const { chatSessions, currentUserId } = get();
+      const storageKey = currentUserId ? `${CHAT_SESSIONS_KEY}:${currentUserId}` : CHAT_SESSIONS_KEY;
+      await AsyncStorage.setItem(storageKey, JSON.stringify(chatSessions));
     } catch (error) {
       console.error('Error saving chat sessions:', error);
     }

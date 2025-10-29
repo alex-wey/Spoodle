@@ -22,24 +22,20 @@ const API_BASE_URL = getApiBaseUrl();
 
 // Category configuration
 const CATEGORY_CONFIG = {
-  'past_appointments': {
-    title: 'Past Visits',
+  'veterinary_notes': {
+    title: 'Veterinary Notes',
     icon: Calendar,
   },
-  'x_ray_documents': {
-    title: 'X-Ray Documents',
+  'diagnostic_reports_and_imaging': {
+    title: 'Diagnostic Reports & Imaging',
     icon: Zap,
   },
-  'diagnostic_reports': {
-    title: 'Diagnostic Reports',
-    icon: Stethoscope,
-  },
-  'blood_test_reports': {
-    title: 'Blood Test Reports',
+  'lab_results': {
+    title: 'Lab Results',
     icon: Activity,
   },
-  'vaccination_history': {
-    title: 'Vaccination History',
+  'vaccine_record': {
+    title: 'Vaccine Record',
     icon: Shield,
   },
 } as const;
