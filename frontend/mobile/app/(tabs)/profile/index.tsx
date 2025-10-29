@@ -9,6 +9,7 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { 
   User, 
@@ -16,6 +17,8 @@ import {
   Phone, 
   MapPin, 
   Camera,
+  Save,
+  X,
 } from 'lucide-react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { SignOutButton } from './components/SignOutButton';
@@ -33,31 +36,54 @@ export default function ProfileScreen() {
   });
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editedAddress, setEditedAddress] = useState({
+    street: '',
+    city: '',
+    state: '',
+    zip: '',
+  });
 
   const { user } = useUser();
 
   const fetchProfileData = React.useCallback(async () => {
     try {
-      // Use user data from Clerk if available
-      if (user) {
+      // Fetch profile data from backend (includes address from users table)
+      const profileResponse = await clerkApiClient.getProfile();
+      if (profileResponse.success) {
+        const data = profileResponse.data;
         setProfile({
-          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Pet Owner',
-          email: user.emailAddresses?.[0]?.emailAddress || '',
-          phone: user.phoneNumbers?.[0]?.phoneNumber || null,
-          address: null, // Clerk doesn't store address by default
-          createdAt: user.createdAt ? new Date(user.createdAt) : null,
+          name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'Pet Owner',
+          email: data.email || '',
+          phone: data.phone || null,
+          address: data.address || null,
+          createdAt: user?.createdAt ? new Date(user.createdAt) : null,
         });
-
-        // Fetch profile image from settings
-        try {
-          const settingsResponse = await clerkApiClient.getSettings();
-          if (settingsResponse.success && settingsResponse.data.profileImageUrl) {
-            setAvatarUri(settingsResponse.data.profileImageUrl);
-          }
-        } catch (settingsError) {
-          console.log('Settings not yet created or error fetching:', settingsError);
-          // This is fine - settings might not exist yet
+        
+        // Parse address string into components
+        if (data.address) {
+          const parts = data.address.split(',').map(p => p.trim());
+          setEditedAddress({
+            street: parts[0] || '',
+            city: parts[1] || '',
+            state: parts[2] || '',
+            zip: parts[3] || '',
+          });
+        } else {
+          setEditedAddress({ street: '', city: '', state: '', zip: '' });
         }
+      }
+
+      // Fetch profile image from settings
+      try {
+        const settingsResponse = await clerkApiClient.getSettings();
+        if (settingsResponse.success && settingsResponse.data.profileImageUrl) {
+          setAvatarUri(settingsResponse.data.profileImageUrl);
+        }
+      } catch (settingsError) {
+        console.log('Settings not yet created or error fetching:', settingsError);
+        // This is fine - settings might not exist yet
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -136,13 +162,90 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      
+      // Concatenate address fields
+      const addressParts = [
+        editedAddress.street,
+        editedAddress.city,
+        editedAddress.state,
+        editedAddress.zip
+      ].filter(part => part.trim());
+      
+      const concatenatedAddress = addressParts.length > 0 
+        ? addressParts.join(', ') 
+        : undefined;
+      
+      // Save address to users table via updateProfile endpoint
+      const response = await clerkApiClient.updateProfile({
+        address: concatenatedAddress
+      });
+
+      if (response.success) {
+        // Update local state with response data
+        setProfile(prev => ({ ...prev, address: response.data.address || null }));
+        setIsEditing(false);
+        Alert.alert('Success', 'Address updated successfully!');
+      } else {
+        throw new Error('Failed to update address');
+      }
+    } catch (error) {
+      console.error('Error saving address:', error);
+      Alert.alert('Error', 'Failed to save address. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    // Re-parse the current address
+    if (profile.address) {
+      const parts = profile.address.split(',').map(p => p.trim());
+      setEditedAddress({
+        street: parts[0] || '',
+        city: parts[1] || '',
+        state: parts[2] || '',
+        zip: parts[3] || '',
+      });
+    } else {
+      setEditedAddress({ street: '', city: '', state: '', zip: '' });
+    }
+    setIsEditing(false);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Profile</Text>
-          <View style={{ width: 48 }} />
+          {isEditing ? (
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={handleSave}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Save size={20} color="#FFFFFF" />
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={handleCancel}
+              >
+                <X size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity onPress={() => setIsEditing(true)}>
+              <Text style={styles.editButtonText}>Edit</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Profile Card */}
@@ -211,27 +314,70 @@ export default function ProfileScreen() {
             </View>
           )}
 
-          {profile.address ? (
-            <View style={[styles.contactItem, { marginBottom: 0 }]}>
-              <View style={styles.contactIconContainer}>
-                <MapPin size={24} color="#3B82F6" />
-              </View>
-              <View style={styles.contactDetails}>
-                <Text style={styles.contactValue}>{profile.address}</Text>
-                <Text style={styles.contactLabel}>Home Address</Text>
-              </View>
+          <View style={[styles.contactItem, { marginBottom: 0, alignItems: 'flex-start' }]}>
+            <View style={[styles.contactIconContainer, { marginTop: 4 }]}>
+              <MapPin size={24} color={isEditing ? "#3BB272" : "#3B82F6"} />
             </View>
-          ) : (
-            <View style={[styles.contactItem, { marginBottom: 0 }]}>
-              <View style={styles.contactIconContainer}>
-                <MapPin size={24} color="#9CA3AF" />
-              </View>
-              <View style={styles.contactDetails}>
-                <Text style={styles.contactValuePlaceholder}>No address added</Text>
-                <Text style={styles.contactLabel}>Home Address</Text>
-              </View>
+            <View style={styles.contactDetails}>
+              {isEditing ? (
+                <View style={styles.addressInputContainer}>
+                  <TextInput
+                    style={styles.addressInput}
+                    value={editedAddress.street}
+                    onChangeText={(text) => setEditedAddress(prev => ({ ...prev, street: text }))}
+                    placeholder="Street Address"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                  <TextInput
+                    style={styles.addressInput}
+                    value={editedAddress.city}
+                    onChangeText={(text) => setEditedAddress(prev => ({ ...prev, city: text }))}
+                    placeholder="City"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                  <View style={styles.addressRow}>
+                    <TextInput
+                      style={[styles.addressInput, { flex: 1, marginRight: 8 }]}
+                      value={editedAddress.state}
+                      onChangeText={(text) => setEditedAddress(prev => ({ ...prev, state: text }))}
+                      placeholder="State"
+                      placeholderTextColor="#9CA3AF"
+                    />
+                    <TextInput
+                      style={[styles.addressInput, { flex: 1 }]}
+                      value={editedAddress.zip}
+                      onChangeText={(text) => setEditedAddress(prev => ({ ...prev, zip: text }))}
+                      placeholder="Zip Code"
+                      placeholderTextColor="#9CA3AF"
+                      keyboardType="number-pad"
+                    />
+                  </View>
+                </View>
+              ) : (
+                profile.address ? (
+                  <View>
+                    {(() => {
+                      const parts = profile.address.split(',').map(p => p.trim());
+                      const street = parts[0] || '';
+                      const city = parts[1] || '';
+                      const state = parts[2] || '';
+                      const zip = parts[3] || '';
+                      
+                      return (
+                        <>
+                          <Text style={styles.contactValue}>{street}</Text>
+                          <Text style={styles.contactValue}>{city}, {state} {zip}</Text>
+                        </>
+                      );
+                    })()}
+                  </View>
+                ) : (
+                  <Text style={styles.contactValuePlaceholder}>No address added</Text>
+                )
+              )}
+              <Text style={styles.contactLabel}>Home Address</Text>
             </View>
-          )}
+          </View>
         </View>
 
         {/* Spoodle Team Contact Information */}
@@ -468,5 +614,53 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     backgroundColor: 'transparent',
     padding: 0,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  editButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4559A7',
+  },
+  saveButton: {
+    padding: 10,
+    borderRadius: 12,
+    backgroundColor: '#3BB272',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cancelButton: {
+    padding: 10,
+    borderRadius: 12,
+    backgroundColor: '#C62828',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  addressInputContainer: {
+    width: '100%',
+    gap: 8,
+  },
+  addressRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  addressInput: {
+    fontSize: 16,
+    color: '#4559A7',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#ADD7EB',
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    minHeight: 50,
   },
 });
