@@ -383,6 +383,19 @@ class ClerkApiClient {
     }>(`/documents/download/${documentId}`);
   }
 
+  // Get presigned URL to open in a new tab (web)
+  async getDocumentPresignedUrl(documentId: string) {
+    return this.request<{
+      success: boolean;
+      data: {
+        url: string;
+        fileName?: string;
+        fileSize?: number;
+        mimeType?: string;
+      };
+    }>(`/documents/download/${documentId}?json=1`);
+  }
+
   async uploadDocument(formData: FormData) {
     const headers: Record<string, string> = {};
     

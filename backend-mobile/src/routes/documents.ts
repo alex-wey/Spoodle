@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import multer from 'multer';
 import multerS3 from 'multer-s3';
 import { S3Client, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { z } from 'zod';
@@ -634,6 +635,7 @@ router.get('/download/:id',
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
+      const wantJson = req.query.json === '1' || (req.headers.accept || '').includes('application/json');
       
       // Check if document exists and belongs to user
       const document = await prisma.document.findFirst({
@@ -653,9 +655,12 @@ router.get('/download/:id',
         });
       }
 
-      // If filePath is a full URL, redirect regardless of USE_S3
+      // If filePath is a full URL
       if (/^https?:\/\//.test(document.filePath)) {
         try {
+          if (wantJson) {
+            return res.json({ success: true, data: { url: document.filePath, fileName: document.fileName, fileSize: document.fileSize, mimeType: document.mimeType } });
+          }
           res.setHeader('Content-Type', document.mimeType);
           res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
           return res.redirect(document.filePath);
@@ -674,10 +679,11 @@ router.get('/download/:id',
               secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
             }
           });
-          const getRes: any = await lazyClient.send(new GetObjectCommand({
-            Bucket: s3BucketName,
-            Key: key,
-          }));
+          if (wantJson) {
+            const signed = await getSignedUrl(lazyClient, new GetObjectCommand({ Bucket: s3BucketName, Key: key }), { expiresIn: 60 });
+            return res.json({ success: true, data: { url: signed, fileName: document.fileName, fileSize: document.fileSize, mimeType: document.mimeType } });
+          }
+          const getRes: any = await lazyClient.send(new GetObjectCommand({ Bucket: s3BucketName, Key: key }));
           // Forward headers and stream body
           res.setHeader('Content-Type', document.mimeType || (getRes.ContentType || 'application/octet-stream'));
           res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);

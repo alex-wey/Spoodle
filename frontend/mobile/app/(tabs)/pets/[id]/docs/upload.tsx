@@ -360,9 +360,9 @@ export default function UploadDocumentScreen() {
 
           {/* Submit Button */}
           <TouchableOpacity
-            style={[styles.uploadButton, (!category || !fileName || isSubmitting) && styles.uploadButtonDisabled]}
+            style={[styles.uploadButton, isSubmitting && styles.uploadButtonDisabled]}
             onPress={handleSubmit}
-            disabled={!category || !fileName || isSubmitting}
+            disabled={isSubmitting}
           >
             {isSubmitting ? (
               <ActivityIndicator color="#FFFFFF" />

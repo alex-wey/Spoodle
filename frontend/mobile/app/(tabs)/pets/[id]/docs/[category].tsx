@@ -284,7 +284,15 @@ export default function CategoryDocumentsScreen() {
       
       const fileUrl = `${API_BASE_URL}/api/documents/download/${document.id}`;
       if (Platform.OS === 'web') {
-        // Open in a new tab directly; backend will stream or redirect to S3
+        // Fetch presigned URL with auth, then open in new tab
+        try {
+          const json = await clerkApiClient.getDocumentPresignedUrl(document.id);
+          if (json.success && json.data?.url) {
+            window.open(json.data.url, '_blank');
+            return;
+          }
+        } catch {}
+        // Fallback to direct URL if presign fails
         window.open(fileUrl, '_blank');
       } else {
         const canOpen = await Linking.canOpenURL(fileUrl);

@@ -44,6 +44,9 @@ export default function ProfileScreen() {
     state: '',
     zip: '',
   });
+  const [editedFirstName, setEditedFirstName] = useState('');
+  const [editedLastName, setEditedLastName] = useState('');
+  const [editedPhone, setEditedPhone] = useState('');
 
   const { user } = useUser();
 
@@ -60,6 +63,9 @@ export default function ProfileScreen() {
           address: data.address || null,
           createdAt: user?.createdAt ? new Date(user.createdAt) : null,
         });
+        setEditedFirstName(data.firstName || '');
+        setEditedLastName(data.lastName || '');
+        setEditedPhone(data.phone || '');
         
         // Parse address string into components
         if (data.address) {
@@ -178,14 +184,22 @@ export default function ProfileScreen() {
         ? addressParts.join(', ') 
         : undefined;
       
-      // Save address to users table via updateProfile endpoint
+      // Save profile details via updateProfile endpoint
       const response = await clerkApiClient.updateProfile({
+        firstName: editedFirstName || undefined,
+        lastName: editedLastName || undefined,
+        phone: editedPhone || undefined,
         address: concatenatedAddress
       });
 
       if (response.success) {
         // Update local state with response data
-        setProfile(prev => ({ ...prev, address: response.data.address || null }));
+        setProfile(prev => ({
+          ...prev,
+          name: `${response.data.firstName || ''} ${response.data.lastName || ''}`.trim() || prev.name,
+          phone: response.data.phone || null,
+          address: response.data.address || null,
+        }));
         setIsEditing(false);
         Alert.alert('Success', 'Address updated successfully!');
       } else {
@@ -292,7 +306,50 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          {profile.phone ? (
+          {/* Name editing */}
+          {isEditing && (
+            <View style={[styles.contactItem, { alignItems: 'flex-start' }]}>
+              <View style={styles.contactIconContainer}>
+                <User size={24} color="#3B82F6" />
+              </View>
+              <View style={styles.contactDetails}>
+                <TextInput
+                  style={styles.addressInput}
+                  value={editedFirstName}
+                  onChangeText={setEditedFirstName}
+                  placeholder="First name"
+                  placeholderTextColor="#9CA3AF"
+                />
+                <TextInput
+                  style={[styles.addressInput, { marginTop: 8 }]}
+                  value={editedLastName}
+                  onChangeText={setEditedLastName}
+                  placeholder="Last name"
+                  placeholderTextColor="#9CA3AF"
+                />
+                <Text style={[styles.contactLabel, { marginTop: 8 }]}>Full Name</Text>
+              </View>
+            </View>
+          )}
+
+          {isEditing ? (
+            <View style={styles.contactItem}>
+              <View style={styles.contactIconContainer}>
+                <Phone size={20} color="#3B82F6" />
+              </View>
+              <View style={styles.contactDetails}>
+                <TextInput
+                  style={styles.addressInput}
+                  value={editedPhone}
+                  onChangeText={setEditedPhone}
+                  placeholder="Phone number"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="phone-pad"
+                />
+                <Text style={styles.contactLabel}>Phone Number</Text>
+              </View>
+            </View>
+          ) : profile.phone ? (
             <View style={styles.contactItem}>
               <View style={styles.contactIconContainer}>
                 <Phone size={20} color="#3B82F6" />
