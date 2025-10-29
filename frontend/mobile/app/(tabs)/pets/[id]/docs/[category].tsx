@@ -11,6 +11,7 @@ import {
   Modal,
   Linking,
   Platform,
+  Image,
 } from 'react-native';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { ArrowLeft, FileText, Calendar, MapPin, Eye, Plus, X, Shield, Activity, Stethoscope, Zap } from 'lucide-react-native';
@@ -107,9 +108,11 @@ interface DocumentViewerModalProps {
   category: string;
   onClose: () => void;
   onOpenExternal: (document: Document) => void;
+  previewUrl?: string | null;
+  isPreviewLoading?: boolean;
 }
 
-function DocumentViewerModal({ visible, document, category, onClose, onOpenExternal }: DocumentViewerModalProps) {
+function DocumentViewerModal({ visible, document, category, onClose, onOpenExternal, previewUrl, isPreviewLoading }: DocumentViewerModalProps) {
   if (!document) return null;
   
   const IconComponent = CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG]?.icon || FileText;
@@ -133,13 +136,20 @@ function DocumentViewerModal({ visible, document, category, onClose, onOpenExter
         
         <ScrollView style={styles.modalContent}>
           <View style={styles.documentViewer}>
-            {document.mimeType?.startsWith('image/') ? (
+            {document.mimeType?.startsWith('image/') && previewUrl ? (
+              <Image source={{ uri: previewUrl }} resizeMode="contain" style={{ width: '100%', height: 300, borderRadius: 12, backgroundColor: '#F8F9FA' }} />
+            ) : Platform.OS === 'web' && previewUrl ? (
+              // Web: show inline preview for any type via iframe (PDF/images/others if browser supports)
+              <View style={{ width: '100%', height: 420, borderRadius: 12, overflow: 'hidden', backgroundColor: '#F8F9FA', borderWidth: 1, borderColor: '#E9ECEF' }}>
+                <iframe src={previewUrl} style={{ width: '100%', height: '100%', border: '0' }} title="document-preview" />
+              </View>
+            ) : document.mimeType?.startsWith('image/') && isPreviewLoading ? (
               <View style={styles.imagePreviewContainer}>
                 <View style={styles.imagePreviewIcon}>
                   <IconComponent size={24} color="#FFFFFF" />
                 </View>
-                <Text style={styles.imagePreviewText}>Image Preview</Text>
-                <Text style={styles.imagePreviewSubtext}>Tap &quot;View Document&quot; to open</Text>
+                <Text style={styles.imagePreviewText}>Loading preview…</Text>
+                <Text style={styles.imagePreviewSubtext}>You can also tap "View Document"</Text>
               </View>
             ) : (
               <View style={styles.viewerIcon}>
@@ -230,6 +240,8 @@ export default function CategoryDocumentsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [viewerVisible, setViewerVisible] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
   const categoryTitle = CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG]?.title || 'Documents';
 
@@ -276,25 +288,45 @@ export default function CategoryDocumentsScreen() {
   const handleViewDocument = (document: Document) => {
     setSelectedDocument(document);
     setViewerVisible(true);
+    // For native image preview, fetch presigned URL
+    if (Platform.OS !== 'web' && document.mimeType?.startsWith('image/')) {
+      setIsPreviewLoading(true);
+      setPreviewUrl(null);
+      clerkApiClient
+        .getDocumentPresignedUrl(document.id)
+        .then((res) => {
+          if (res.success && res.data?.url) {
+            setPreviewUrl(res.data.url);
+          }
+        })
+        .catch(() => {})
+        .finally(() => setIsPreviewLoading(false));
+    } else {
+      setPreviewUrl(null);
+      setIsPreviewLoading(false);
+    }
   };
 
   const handleOpenExternal = async (document: Document) => {
     try {
-      setViewerVisible(false);
-      
+      // For web keep modal visible; for native we may navigate out
       const fileUrl = `${API_BASE_URL}/api/documents/download/${document.id}`;
       if (Platform.OS === 'web') {
-        // Fetch presigned URL with auth, then open in new tab
+        // Fetch presigned URL and render inline in the modal
         try {
           const json = await clerkApiClient.getDocumentPresignedUrl(document.id);
           if (json.success && json.data?.url) {
-            window.open(json.data.url, '_blank');
+            setPreviewUrl(json.data.url);
+            setViewerVisible(true);
             return;
           }
-        } catch {}
-        // Fallback to direct URL if presign fails
-        window.open(fileUrl, '_blank');
+          Alert.alert('Error', 'Unable to get a secure download link. Please try again.');
+        } catch (e) {
+          console.error('Presign error:', e);
+          Alert.alert('Error', 'Unable to get a secure download link. Please sign in again and retry.');
+        }
       } else {
+        setViewerVisible(false);
         const canOpen = await Linking.canOpenURL(fileUrl);
         
         if (canOpen) {
@@ -391,6 +423,8 @@ export default function CategoryDocumentsScreen() {
         category={category as string}
         onClose={() => setViewerVisible(false)}
         onOpenExternal={handleOpenExternal}
+        previewUrl={previewUrl}
+        isPreviewLoading={isPreviewLoading}
       />
     </SafeAreaView>
   );

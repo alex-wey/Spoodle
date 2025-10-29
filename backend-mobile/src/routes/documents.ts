@@ -655,49 +655,65 @@ router.get('/download/:id',
         });
       }
 
-      // If filePath is a full URL
-      if (/^https?:\/\//.test(document.filePath)) {
-        try {
-          if (wantJson) {
-            return res.json({ success: true, data: { url: document.filePath, fileName: document.fileName, fileSize: document.fileSize, mimeType: document.mimeType } });
+      // Helper to presign using best-effort bucket/key detection
+      const presignFromPath = async (rawPath: string) => {
+        const lazyClient = s3Client || new S3Client({
+          region: process.env.AWS_REGION || 'us-east-2',
+          credentials: {
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
           }
-          res.setHeader('Content-Type', document.mimeType);
-          res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
-          return res.redirect(document.filePath);
-        } catch (e) {
-          console.error('URL redirect failed:', e);
-        }
-      } else if ((useS3 && s3Client) || /^documents\//.test(document.filePath)) {
+        });
+        let key = rawPath.replace(/^\//, '');
+        let bucket: string = s3BucketName || '';
         try {
-          // Treat filePath as an S3 key and stream the object
-          const key = document.filePath.replace(/^\//, '');
-          // Use existing client or lazily create one if env creds exist
-          const lazyClient = s3Client || new S3Client({
-            region: process.env.AWS_REGION || 'us-east-2',
-            credentials: {
-              accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-              secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
+          if (/^https?:\/\//.test(rawPath)) {
+            const u = new URL(rawPath);
+            key = u.pathname.replace(/^\//, '');
+            // Try to derive bucket from host if env differs
+            // e.g. spoodle-medical-records.s3.us-east-2.amazonaws.com
+            const hostParts = u.hostname.split('.');
+            if (hostParts.length >= 4 && hostParts[1] === 's3') {
+              bucket = hostParts[0] || bucket;
             }
-          });
-          if (wantJson) {
-            const signed = await getSignedUrl(lazyClient, new GetObjectCommand({ Bucket: s3BucketName, Key: key }), { expiresIn: 60 });
-            return res.json({ success: true, data: { url: signed, fileName: document.fileName, fileSize: document.fileSize, mimeType: document.mimeType } });
           }
-          const getRes: any = await lazyClient.send(new GetObjectCommand({ Bucket: s3BucketName, Key: key }));
-          // Forward headers and stream body
-          res.setHeader('Content-Type', document.mimeType || (getRes.ContentType || 'application/octet-stream'));
+        } catch {}
+        const signed = await getSignedUrl(lazyClient, new GetObjectCommand({ Bucket: bucket, Key: key }), { expiresIn: 300 });
+        return signed;
+      };
+
+      // If filePath is a full URL or S3 key/local path, handle both with presign for JSON
+      if (wantJson) {
+        try {
+          const signed = await presignFromPath(document.filePath);
+          return res.json({ success: true, data: { url: signed, fileName: document.fileName, fileSize: document.fileSize, mimeType: document.mimeType } });
+        } catch (e) {
+          console.error('Presign JSON failed:', e);
+        }
+      } else if ((useS3 && s3Client) || /^documents\//.test(document.filePath) || /^https?:\/\//.test(document.filePath)) {
+        try {
+          // For non-JSON, redirect to a presigned URL for S3 objects (key or full URL)
+          const signed = await presignFromPath(document.filePath);
+          res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
           res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
-          if (getRes.ContentLength) {
-            res.setHeader('Content-Length', String(getRes.ContentLength));
-          }
-          if (getRes.Body && typeof getRes.Body.pipe === 'function') {
-            return getRes.Body.pipe(res);
-          } else {
-            const buf = await getRes.Body?.transformToByteArray?.();
-            return res.send(Buffer.from(buf || []));
-          }
+          return res.redirect(signed);
         } catch (s3Err) {
-          console.error('S3 getObject failed:', s3Err);
+          console.error('S3 redirect presign failed:', s3Err);
+        }
+      }
+
+      // Local filesystem fallback (legacy)
+      if (!/^https?:\/\//.test(document.filePath)) {
+        try {
+          await fs.access(document.filePath);
+          // Stream local file
+          const getRes: any = await fs.readFile(document.filePath);
+          // Forward headers and stream body
+          res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
+          res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
+          return res.send(getRes);
+        } catch (fsErr) {
+          console.error('Local file send failed:', fsErr);
         }
       }
 

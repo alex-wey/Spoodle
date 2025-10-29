@@ -128,7 +128,7 @@ export default function ChatScreen() {
               <Text style={styles.featureTitle}>Health Questions</Text>
             </View>
             <Text style={styles.featureDescription}>
-              Ask about symptoms, medications, and general health concerns
+              Ask about signs, medications, and general health concerns
             </Text>
           </View>
 
