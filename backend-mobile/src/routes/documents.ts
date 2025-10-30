@@ -491,8 +491,8 @@ router.post('/upload',
       // Get file path or S3 location
       let filePath: string;
       // The stored display name should prioritize the user's custom name (userFileName)
-      // We'll also persist the original uploaded filename for reference
       let storedFileName: string;
+      // Keep original name for logging only (not stored in DB to match schema)
       let originalFileName: string;
       
       const file = (req as any).file as any; // Type assertion for multer-s3
@@ -519,19 +519,16 @@ router.post('/upload',
           : file.originalname;
       }
 
+      // Persist only columns that exist in Prisma schema
       const documentData = {
         id: uuidv4(),
-        petId: selectedPetId,
-        category,
+        petId: selectedPetId as string,
+        category: String(category),
         fileName: storedFileName,
-        originalFileName,
         filePath,
-        fileSize: file.size,
-        mimeType: file.mimetype,
-        hospitalName: hospitalName || undefined,
-        date: date ? new Date(date as string) : undefined,
-        notes: notes || undefined
-      };
+        fileSize: Number(file.size),
+        mimeType: String(file.mimetype)
+      } as const;
       
       console.log('📝 Creating document with data:', documentData);
       
