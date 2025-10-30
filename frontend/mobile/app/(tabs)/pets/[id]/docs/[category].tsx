@@ -152,6 +152,18 @@ function DocumentViewerModal({ visible, document, category, onClose, onOpenExter
           <View style={styles.documentViewer}>
             {document.mimeType?.startsWith('image/') && previewUrl ? (
               <Image source={{ uri: previewUrl }} resizeMode="contain" style={{ width: '100%', height: 560, borderRadius: 12, backgroundColor: '#F8F9FA' }} />
+            ) : (Platform.OS !== 'web') && previewUrl && WebViewComponent ? (
+              <View style={{ width: '100%', height: 560, borderRadius: 12, overflow: 'hidden', backgroundColor: '#F8F9FA', borderWidth: 1, borderColor: '#E9ECEF' }}>
+                <WebViewComponent
+                  source={{ uri: ((document.mimeType?.toLowerCase?.().includes('pdf') || /\.pdf(\?|$)/i.test(previewUrl))
+                    ? `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(previewUrl)}`
+                    : previewUrl) as string }}
+                  style={{ flex: 1 }}
+                  originWhitelist={['*']}
+                  useWebKit
+                  allowFileAccess
+                />
+              </View>
             ) : Platform.OS === 'web' && previewUrl ? (
               // Web: show inline preview for any type via iframe (PDF/images/others if browser supports)
               <View style={{ width: '100%', height: 420, borderRadius: 12, overflow: 'hidden', backgroundColor: '#F8F9FA', borderWidth: 1, borderColor: '#E9ECEF' }}>
@@ -316,35 +328,20 @@ export default function CategoryDocumentsScreen() {
 
   const handleOpenExternal = async (document: Document) => {
     try {
-      // For web keep modal visible; for native open external viewer with presigned URL
+      // On both web and native, fetch a presigned URL and render inline in the modal
       const fileUrl = `${API_BASE_URL}/api/documents/download/${document.id}`;
-      if (Platform.OS === 'web') {
-        // Fetch presigned URL and render inline in the modal
-        try {
-          const json = await clerkApiClient.getDocumentPresignedUrl(document.id);
-          if (json.success && json.data?.url) {
-            setPreviewUrl(json.data.url);
-            setViewerVisible(true);
-            return;
-          }
-          Alert.alert('Error', 'Unable to get a secure download link. Please try again.');
-        } catch (e) {
-          console.error('Presign error:', e);
-          Alert.alert('Error', 'Unable to get a secure download link. Please sign in again and retry.');
+      // Fetch presigned URL and render inline in the modal
+      try {
+        const json = await clerkApiClient.getDocumentPresignedUrl(document.id);
+        if (json.success && json.data?.url) {
+          setPreviewUrl(json.data.url);
+          setViewerVisible(true);
+          return;
         }
-      } else {
-        // Native: fetch presigned URL and open with system viewer (external)
-        try {
-          const json = await clerkApiClient.getDocumentPresignedUrl(document.id);
-          if (json.success && json.data?.url) {
-            await Linking.openURL(json.data.url);
-            return;          
-          }
-          Alert.alert('Error', 'Unable to get a secure download link. Please try again.');
-        } catch (e) {
-          console.error('Presign error (native):', e);
-          Alert.alert('Error', 'Unable to open this file.');
-        }
+        Alert.alert('Error', 'Unable to get a secure download link. Please try again.');
+      } catch (e) {
+        console.error('Presign error:', e);
+        Alert.alert('Error', 'Unable to get a secure download link. Please sign in again and retry.');
       }
     } catch (error) {
       console.error('Error opening document:', error);

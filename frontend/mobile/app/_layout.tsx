@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useEffect } from "react";
+import { View, Text } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
@@ -48,17 +49,24 @@ export default function RootLayout() {
   // Read Clerk publishable key from env, with fallback to app config
   const clerkPublishableKey =
     process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ||
-    (Constants?.expoConfig?.extra as any)?.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ||
-    // Final fallback to the provided key to unblock dev if env/config fail
-    'pk_test_aW50ZXJuYWwtaGVycmluZy00MS5jbGVyay5hY2NvdW50cy5kZXYk';
+    (Constants?.expoConfig?.extra as any)?.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
   if (!clerkPublishableKey) {
     // Helpful diagnostic in dev
-    console.warn('[Clerk] Missing EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY at runtime');
-  } else {
-    // Minimal confirmation without leaking the full key
-    console.log('[Clerk] Publishable key loaded:', clerkPublishableKey.slice(0, 12) + '...');
+    console.error('[Clerk] Missing EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY at runtime - app will not work');
+    // Return an error view instead of crashing
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+        <Text style={{ fontSize: 16, color: '#E75325', textAlign: 'center' }}>
+          Configuration Error: Missing Clerk publishable key.{'\n'}
+          Please check your .env file.
+        </Text>
+      </View>
+    );
   }
+
+  // Minimal confirmation without leaking the full key
+  console.log('[Clerk] Publishable key loaded:', clerkPublishableKey.slice(0, 12) + '...');
 
   return (
     <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
