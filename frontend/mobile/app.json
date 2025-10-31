@@ -11,11 +11,11 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.spoodle.mobile",
-      "buildNumber": "1",
       "infoPlist": {
         "NSCameraUsageDescription": "Spoodle needs access to your camera to take photos of pet documents and records.",
         "NSPhotoLibraryUsageDescription": "Spoodle needs access to your photo library to select and upload documents for your pets.",
-        "NSPhotoLibraryAddUsageDescription": "Spoodle would like to save photos to your photo library."
+        "NSPhotoLibraryAddUsageDescription": "Spoodle would like to save photos to your photo library.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
