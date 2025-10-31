@@ -24,7 +24,7 @@ export const getApiBaseUrl = (): string => {
     if (url.endsWith('/')) {
       url = url.slice(0, -1);
     }
-    console.log(`[API Client] Using API URL from env: ${url}`);
+    console.log(`[API Client] Using API URL: ${url}`);
     return url;
   }
   

@@ -51,6 +51,11 @@ export default function RootLayout() {
     process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ||
     (Constants?.expoConfig?.extra as any)?.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
+  // Read optional custom Clerk frontend API domain
+  const clerkFrontendApi =
+    process.env.EXPO_PUBLIC_CLERK_FRONTEND_API ||
+    (Constants?.expoConfig?.extra as any)?.EXPO_PUBLIC_CLERK_FRONTEND_API;
+
   if (!clerkPublishableKey) {
     // Helpful diagnostic in dev
     console.error('[Clerk] Missing EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY at runtime - app will not work');
@@ -65,11 +70,27 @@ export default function RootLayout() {
     );
   }
 
-  // Minimal confirmation without leaking the full key
-  console.log('[Clerk] Publishable key loaded:', clerkPublishableKey.slice(0, 12) + '...');
+  // Log configuration in development only
+  if (__DEV__) {
+    console.log('[Clerk] Publishable key loaded:', clerkPublishableKey.slice(0, 12) + '...');
+    if (clerkFrontendApi) {
+      console.log('[Clerk] Using custom frontend API:', clerkFrontendApi);
+    }
+  }
+
+  // Prepare Clerk provider options
+  const clerkOptions: any = {
+    publishableKey: clerkPublishableKey,
+    tokenCache: tokenCache,
+  };
+
+  // Add frontendApi if custom domain is configured
+  if (clerkFrontendApi) {
+    clerkOptions.frontendApi = clerkFrontendApi;
+  }
 
   return (
-    <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
+    <ClerkProvider {...clerkOptions}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <QueryClientProvider client={queryClient}>
           <ApiInitializer>
