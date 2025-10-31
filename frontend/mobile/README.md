@@ -299,7 +299,7 @@ The app uses Expo EAS (Expo Application Services) for building:
 
 Key configuration in `app.json`:
 - **App Name**: "Spoodle - Pet Health Manager"
-- **Slug**: `spoodle-mobile`
+- **Slug**: `spoodle`
 - **Version**: 1.0.0
 - **Bundle Identifiers**:
   - iOS: `com.spoodle.mobile`
