@@ -19,7 +19,7 @@ export default function LandingScreen() {
           <View style={styles.logoContainer}>
             <View style={styles.logoWrapper}>
               <Image
-                source={require("../../assets/images/Spoodle Logo Variations Transparent Backgrounds-02.png")}
+                source={require("../../assets/images/spoodle_logo.png")}
                 style={styles.logo}
                 resizeMode="contain"
               />
