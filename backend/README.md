@@ -411,8 +411,6 @@ backend/
 | `UPLOAD_DIR` | File upload directory | `./uploads` |
 | `MAX_FILE_SIZE` | Max file size in bytes | `10485760` (10MB) |
 | `ALLOWED_FILE_TYPES` | Allowed file extensions | `pdf,jpg,jpeg,png,doc,docx` |
-| `FRONTEND_URL` | Frontend web URL for CORS | `http://localhost:3000` |
-| `MOBILE_URL` | Mobile app URL for CORS | `http://localhost:19006` |
 | `RATE_LIMIT_WINDOW_MS` | Rate limit time window (ms) | `900000` (15 min) |
 | `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | `100` |
 
