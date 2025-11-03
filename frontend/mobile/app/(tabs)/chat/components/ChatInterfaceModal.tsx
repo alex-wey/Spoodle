@@ -7,8 +7,10 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  SafeAreaView,
+  Platform,
+  Keyboard,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, Send } from 'lucide-react-native';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { useChatStore, Message } from '../../../store/chat';
@@ -32,6 +34,7 @@ export default function ChatInterfaceModal({
 }: ChatInterfaceModalProps) {
   const { getToken } = useAuth();
   const { user } = useUser();
+  const insets = useSafeAreaInsets();
   const { 
     chatSessions, 
     initializeChatSession,  
@@ -43,6 +46,7 @@ export default function ChatInterfaceModal({
   
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Get current chat session
@@ -71,6 +75,27 @@ export default function ChatInterfaceModal({
       }, 100);
     }
   }, [messages]);
+
+  // Handle keyboard show/hide
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+    };
+  }, []);
 
   const handleSendMessage = async () => {
     if (inputText.trim() && !isLoading) {
@@ -146,7 +171,7 @@ export default function ChatInterfaceModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Chat with Spoodle - {petName}</Text>
@@ -157,9 +182,15 @@ export default function ChatInterfaceModal({
 
           <ScrollView 
             ref={scrollViewRef}
-            style={styles.messagesContainer} 
+            style={styles.messagesContainer}
+            contentContainerStyle={[
+              styles.messagesContent,
+              { paddingBottom: keyboardHeight + 80 + insets.bottom }
+            ]}
             showsVerticalScrollIndicator={false}
             onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
           >
             {messages.map((message) => (
               <View
@@ -196,7 +227,15 @@ export default function ChatInterfaceModal({
             ))}
           </ScrollView>
 
-          <View style={styles.inputContainer}>
+          <View 
+            style={[
+              styles.inputContainer,
+              { 
+                bottom: keyboardHeight > 0 ? keyboardHeight : insets.bottom,
+                paddingBottom: keyboardHeight > 0 ? insets.bottom : 12,
+              }
+            ]}
+          >
             <TextInput
               style={styles.textInput}
               value={inputText}
@@ -262,6 +301,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
+  messagesContent: {
+    flexGrow: 1,
+  },
   messageContainer: {
     marginBottom: 16,
   },
@@ -306,11 +348,21 @@ const styles = StyleSheet.create({
     color: '#4559A7',
   },
   inputContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 12,
     backgroundColor: '#ADD7EB',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
   },
   textInput: {
     flex: 1,

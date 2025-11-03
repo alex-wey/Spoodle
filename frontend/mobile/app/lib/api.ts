@@ -109,7 +109,7 @@ class ClerkApiClient {
 
   // Auth endpoints - these work with Clerk
   async getProfile() {
-    return this.request<{
+    const response = await this.request<{
       success: boolean;
       data: {
         id: string;
@@ -122,6 +122,8 @@ class ClerkApiClient {
         updatedAt: string;
       };
     }>("/auth/me");
+
+    return response;
   }
 
   async updateProfile(data: {

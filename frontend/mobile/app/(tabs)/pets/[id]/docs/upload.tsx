@@ -5,11 +5,11 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   Alert,
   TextInput,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Upload, FileText, ChevronDown, Trash2, Calendar, MapPin, Stethoscope, FileEdit } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';

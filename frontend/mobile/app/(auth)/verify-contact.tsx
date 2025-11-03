@@ -1,5 +1,6 @@
 import * as React from 'react'
-import { Text, TextInput, TouchableOpacity, View, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Animated } from 'react-native'
+import { Text, TextInput, TouchableOpacity, View, StyleSheet, KeyboardAvoidingView, Platform, Animated } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useSignUp } from '@clerk/clerk-expo'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { authenticateClerk } from '../middleware/auth.js';
 import { updateUserProfile, deleteUserData } from '../utils/userSync.js';
+import { prisma } from '../index.js';
 
 const router = Router();
 
@@ -15,19 +16,35 @@ router.get('/me', authenticateClerk, async (req: Request, res: Response) => {
       });
     }
 
-    // Merge DB user (PetOwner) with Clerk profile fields for display
+    // Fetch the User record from the database to get the address
+    const dbUser = await prisma.user.findUnique({
+      where: { clerkUserId: req.user.clerkUserId },
+      select: {
+        id: true,
+        clerkUserId: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        address: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    // Merge DB user with Clerk profile fields for display
     const merged = {
-      id: req.user.id,
+      id: dbUser?.id ?? req.user.id,
       clerkUserId: req.user.clerkUserId,
-      createdAt: (req.user as any).createdAt,
-      updatedAt: (req.user as any).updatedAt,
-      // Clerk profile fields when available
-      email: req.userProfile?.email ?? null,
-      firstName: req.userProfile?.firstName ?? null,
-      lastName: req.userProfile?.lastName ?? null,
-      phone: req.userProfile?.phone ?? null,
-      // Optional address may come from users table via PUT /me; include if present on req.user
-      address: (req.user as any).address ?? null,
+      createdAt: dbUser?.createdAt ?? (req.user as any).createdAt,
+      updatedAt: dbUser?.updatedAt ?? (req.user as any).updatedAt,
+      // Use DB user fields first, fallback to Clerk profile
+      email: dbUser?.email ?? req.userProfile?.email ?? null,
+      firstName: dbUser?.firstName ?? req.userProfile?.firstName ?? null,
+      lastName: dbUser?.lastName ?? req.userProfile?.lastName ?? null,
+      phone: dbUser?.phone ?? req.userProfile?.phone ?? null,
+      // Address comes from the User table
+      address: dbUser?.address ?? null,
     };
 
     return res.json({

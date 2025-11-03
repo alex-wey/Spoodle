@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   Alert,
   RefreshControl,
   Modal,
@@ -13,6 +12,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 // WebView for native in-modal previews (only used on native)
 import { Platform as RNPlatform } from 'react-native';
 let WebViewComponent: any = null;
