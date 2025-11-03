@@ -232,7 +232,7 @@ export default function ChatInterfaceModal({
               styles.inputContainer,
               { 
                 bottom: keyboardHeight > 0 ? keyboardHeight : insets.bottom,
-                paddingBottom: keyboardHeight > 0 ? insets.bottom : 12,
+                paddingBottom: keyboardHeight > 0 ? 8 : 12,
               }
             ]}
           >
@@ -354,15 +354,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 8,
     backgroundColor: '#ADD7EB',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
   },
   textInput: {
     flex: 1,
