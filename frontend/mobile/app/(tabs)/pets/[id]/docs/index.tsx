@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,15 +8,14 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { 
   FolderOpen,
-  Upload,
-  Calendar,
+  Plus,
+  NotepadText,
   Stethoscope,
-  Shield,
-  Activity,
-  Zap,
+  TestTubeDiagonal,
+  Syringe,
   ArrowLeft,
   Bug
 } from 'lucide-react-native';
@@ -26,17 +25,17 @@ import type { Pet } from '../../../../types';
 import { FAB } from '../../../../components/FAB';
 
 const DOCUMENT_CATEGORIES = [
-  { id: 'veterinary_notes', title: 'Veterinary Notes', color: '#3BB272' },
-  { id: 'diagnostic_reports_and_imaging', title: 'Diagnostic Reports & Imaging', color: '#E75325' },
+  { id: 'veterinary_notes', title: 'Veterinary Notes', color: '#4559A7' },
+  { id: 'diagnostic_reports_and_imaging', title: 'Diagnostic Reports', color: '#4559A7' },
   { id: 'lab_results', title: 'Lab Results', color: '#4559A7' },
-  { id: 'vaccine_record', title: 'Vaccine Record', color: '#3BB272' },
+  { id: 'vaccine_record', title: 'Vaccine Records', color: '#4559A7' },
 ];
 
 const CATEGORY_ICONS: Record<string, any> = {
-  'veterinary_notes': Calendar,
-  'diagnostic_reports_and_imaging': Zap,
-  'lab_results': Activity,
-  'vaccine_record': Shield,
+  'veterinary_notes': NotepadText,
+  'diagnostic_reports_and_imaging': Stethoscope,
+  'lab_results': TestTubeDiagonal,
+  'vaccine_record': Syringe,
 };
 
 export default function DocsScreen() {
@@ -53,7 +52,7 @@ export default function DocsScreen() {
       await fetchPets();
     };
     loadPets();
-  }, []); // Only run once on mount
+  }, [fetchPets]); // Only run once on mount
 
   // Select pet when pets list or petId changes
   useEffect(() => {
@@ -63,14 +62,23 @@ export default function DocsScreen() {
         setSelectedPet(pet);
       }
     }
-  }, [petId, pets.length]); // Only depend on petId and pets array length
+  }, [petId, pets]); // Only depend on petId and pets array
 
   // Load documents when pet is selected - only once
   useEffect(() => {
     if (selectedPet) {
       fetchDocuments();
     }
-  }, [selectedPet?.id]); // Only depend on the pet ID, not the whole object
+  }, [selectedPet, fetchDocuments]); // Only depend on the pet ID, not the whole object
+
+  // Refresh documents when screen comes into focus (e.g., after uploading)
+  useFocusEffect(
+    useCallback(() => {
+      if (selectedPet) {
+        fetchDocuments();
+      }
+    }, [selectedPet, fetchDocuments])
+  );
 
   // Get document count for a specific category
   const getCategoryCount = (categoryId: string) => {
@@ -142,28 +150,23 @@ export default function DocsScreen() {
             );
           })}
           
-          {/* Upload Button */}
-          <TouchableOpacity
-            style={[styles.categoryBox, { borderTopColor: '#3BB272' }]}
-            onPress={() => router.push(`/(tabs)/pets/${petId}/docs/upload` as any)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.categoryHeader}>
-              <View style={[styles.categoryIconContainer, { backgroundColor: '#3BB272' }]}>
-                <Upload size={24} color="#FFFFFF" />
-              </View>
-              <Text style={styles.categoryTitle}>Upload Documents</Text>
-            </View>
-          </TouchableOpacity>
         </View>
 
       </ScrollView>
+
+      {/* Upload Document FAB */}
+      <TouchableOpacity
+        style={styles.uploadFab}
+        onPress={() => router.push(`/(tabs)/pets/${petId}/docs/upload` as any)}
+      >
+        <Plus size={28} color="#FFFFFF" />
+      </TouchableOpacity>
 
       {/* Bug Report FAB */}
       <FAB
         icon={<Bug size={20} color="white" />}
         onPress={() => router.push("/support")}
-        style={styles.fab}
+        style={styles.bugFab}
         size="small"
       />
     </SafeAreaView>
@@ -344,7 +347,23 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  fab: {
+  uploadFab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#4559A7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  bugFab: {
     position: 'absolute',
     top: 70,
     right: 20,

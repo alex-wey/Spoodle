@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Save, Camera, X } from "lucide-react-native";
+import { ArrowLeft, Plus, Camera, X } from "lucide-react-native";
 import { useState, useEffect } from "react";
 import { usePetStore } from "../../store/pets";
 import * as ImagePicker from 'expo-image-picker';
@@ -113,13 +113,15 @@ export default function AddPetScreen() {
     // Remove all non-numeric characters
     const cleaned = text.replace(/\D/g, '');
     
-    // Format as MM/DD/YYYY
-    let formatted = cleaned;
-    if (cleaned.length >= 2) {
-      formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2);
-    }
-    if (cleaned.length >= 4) {
-      formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4) + '/' + cleaned.slice(4, 8);
+    // Limit to 8 digits (MMDDYYYY)
+    const limited = cleaned.slice(0, 8);
+    
+    // Format as MM/DD/YYYY only when adding characters
+    let formatted = limited;
+    if (limited.length >= 5) {
+      formatted = limited.slice(0, 2) + '/' + limited.slice(2, 4) + '/' + limited.slice(4);
+    } else if (limited.length >= 3) {
+      formatted = limited.slice(0, 2) + '/' + limited.slice(2);
     }
     
     setFormData({ ...formData, dateOfBirth: formatted });
@@ -392,7 +394,7 @@ export default function AddPetScreen() {
             onPress={handleSubmit}
             disabled={isSubmitting}
           >
-            <Save size={20} color="white" />
+            <Plus size={20} color="white" />
             <Text style={styles.submitButtonText}>
               {isSubmitting 
                 ? (isEditMode ? 'Updating Pet...' : 'Adding Pet...') 
@@ -492,20 +494,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
     backgroundColor: "#3BB272",
-    paddingVertical: 18,
-    borderRadius: 14,
-    marginTop: 20,
-    marginBottom: 20,
+    paddingVertical: 24,
+    borderRadius: 12,
+    marginTop: 4,
+    marginBottom: 14,
+    gap: 10,
   },
   submitButtonDisabled: {
     backgroundColor: "#ADD7EB",
   },
   submitButtonText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "700",
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "600",
   },
   imageUploadContainer: {
     alignItems: "center",

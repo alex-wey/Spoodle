@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Text, TextInput, TouchableOpacity, View, StyleSheet, KeyboardAvoidingView, Platform, Animated } from 'react-native'
+import { Text, TextInput, TouchableOpacity, View, StyleSheet, KeyboardAvoidingView, Platform, Animated, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useSignUp } from '@clerk/clerk-expo'
 import { Link, useRouter } from 'expo-router'
@@ -143,8 +143,13 @@ export default function SignUpScreen() {
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoidingView}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <View style={styles.content}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => router.back()}
@@ -241,7 +246,7 @@ export default function SignUpScreen() {
               </Link>
             </View>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
 
       {/* Toast Notification */}
@@ -273,11 +278,11 @@ const styles = StyleSheet.create({
   keyboardAvoidingView: {
     flex: 1,
   },
-  content: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 80,
-    paddingBottom: 24,
+    paddingBottom: 40,
     justifyContent: 'flex-start',
   },
   backButton: {

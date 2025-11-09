@@ -324,8 +324,6 @@ const styles = StyleSheet.create({
   },
   aiMessage: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   messageText: {
     fontSize: 16,
@@ -342,10 +340,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   userTimeText: {
-    color: '#4559A7',
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   aiTimeText: {
-    color: '#4559A7',
+    color: '#6B7280',
   },
   inputContainer: {
     position: 'absolute',

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Upload, FileText, ChevronDown, Trash2, Calendar, MapPin, Stethoscope, FileEdit } from 'lucide-react-native';
+import { ArrowLeft, Upload, FileText, ChevronDown, Trash2, MapPin, Stethoscope, FileEdit } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { usePetStore } from '../../../../store/pets';
 import { clerkApiClient } from '../../../../lib/api';
@@ -32,13 +32,15 @@ export default function UploadDocumentScreen() {
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [hospitalName, setHospitalName] = useState('');
   const [vetName, setVetName] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
 
-  // Reset form when component mounts
+  // Update category when preselectedCategory changes
   React.useEffect(() => {
-    // Only reset if no preselected category (coming from general upload)
-    if (!preselectedCategory) {
+    if (preselectedCategory) {
+      // If there's a preselected category, set it
+      setCategory(preselectedCategory);
+    } else {
+      // If no preselected category, reset the form
       setSelectedPet(null);
       setCategory('');
       setFileName('');
@@ -47,13 +49,11 @@ export default function UploadDocumentScreen() {
       setFileType('');
       setHospitalName('');
       setVetName('');
-      setDate(new Date().toISOString().split('T')[0]);
       setNotes('');
     }
   }, [preselectedCategory]);
 
   const { pets, fetchPets } = usePetStore();
-  const petIconColors = ['#ADD7EB', '#FFD3B6', '#C3F0CA', '#FFECB3', '#D7C7FF', '#F8BBD0'];
 
   // Function to reset the form
   const resetForm = () => {
@@ -65,15 +65,14 @@ export default function UploadDocumentScreen() {
     setFileType('');
     setHospitalName('');
     setVetName('');
-    setDate(new Date().toISOString().split('T')[0]);
     setNotes('');
     setIsSubmitting(false);
   };
 
   const categories = [
-    { id: 'veterinary_notes', title: 'Veterinary Notes', color: '#4559A7' },
-    { id: 'diagnostic_reports_and_imaging', title: 'Diagnostic Reports & Imaging', color: '#4559A7' },
-    { id: 'lab_results', title: 'Lab Results', color: '#4559A7' },
+    { id: 'veterinary_notes', title: 'Veterinary Note', color: '#4559A7' },
+    { id: 'diagnostic_reports_and_imaging', title: 'Diagnostic Report', color: '#4559A7' },
+    { id: 'lab_results', title: 'Lab Result', color: '#4559A7' },
     { id: 'vaccine_record', title: 'Vaccine Record', color: '#4559A7' },
   ];
 
@@ -142,7 +141,6 @@ export default function UploadDocumentScreen() {
       formData.append('category', category);
       formData.append('hospitalName', hospitalName);
       formData.append('fileName', customFileName || fileName);
-      formData.append('date', date);
       if (notes) {
         formData.append('notes', notes);
       }
@@ -210,8 +208,11 @@ export default function UploadDocumentScreen() {
   const selectedCategory = categories.find(c => c.id === category);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+      >
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity 
@@ -226,23 +227,6 @@ export default function UploadDocumentScreen() {
 
         {/* Single Form */}
         <View style={styles.form}>
-          {/* Pet Selection */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Which Pet *</Text>
-            {/* Pet dropdown styled list with avatar */}
-            <View style={[styles.dropdownMenu, { marginTop: 0 }]}> 
-              {pets.map((p: any, idx: number) => (
-                <TouchableOpacity
-                  key={p.id}
-                  style={[styles.dropdownItem, selectedPet?.id === p.id && styles.dropdownItemSelected]}
-                  onPress={() => setSelectedPet(p)}
-                >
-                  <View style={[styles.categoryDot, { backgroundColor: petIconColors[idx % petIconColors.length], width: 28, height: 28, borderRadius: 14 }]} />
-                  <Text style={[styles.dropdownItemText, { marginLeft: 12 }]}>{p.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
           {/* Category Selection */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Document Category *</Text>
@@ -251,9 +235,6 @@ export default function UploadDocumentScreen() {
               onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
             >
               <View style={styles.dropdownContent}>
-                {selectedCategory && (
-                  <View style={[styles.categoryDot, { backgroundColor: selectedCategory.color }]} />
-                )}
                 <Text style={[styles.dropdownText, !category && styles.dropdownPlaceholder]}>
                   {selectedCategory ? selectedCategory.title : 'Choose a category...'}
                 </Text>
@@ -272,7 +253,6 @@ export default function UploadDocumentScreen() {
                     ]}
                     onPress={() => handleCategorySelect(cat.id)}
                   >
-                    <View style={[styles.categoryDot, { backgroundColor: cat.color }]} />
                     <Text style={styles.dropdownItemText}>{cat.title}</Text>
                     {category === cat.id && <Text style={styles.checkmark}>✓</Text>}
                   </TouchableOpacity>
@@ -297,15 +277,15 @@ export default function UploadDocumentScreen() {
               </View>
             ) : (
               <TouchableOpacity style={styles.filePickerButton} onPress={handlePickDocument}>
-                <Upload size={24} color="#4559A7" />
-                <Text style={styles.filePickerText}>Choose File</Text>
+                <Upload size={24} color="#a2acd3" />
+                <Text style={styles.filePickerText}>Choose file</Text>
               </TouchableOpacity>
             )}
           </View>
 
           {/* Custom File Name */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Custom File Name (Optional)</Text>
+            <Text style={styles.label}>Custom File Name (optional)</Text>
             <View style={styles.inputContainer}>
               <FileText size={20} color="#4559A7" style={styles.inputIcon} />
               <TextInput
@@ -313,22 +293,7 @@ export default function UploadDocumentScreen() {
                 placeholder="Enter custom name for the file"
                 value={customFileName}
                 onChangeText={setCustomFileName}
-                placeholderTextColor="#ADD7EB"
-              />
-            </View>
-          </View>
-
-          {/* Date */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Date *</Text>
-            <View style={styles.inputContainer}>
-              <Calendar size={20} color="#4559A7" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                value={date}
-                onChangeText={setDate}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor="#ADD7EB"
+                placeholderTextColor="#a2acd3"
               />
             </View>
           </View>
@@ -344,7 +309,7 @@ export default function UploadDocumentScreen() {
                   placeholder="Enter hospital or clinic name"
                   value={hospitalName}
                   onChangeText={setHospitalName}
-                  placeholderTextColor="#ADD7EB"
+                  placeholderTextColor="#a2acd3"
                 />
               </View>
             </View>
@@ -353,7 +318,7 @@ export default function UploadDocumentScreen() {
           {/* Vet Name - Only for Veterinary Notes */}
           {category === 'veterinary_notes' && (
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Veterinarian Name (Optional)</Text>
+              <Text style={styles.label}>Veterinarian Name (optional)</Text>
               <View style={styles.inputContainer}>
                 <Stethoscope size={20} color="#4559A7" style={styles.inputIcon} />
                 <TextInput
@@ -361,7 +326,7 @@ export default function UploadDocumentScreen() {
                   placeholder="Enter veterinarian name"
                   value={vetName}
                   onChangeText={setVetName}
-                  placeholderTextColor="#ADD7EB"
+                  placeholderTextColor="#a2acd3"
                 />
               </View>
             </View>
@@ -369,9 +334,9 @@ export default function UploadDocumentScreen() {
 
           {/* Notes - For all categories */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Notes (Optional)</Text>
-            <View style={styles.inputContainer}>
-              <FileEdit size={20} color="#4559A7" style={styles.inputIcon} />
+            <Text style={styles.label}>Notes (optional)</Text>
+            <View style={[styles.inputContainer, styles.textAreaContainer]}>
+              <FileEdit size={20} color="#4559A7" style={styles.textAreaIcon} />
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="Add any additional notes"
@@ -380,7 +345,7 @@ export default function UploadDocumentScreen() {
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
-                placeholderTextColor="#ADD7EB"
+                placeholderTextColor="#a2acd3"
               />
             </View>
           </View>
@@ -413,6 +378,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 12,
   },
   header: {
     flexDirection: 'row',
@@ -506,7 +474,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 20,
     color: '#4559A7',
-    marginLeft: 14,
   },
   categoryDot: {
     width: 16,
@@ -538,13 +505,20 @@ const styles = StyleSheet.create({
   },
   textArea: {
     minHeight: 100,
-    paddingTop: 12,
+    paddingTop: 0,
+  },
+  textAreaContainer: {
+    alignItems: 'flex-start',
+  },
+  textAreaIcon: {
+    marginTop: 2,
+    marginRight: 14,
   },
   filePickerButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#DCEBF5',
+    backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#ADD7EB',
     borderStyle: 'dashed',
@@ -555,7 +529,7 @@ const styles = StyleSheet.create({
   filePickerText: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#4559A7',
+    color: '#a2acd3',
   },
   filePreview: {
     flexDirection: 'row',
@@ -587,7 +561,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#3BB272',
     paddingVertical: 24,
     borderRadius: 12,
-    marginTop: 24,
+    marginTop: 4,
     gap: 10,
   },
   uploadButtonDisabled: {

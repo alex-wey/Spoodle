@@ -1,6 +1,6 @@
 import { useSignIn } from '@clerk/clerk-expo'
 import { Link, useRouter } from 'expo-router'
-import { Text, TextInput, TouchableOpacity, View, StyleSheet, KeyboardAvoidingView, Platform, Animated } from 'react-native'
+import { Text, TextInput, TouchableOpacity, View, StyleSheet, KeyboardAvoidingView, Platform, Animated, ScrollView, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import React from 'react'
 import { Ionicons } from '@expo/vector-icons'
@@ -14,6 +14,7 @@ export default function Page() {
   const [password, setPassword] = React.useState('')
   const [error, setError] = React.useState('')
   const [showToast, setShowToast] = React.useState(false)
+  const [isResettingPassword, setIsResettingPassword] = React.useState(false)
   const toastOpacity = React.useRef(new Animated.Value(0)).current
 
   // Show toast notification
@@ -39,6 +40,32 @@ export default function Page() {
         setError('')
       })
     }, 2000)
+  }
+
+  // Handle forgot password
+  const onForgotPasswordPress = async () => {
+    if (!emailAddress) {
+      showErrorToast('Please enter your email address first')
+      return
+    }
+
+    setIsResettingPassword(true)
+    try {
+      await signIn?.create({
+        strategy: 'reset_password_email_code',
+        identifier: emailAddress,
+      })
+      
+      Alert.alert(
+        'Check your email',
+        `We've sent a password reset link to ${emailAddress}. Please check your inbox and follow the instructions to reset your password.`,
+        [{ text: 'OK' }]
+      )
+    } catch (err: any) {
+      showErrorToast(err?.errors?.[0]?.message || 'Failed to send reset email')
+    } finally {
+      setIsResettingPassword(false)
+    }
   }
 
   // Handle the submission of the sign-in form
@@ -80,8 +107,13 @@ export default function Page() {
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoidingView}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <View style={styles.content}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => router.back()}
@@ -122,6 +154,16 @@ export default function Page() {
               />
             </View>
 
+            <TouchableOpacity 
+              style={styles.forgotPasswordButton}
+              onPress={onForgotPasswordPress}
+              disabled={isResettingPassword}
+            >
+              <Text style={styles.forgotPasswordText}>
+                {isResettingPassword ? 'Sending...' : 'Forgot password?'}
+              </Text>
+            </TouchableOpacity>
+
             <TouchableOpacity style={styles.primaryButton} onPress={onSignInPress}>
               <Text style={styles.primaryButtonText}>Sign In</Text>
             </TouchableOpacity>
@@ -135,7 +177,7 @@ export default function Page() {
               </Link>
             </View>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
 
       {/* Toast Notification */}
@@ -167,11 +209,11 @@ const styles = StyleSheet.create({
   keyboardAvoidingView: {
     flex: 1,
   },
-  content: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 130,
-    paddingBottom: 24,
+    paddingTop: 160,
+    paddingBottom: 40,
     justifyContent: 'flex-start',
   },
   backButton: {
@@ -223,6 +265,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 1,
+  },
+  forgotPasswordButton: {
+    alignSelf: 'center',
+    marginTop: -8,
+    marginBottom: -20,
+  },
+  forgotPasswordText: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 16,
+    fontWeight: '500',
+    textDecorationLine: 'underline',
   },
   primaryButton: {
     backgroundColor: '#FFFFFF',

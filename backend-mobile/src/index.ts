@@ -18,15 +18,16 @@ import settingsRoutes from './routes/settings.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3002;
-const NODE_ENV = process.env.NODE_ENV || 'development';
+const PORT = process.env.PORT!;
+const NODE_ENV = process.env.NODE_ENV!;
 const IS_PRODUCTION = NODE_ENV === 'production';
+const HOST = process.env.HOST!;
 
 // Initialize Prisma client
 export const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DATABASE_URL || 'postgresql://localhost:5432/spoodle'
+      url: process.env.DATABASE_URL!
     }
   },
   log: ['query', 'info', 'warn', 'error']
@@ -36,24 +37,14 @@ export const prisma = new PrismaClient({
 app.use(helmet());
 
 // CORS configuration for mobile app
+// Native iOS/Android apps don't have CORS restrictions
+// Allow all origins since mobile apps may send requests with various origins
 const corsOptions = {
-  origin: IS_PRODUCTION
-    ? (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-        // In production, allow all origins for mobile apps
-        // Mobile apps often send requests with null or file:// origins
-        callback(null, true);
-      }
-    : [
-        // Development origins
-        'http://localhost:8081',
-        'http://localhost:8082',
-        'http://localhost:8083',
-        'http://localhost:19006',
-        'http://localhost:19000',
-        'exp://localhost:19000',
-        'exp://192.168.1.100:19000',
-        'exp://10.0.2.2:19000'
-      ],
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow all origins for mobile apps
+    // Mobile apps often send requests with null, file://, or custom scheme origins
+    callback(null, true);
+  },
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -176,16 +167,16 @@ const server = app.listen(PORT, () => {
     console.log(`📱 Mobile app should connect to: https://${domain}`);
     console.log(`🔍 API Health Check: https://${domain}/health`);
   } else {
-    console.log(`🚀 Spoodle MOBILE Backend API running on http://localhost:${PORT}`);
-    console.log(`📱 Mobile app should connect to: http://localhost:${PORT}`);
+    console.log(`🚀 Spoodle MOBILE Backend API running on http://${HOST}:${PORT}`);
+    console.log(`📱 Mobile app should connect to: http://${HOST}:${PORT}`);
     console.log(`🔍 Mobile API endpoints available at:`);
-    console.log(`  - Health: http://localhost:${PORT}/health`);
-    console.log(`  - Auth: http://localhost:${PORT}/api/auth/*`);
-    console.log(`  - Dashboard: http://localhost:${PORT}/api/dashboard/*`);
-    console.log(`  - Pets: http://localhost:${PORT}/api/pets/*`);
-    console.log(`  - Documents: http://localhost:${PORT}/api/documents/*`);
-    console.log(`  - Bug Reports: http://localhost:${PORT}/api/bug-report/*`);
-    console.log(`  - Chatbot: http://localhost:${PORT}/api/chatbot/*`);
+    console.log(`  - Health: http://${HOST}:${PORT}/health`);
+    console.log(`  - Auth: http://${HOST}:${PORT}/api/auth/*`);
+    console.log(`  - Dashboard: http://${HOST}:${PORT}/api/dashboard/*`);
+    console.log(`  - Pets: http://${HOST}:${PORT}/api/pets/*`);
+    console.log(`  - Documents: http://${HOST}:${PORT}/api/documents/*`);
+    console.log(`  - Bug Reports: http://${HOST}:${PORT}/api/bug-report/*`);
+    console.log(`  - Chatbot: http://${HOST}:${PORT}/api/chatbot/*`);
   }
 });
 

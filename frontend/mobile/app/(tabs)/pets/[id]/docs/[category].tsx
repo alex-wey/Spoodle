@@ -7,46 +7,32 @@ import {
   TouchableOpacity,
   Alert,
   RefreshControl,
-  Modal,
-  Linking,
   Platform,
-  Image,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-// WebView for native in-modal previews (only used on native)
-import { Platform as RNPlatform } from 'react-native';
-let WebViewComponent: any = null;
-if (RNPlatform.OS !== 'web') {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    WebViewComponent = require('react-native-webview').WebView;
-  } catch {}
-}
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { ArrowLeft, FileText, Calendar, MapPin, Eye, Plus, X, Shield, Activity, Stethoscope, Zap } from 'lucide-react-native';
-import { clerkApiClient, getApiBaseUrl } from '../../../../lib/api';
+import { ArrowLeft, FileText, NotepadText, MapPin, Plus, TestTubeDiagonal, Syringe, Stethoscope } from 'lucide-react-native';
+import { clerkApiClient } from '../../../../lib/api';
 import { Document } from '../../../../store/documents';
-
-// Get API base URL from environment
-const API_BASE_URL = getApiBaseUrl();
 
 // Category configuration
 const CATEGORY_CONFIG = {
   'veterinary_notes': {
     title: 'Veterinary Notes',
-    icon: Calendar,
+    icon: NotepadText,
   },
   'diagnostic_reports_and_imaging': {
-    title: 'Diagnostic Reports & Imaging',
-    icon: Zap,
+    title: 'Diagnostic Reports',
+    icon: Stethoscope,
   },
   'lab_results': {
     title: 'Lab Results',
-    icon: Activity,
+    icon: TestTubeDiagonal,
   },
   'vaccine_record': {
-    title: 'Vaccine Record',
-    icon: Shield,
+    title: 'Vaccine Records',
+    icon: Syringe,
   },
 } as const;
 
@@ -57,10 +43,6 @@ const LIGHT_BLUE = '#ADD7EB';
 // Helper functions
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString();
-};
-
-const formatFileSize = (bytes: number) => {
-  return `${Math.round(bytes / 1024)} KB`;
 };
 
 // Document Card Component
@@ -79,7 +61,11 @@ function DocumentCard({ document, category, onView }: DocumentCardProps) {
     : ((document as any).originalFileName || rawName);
   
   return (
-    <View style={styles.documentCard}>
+    <TouchableOpacity 
+      style={styles.documentCard}
+      onPress={() => onView(document)}
+      activeOpacity={0.7}
+    >
       <View style={styles.documentHeader}>
         <View style={styles.documentIcon}>
           <IconComponent size={24} color="#FFFFFF" />
@@ -101,149 +87,7 @@ function DocumentCard({ document, category, onView }: DocumentCardProps) {
       {document.notes && (
         <Text style={styles.documentNotes}>{document.notes}</Text>
       )}
-      
-      <View style={styles.documentActions}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => onView(document)}
-        >
-          <Eye size={20} color={PRIMARY_COLOR} />
-          <Text style={styles.actionText}>View</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
-
-// Document Viewer Modal Component
-interface DocumentViewerModalProps {
-  visible: boolean;
-  document: Document | null;
-  category: string;
-  onClose: () => void;
-  onOpenExternal: (document: Document) => void;
-  previewUrl?: string | null;
-  isPreviewLoading?: boolean;
-}
-
-function DocumentViewerModal({ visible, document, category, onClose, onOpenExternal, previewUrl, isPreviewLoading }: DocumentViewerModalProps) {
-  if (!document) return null;
-  
-  const IconComponent = CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG]?.icon || FileText;
-  const categoryTitle = CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG]?.title || 'Documents';
-  
-  return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      <SafeAreaView style={styles.modalContainer}>
-        <View style={styles.modalHeader}>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <X size={24} color={PRIMARY_COLOR} />
-          </TouchableOpacity>
-          <Text style={styles.modalTitle}>Document Details</Text>
-          <View style={styles.placeholder} />
-        </View>
-        
-        <ScrollView style={styles.modalContent}>
-          <View style={styles.documentViewer}>
-            {document.mimeType?.startsWith('image/') && previewUrl ? (
-              <Image source={{ uri: previewUrl }} resizeMode="contain" style={{ width: '100%', height: 560, borderRadius: 12, backgroundColor: '#F8F9FA' }} />
-            ) : (Platform.OS !== 'web') && previewUrl && WebViewComponent ? (
-              <View style={{ width: '100%', height: 560, borderRadius: 12, overflow: 'hidden', backgroundColor: '#F8F9FA', borderWidth: 1, borderColor: '#E9ECEF' }}>
-                <WebViewComponent
-                  source={{ uri: ((document.mimeType?.toLowerCase?.().includes('pdf') || /\.pdf(\?|$)/i.test(previewUrl))
-                    ? `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(previewUrl)}`
-                    : previewUrl) as string }}
-                  style={{ flex: 1 }}
-                  originWhitelist={['*']}
-                  useWebKit
-                  allowFileAccess
-                />
-              </View>
-            ) : Platform.OS === 'web' && previewUrl ? (
-              // Web: show inline preview for any type via iframe (PDF/images/others if browser supports)
-              <View style={{ width: '100%', height: 420, borderRadius: 12, overflow: 'hidden', backgroundColor: '#F8F9FA', borderWidth: 1, borderColor: '#E9ECEF' }}>
-                <iframe src={previewUrl} style={{ width: '100%', height: '100%', border: '0' }} title="document-preview" />
-              </View>
-            ) : document.mimeType?.startsWith('image/') && isPreviewLoading ? (
-              <View style={styles.imagePreviewContainer}>
-                <View style={styles.imagePreviewIcon}>
-                  <IconComponent size={24} color="#FFFFFF" />
-                </View>
-                <Text style={styles.imagePreviewText}>Loading preview…</Text>
-                <Text style={styles.imagePreviewSubtext}>You can also tap "View Document"</Text>
-              </View>
-            ) : (
-              <View style={styles.viewerIcon}>
-                <IconComponent size={48} color="#FFFFFF" />
-              </View>
-            )}
-            
-            <View style={styles.documentDetails}>
-          <Text style={styles.documentTitle}>{document.fileName || (document as any).originalFileName || document.fileName}</Text>
-              <Text style={styles.documentCategory}>{categoryTitle}</Text>
-              
-              <View style={styles.metadataContainer}>
-                <View style={styles.metadataRow}>
-                  <Calendar size={16} color={PRIMARY_COLOR} />
-                  <Text style={styles.metadataLabel}>Date:</Text>
-                  <Text style={styles.metadataValue}>
-                    {formatDate(document.date || document.createdAt)}
-                  </Text>
-                </View>
-                
-                {document.hospitalName && (
-                  <View style={styles.metadataRow}>
-                    <MapPin size={16} color={PRIMARY_COLOR} />
-                    <Text style={styles.metadataLabel}>Hospital:</Text>
-                    <Text style={styles.metadataValue}>{document.hospitalName}</Text>
-                  </View>
-                )}
-                
-                <View style={styles.metadataRow}>
-                  <FileText size={16} color={PRIMARY_COLOR} />
-                  <Text style={styles.metadataLabel}>Pet:</Text>
-                  <Text style={styles.metadataValue}>
-                    {document.pet?.name || 'Unknown'}
-                  </Text>
-                </View>
-                
-                <View style={styles.metadataRow}>
-                  <FileText size={16} color={PRIMARY_COLOR} />
-                  <Text style={styles.metadataLabel}>Size:</Text>
-                  <Text style={styles.metadataValue}>
-                    {document.fileSize ? formatFileSize(document.fileSize) : 'Unknown'}
-                  </Text>
-                </View>
-              </View>
-              
-              {document.notes && (
-                <View style={styles.notesContainer}>
-                  <Text style={styles.notesLabel}>Notes:</Text>
-                  <Text style={styles.notesText}>{document.notes}</Text>
-                </View>
-              )}
-              
-              {/* Technical details removed to avoid exposing raw S3 URLs */}
-            </View>
-          </View>
-        </ScrollView>
-        
-        <View style={styles.modalActions}>
-          <TouchableOpacity
-            style={styles.viewButton}
-            onPress={() => onOpenExternal(document)}
-          >
-            <Eye size={24} color="#FFFFFF" />
-            <Text style={styles.viewButtonText}>View Document</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    </Modal>
+    </TouchableOpacity>
   );
 }
 
@@ -255,10 +99,6 @@ export default function CategoryDocumentsScreen() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
-  const [viewerVisible, setViewerVisible] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
   const categoryTitle = CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG]?.title || 'Documents';
 
@@ -302,50 +142,22 @@ export default function CategoryDocumentsScreen() {
     setRefreshing(false);
   };
 
-  const handleViewDocument = (document: Document) => {
-    setSelectedDocument(document);
-    setViewerVisible(true);
-    // Revert native inline preview for non-images. Preview images only on native; on web preview all via iframe.
-    const isWeb = Platform.OS === 'web';
-    const isImage = !!document.mimeType?.startsWith('image/');
-    if (isWeb || isImage) {
-      setIsPreviewLoading(true);
-      setPreviewUrl(null);
-      clerkApiClient
-        .getDocumentPresignedUrl(document.id)
-        .then((res) => {
-          if (res.success && res.data?.url) {
-            setPreviewUrl(res.data.url);
-          }
-        })
-        .catch(() => {})
-        .finally(() => setIsPreviewLoading(false));
-    } else {
-      setPreviewUrl(null);
-      setIsPreviewLoading(false);
-    }
-  };
-
-  const handleOpenExternal = async (document: Document) => {
+  const handleViewDocument = async (document: Document) => {
     try {
-      // On both web and native, fetch a presigned URL and render inline in the modal
-      const fileUrl = `${API_BASE_URL}/api/documents/download/${document.id}`;
-      // Fetch presigned URL and render inline in the modal
-      try {
-        const json = await clerkApiClient.getDocumentPresignedUrl(document.id);
-        if (json.success && json.data?.url) {
-          setPreviewUrl(json.data.url);
-          setViewerVisible(true);
-          return;
+      const json = await clerkApiClient.getDocumentPresignedUrl(document.id);
+      if (json.success && json.data?.url) {
+        // Open the document directly in the browser/external viewer
+        if (Platform.OS === 'web') {
+          window.open(json.data.url, '_blank');
+        } else {
+          await Linking.openURL(json.data.url);
         }
+      } else {
         Alert.alert('Error', 'Unable to get a secure download link. Please try again.');
-      } catch (e) {
-        console.error('Presign error:', e);
-        Alert.alert('Error', 'Unable to get a secure download link. Please sign in again and retry.');
       }
     } catch (error) {
       console.error('Error opening document:', error);
-      Alert.alert('Error', 'Failed to open document');
+      Alert.alert('Error', 'Failed to open document. Please try again.');
     }
   };
 
@@ -382,18 +194,16 @@ export default function CategoryDocumentsScreen() {
         ) : documents.length === 0 ? (
           <View style={styles.emptyContainer}>
             <FileText size={64} color={LIGHT_BLUE} />
-            <Text style={styles.emptyTitle}>No Documents Found</Text>
-            <Text style={styles.emptyDescription}>
-              No documents found in this category yet.
-            </Text>
+            <Text style={styles.emptyTitle}>No Documents Yet</Text>
             <TouchableOpacity
-              style={styles.addButton}
+              style={styles.addFirstDocButton}
               onPress={() => router.push({
                 pathname: `/(tabs)/pets/${petId}/docs/upload` as any,
                 params: { category: category }
               })}
             >
-              <Text style={styles.addButtonText}>Add First Document</Text>
+              <Plus size={20} color="#FFFFFF" />
+              <Text style={styles.addFirstDocButtonText}>Add First Document</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -409,28 +219,6 @@ export default function CategoryDocumentsScreen() {
           </View>
         )}
       </ScrollView>
-
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => router.push({
-          pathname: `/(tabs)/pets/${petId}/docs/upload` as any,
-          params: { category: category }
-        })}
-      >
-        <Plus size={28} color="#FFFFFF" />
-      </TouchableOpacity>
-
-      {/* Document Viewer Modal */}
-      <DocumentViewerModal
-        visible={viewerVisible}
-        document={selectedDocument}
-        category={category as string}
-        onClose={() => setViewerVisible(false)}
-        onOpenExternal={handleOpenExternal}
-        previewUrl={previewUrl}
-        isPreviewLoading={isPreviewLoading}
-      />
     </SafeAreaView>
   );
 }
@@ -486,7 +274,22 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: PRIMARY_COLOR,
     marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 24,
+  },
+  addFirstDocButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: PRIMARY_COLOR,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  addFirstDocButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   emptyDescription: {
     fontSize: 14,
@@ -525,7 +328,6 @@ const styles = StyleSheet.create({
   documentHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
   },
   documentIcon: {
     width: 48,
@@ -540,13 +342,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   documentName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: PRIMARY_COLOR,
     marginBottom: 4,
   },
   documentDate: {
-    fontSize: 14,
+    fontSize: 16,
     color: PRIMARY_COLOR,
     marginBottom: 4,
   },
@@ -565,28 +367,6 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginBottom: 12,
     paddingLeft: 60,
-  },
-  documentActions: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: LIGHT_BLUE,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    backgroundColor: LIGHT_BLUE,
-    minWidth: 120,
-  },
-  actionText: {
-    fontSize: 16,
-    color: PRIMARY_COLOR,
-    marginLeft: 8,
-    fontWeight: '600',
   },
   fab: {
     position: 'absolute',

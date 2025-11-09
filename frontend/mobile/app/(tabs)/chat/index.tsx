@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState, useEffect } from "react";
-import { MessageCircle, Dog, Clock, Bug, Heart, Apple, Activity, Bell } from "lucide-react-native";
+import { BotMessageSquare, Dog, Clock, Bug, Heart, Apple, Lightbulb, Bell } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { usePetStore } from "../../store/pets";
 import { useChatStore } from "../../store/chat";
@@ -55,15 +55,19 @@ export default function ChatScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.header}>
-          <Text style={styles.title}>Spoodle Chatbot</Text>
+          <Text style={styles.title}>Spoodle Chat</Text>
           <Text style={styles.subtitle}>Your AI pet care assistant</Text>
         </View>
         
         <View style={styles.heroSection}>
           <View style={styles.iconContainer}>
-            <MessageCircle size={64} color="#4559A7" />
+            <BotMessageSquare size={64} color="#4559A7" />
           </View>
           <Text style={styles.heroTitle}>Chat with Spoodle</Text>
           <Text style={styles.heroDescription}>
@@ -74,7 +78,7 @@ export default function ChatScreen() {
             style={styles.startButton}
             onPress={handleStartChat}
           >
-            <MessageCircle size={20} color="white" />
+            <BotMessageSquare size={20} color="white" />
             <Text style={styles.startButtonText}>Start Chatting</Text>
           </TouchableOpacity>
         </View>
@@ -99,22 +103,16 @@ export default function ChatScreen() {
                 style={styles.chatSessionCard}
                 onPress={() => handleResumeChat({ id: session.petId, name: session.petName })}
               >
-                <View style={styles.chatSessionInfo}>
-                  <View style={styles.chatSessionHeader}>
-                    <Dog size={24} color="#4559A7" />
-                    <Text style={styles.chatSessionPetName}>{session.petName}</Text>
-                  </View>
+                <View style={styles.chatSessionHeader}>
+                  <Dog size={24} color="#4559A7" />
+                  <Text style={styles.chatSessionPetName}>{session.petName}</Text>
                   <View style={styles.chatSessionMeta}>
                     <Clock size={16} color="#6B7280" />
                     <Text style={styles.chatSessionTime}>
                       {formatLastActivity(session.lastActivity)}
                     </Text>
-                    <Text style={styles.chatSessionCount}>
-                      {session.messages.length} messages
-                    </Text>
                   </View>
                 </View>
-                <MessageCircle size={24} color="#4559A7" />
               </TouchableOpacity>
             ))}
           </View>
@@ -145,7 +143,7 @@ export default function ChatScreen() {
 
           <View style={styles.featureCard}>
             <View style={styles.featureHeader}>
-              <Activity size={24} color="#4559A7" />
+              <Lightbulb size={24} color="#4559A7" />
               <Text style={styles.featureTitle}>Behavior Tips</Text>
             </View>
             <Text style={styles.featureDescription}>
@@ -320,18 +318,20 @@ const styles = StyleSheet.create({
   chatSessionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
+    flex: 1,
   },
   chatSessionPetName: {
     fontSize: 18,
     fontWeight: "600",
     color: "#4559A7",
     marginLeft: 10,
+    flex: 1,
   },
   chatSessionMeta: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 6,
+    marginLeft: 'auto',
   },
   chatSessionTime: {
     fontSize: 14,

@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { X, MessageCircle } from 'lucide-react-native';
+import { X, BotMessageSquare } from 'lucide-react-native';
 
 
 interface ChatbotIntroModalProps {
@@ -54,7 +54,7 @@ export default function ChatbotIntroModal({
 
 
           <TouchableOpacity style={styles.contactButton} onPress={onStartChat}>
-            <MessageCircle size={20} color="#FFFFFF" />
+            <BotMessageSquare size={20} color="#FFFFFF" />
             <Text style={styles.contactButtonText}>Start Chatting</Text>
           </TouchableOpacity>
         </View>

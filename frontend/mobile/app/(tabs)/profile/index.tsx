@@ -230,8 +230,13 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.scrollContent}
+      >
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Profile</Text>
@@ -469,7 +474,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    paddingTop: 0,
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   header: {
     flexDirection: 'row',
@@ -668,7 +675,7 @@ const styles = StyleSheet.create({
   },
   actionsCard: {
     marginHorizontal: 24,
-    marginBottom: 40,
+    marginBottom: 14,
     backgroundColor: 'transparent',
     padding: 0,
   },
