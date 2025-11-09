@@ -39,7 +39,7 @@ export const validationSchemas = {
   }),
   
   createDocument: z.object({
-    category: z.enum(['veterinary_notes', 'diagnostic_reports_and_imaging', 'lab_results', 'vaccine_record']),
+    category: z.enum(['veterinary_notes', 'diagnostic_reports', 'lab_results', 'vaccination_records']),
     petId: commonSchemas.id.optional(),
     hospitalName: z.string().min(1, 'Hospital name is required'),
     fileName: z.string().min(1, 'File name is required'),

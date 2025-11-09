@@ -26,16 +26,16 @@ import { FAB } from '../../../../components/FAB';
 
 const DOCUMENT_CATEGORIES = [
   { id: 'veterinary_notes', title: 'Veterinary Notes', color: '#4559A7' },
-  { id: 'diagnostic_reports_and_imaging', title: 'Diagnostic Reports', color: '#4559A7' },
+  { id: 'diagnostic_reports', title: 'Diagnostic Reports', color: '#4559A7' },
   { id: 'lab_results', title: 'Lab Results', color: '#4559A7' },
-  { id: 'vaccine_record', title: 'Vaccine Records', color: '#4559A7' },
+  { id: 'vaccination_records', title: 'Vaccination Records', color: '#4559A7' },
 ];
 
 const CATEGORY_ICONS: Record<string, any> = {
   'veterinary_notes': NotepadText,
-  'diagnostic_reports_and_imaging': Stethoscope,
+  'diagnostic_reports': Stethoscope,
   'lab_results': TestTubeDiagonal,
-  'vaccine_record': Syringe,
+  'vaccination_records': Syringe,
 };
 
 export default function DocsScreen() {

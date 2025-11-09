@@ -71,9 +71,9 @@ export default function UploadDocumentScreen() {
 
   const categories = [
     { id: 'veterinary_notes', title: 'Veterinary Note', color: '#4559A7' },
-    { id: 'diagnostic_reports_and_imaging', title: 'Diagnostic Report', color: '#4559A7' },
+    { id: 'diagnostic_reports', title: 'Diagnostic Report', color: '#4559A7' },
     { id: 'lab_results', title: 'Lab Result', color: '#4559A7' },
-    { id: 'vaccine_record', title: 'Vaccine Record', color: '#4559A7' },
+    { id: 'vaccination_records', title: 'Vaccination Record', color: '#4559A7' },
   ];
 
   React.useEffect(() => {

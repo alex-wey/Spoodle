@@ -144,8 +144,8 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/category/:category',
   validateRequest({ 
     params: z.object({ 
-      category: z.enum(['veterinary_notes', 'diagnostic_reports_and_imaging', 'lab_results', 'vaccine_record'], {
-        errorMap: () => ({ message: 'Invalid category. Must be one of: veterinary_notes, diagnostic_reports_and_imaging, lab_results, vaccine_record' })
+      category: z.enum(['veterinary_notes', 'diagnostic_reports', 'lab_results', 'vaccination_records'], {
+        errorMap: () => ({ message: 'Invalid category. Must be one of: veterinary_notes, diagnostic_reports, lab_results, vaccination_records' })
       })
     })
   }),
@@ -207,7 +207,7 @@ router.get('/pet/:petId/category/:category',
   validateRequest({ 
     params: z.object({ 
       petId: commonSchemas.id,
-      category: z.enum(['veterinary_notes', 'diagnostic_reports_and_imaging', 'lab_results', 'vaccine_record'])
+      category: z.enum(['veterinary_notes', 'diagnostic_reports', 'lab_results', 'vaccination_records'])
     })
   }),
   async (req: Request, res: Response) => {
@@ -578,7 +578,7 @@ router.put('/:id',
   validateRequest({ 
     params: z.object({ id: commonSchemas.id }),
     body: z.object({
-      category: z.enum(['veterinary_notes', 'diagnostic_reports_and_imaging', 'lab_results', 'vaccine_record']).optional(),
+      category: z.enum(['veterinary_notes', 'diagnostic_reports', 'lab_results', 'vaccination_records']).optional(),
       hospitalName: z.string().min(1).optional(),
       fileName: z.string().min(1).optional(),
       date: z.string().datetime().optional(),

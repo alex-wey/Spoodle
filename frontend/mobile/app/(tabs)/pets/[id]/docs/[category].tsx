@@ -32,7 +32,7 @@ const CATEGORY_CONFIG = {
     title: 'Veterinary Notes',
     icon: NotepadText,
   },
-  'diagnostic_reports_and_imaging': {
+  'diagnostic_reports': {
     title: 'Diagnostic Reports',
     icon: Stethoscope,
   },
@@ -40,8 +40,8 @@ const CATEGORY_CONFIG = {
     title: 'Lab Results',
     icon: TestTubeDiagonal,
   },
-  'vaccine_record': {
-    title: 'Vaccine Records',
+  'vaccination_records': {
+    title: 'Vaccination Records',
     icon: Syringe,
   },
 } as const;
