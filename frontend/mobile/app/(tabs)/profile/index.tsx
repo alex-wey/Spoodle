@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
@@ -14,6 +15,7 @@ import { ProfileCard } from './components/ProfileCard';
 import { ContactInformation } from './components/ContactInformation';
 import { ClinicInformation } from './components/ClinicInformation';
 import { SpoodleInformation } from './components/SpoodleInformation';
+import { ClinicSwitchModal } from './components/ClinicSwitchModal';
 import * as ImagePicker from 'expo-image-picker';
 import { clerkApiClient } from '../../lib/api';
 
@@ -53,12 +55,14 @@ export default function ProfileScreen() {
   const [editedFirstName, setEditedFirstName] = useState('');
   const [editedLastName, setEditedLastName] = useState('');
   const [editedPhone, setEditedPhone] = useState('');
+  const [showClinicSwitchModal, setShowClinicSwitchModal] = useState(false);
+  const [isSwitchingClinic, setIsSwitchingClinic] = useState(false);
 
   const { user } = useUser();
 
   const fetchProfileData = React.useCallback(async () => {
     try {
-      // Fetch profile data from backend (includes address from users table)
+      // Fetch profile data from backend (includes address from users table and clinic data)
       const profileResponse = await clerkApiClient.getProfile();
       if (profileResponse.success) {
         const data = profileResponse.data;
@@ -85,18 +89,14 @@ export default function ProfileScreen() {
         } else {
           setEditedAddress({ street: '', city: '', state: '', zip: '' });
         }
-      }
 
-      // Fetch clinic information
-      try {
-        const clinicResponse = await clerkApiClient.getMyClinic();
-        if (clinicResponse.success && clinicResponse.data) {
-          setClinic(clinicResponse.data);
-          setClinicImageError(false); // Reset error state when clinic changes
+        // Set clinic data from profile response (already included, no separate API call needed)
+        if (data.clinic) {
+          setClinic(data.clinic);
+          setClinicImageError(false);
+        } else {
+          setClinic(null);
         }
-      } catch (clinicError) {
-        console.log('No clinic assigned or error fetching:', clinicError);
-        // User might not have selected a clinic yet
       }
 
       // Fetch profile image from settings
@@ -282,6 +282,42 @@ export default function ProfileScreen() {
     setEditedAddress(prev => ({ ...prev, [field]: text }));
   };
 
+  const handleClinicChange = () => {
+    setShowClinicSwitchModal(true);
+  };
+
+  const handleSwitchClinic = async (newClinic: any) => {
+    try {
+      setIsSwitchingClinic(true);
+      setShowClinicSwitchModal(false);
+
+      const response = await clerkApiClient.switchClinic(newClinic.id);
+
+      if (response.success) {
+        // Update local clinic state
+        setClinic(response.data.newClinic);
+        setClinicImageError(false);
+        
+        Alert.alert(
+          'Success',
+          `Successfully switched to ${response.data.newClinic.name}!`,
+          [{ text: 'OK' }]
+        );
+      } else {
+        throw new Error('Failed to switch clinics');
+      }
+    } catch (error: any) {
+      console.error('Error switching clinic:', error);
+      Alert.alert(
+        'Error',
+        error.message || 'Failed to switch clinics. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsSwitchingClinic(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView 
@@ -335,11 +371,15 @@ export default function ProfileScreen() {
             clinic={clinic}
             clinicImageError={clinicImageError}
             onImageError={() => setClinicImageError(true)}
+            onClinicChange={handleClinicChange}
           />
         )}
 
         {/* Spoodle Information */}
-        <SpoodleInformation />
+        <SpoodleInformation 
+          showClinicSwitcher={clinic?.slug === 'spoodle'}
+          onClinicChange={handleClinicChange}
+        />
 
         {/* Account Actions */}
         <View style={styles.actionsCard}>
@@ -347,6 +387,27 @@ export default function ProfileScreen() {
           <DeleteAccountButton />
         </View>
       </ScrollView>
+
+      {/* Clinic Switch Modal */}
+      {clinic && (
+        <ClinicSwitchModal
+          visible={showClinicSwitchModal}
+          currentClinicId={clinic.id}
+          currentClinicName={clinic.name}
+          onClose={() => setShowClinicSwitchModal(false)}
+          onSwitch={handleSwitchClinic}
+        />
+      )}
+
+      {/* Switching Loading Overlay */}
+      {isSwitchingClinic && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingBox}>
+            <ActivityIndicator size="large" color="#4559A7" />
+            <Text style={styles.loadingBoxText}>Switching clinic...</Text>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -381,5 +442,33 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     backgroundColor: 'transparent',
     padding: 0,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingBox: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    minWidth: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  loadingBoxText: {
+    color: '#4559A7',
+    fontSize: 16,
+    marginTop: 16,
+    fontWeight: '600',
   },
 });

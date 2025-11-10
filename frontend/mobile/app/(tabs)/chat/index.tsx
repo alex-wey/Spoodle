@@ -65,7 +65,7 @@ export default function ChatScreen() {
           <Text style={styles.subtitle}>Your AI pet care assistant</Text>
         </View>
         
-        <View style={styles.heroSection}>
+        <View style={[styles.heroSection, pets.length === 0 && styles.heroSectionNoPets]}>
           <View style={styles.iconContainer}>
             <BotMessageSquare size={64} color="#4559A7" />
           </View>
@@ -74,13 +74,15 @@ export default function ChatScreen() {
             Get instant answers about your pet&apos;s health, nutrition, behavior, and more from our AI assistant.
           </Text>
           
-          <TouchableOpacity 
-            style={styles.startButton}
-            onPress={handleStartChat}
-          >
-            <BotMessageSquare size={20} color="white" />
-            <Text style={styles.startButtonText}>Start Chatting</Text>
-          </TouchableOpacity>
+          {pets.length > 0 && (
+            <TouchableOpacity 
+              style={styles.startButton}
+              onPress={handleStartChat}
+            >
+              <BotMessageSquare size={20} color="white" />
+              <Text style={styles.startButtonText}>Start Chatting</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {pets.length === 0 && (
@@ -215,9 +217,16 @@ const styles = StyleSheet.create({
   heroSection: {
     backgroundColor: "#DCEBF5",
     borderRadius: 20,
-    padding: 32,
+    paddingTop: 32,
+    paddingHorizontal: 32,
+    paddingBottom: 32,
     alignItems: "center",
     marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "#ADD7EB",
+  },
+  heroSectionNoPets: {
+    paddingBottom: 8,
   },
   iconContainer: {
     width: 120,

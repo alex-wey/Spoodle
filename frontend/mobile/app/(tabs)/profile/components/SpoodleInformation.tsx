@@ -1,11 +1,23 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Mail } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Mail, ArrowLeftRight } from 'lucide-react-native';
 
-export function SpoodleInformation() {
+interface SpoodleInformationProps {
+  showClinicSwitcher?: boolean;
+  onClinicChange?: () => void;
+}
+
+export function SpoodleInformation({ showClinicSwitcher = false, onClinicChange }: SpoodleInformationProps) {
   return (
     <View style={styles.contactCard}>
-      <Text style={styles.contactTitle}>Spoodle Information</Text>
+      <View style={styles.contactTitleRow}>
+        <Text style={styles.contactTitle}>Spoodle Information</Text>
+        {showClinicSwitcher && onClinicChange && (
+          <TouchableOpacity onPress={onClinicChange}>
+            <ArrowLeftRight size={18} color="#4559A7" />
+          </TouchableOpacity>
+        )}
+      </View>
       
       <View style={[styles.contactItem, { marginBottom: 0 }]}>
         <View style={styles.contactIconContainer}>
@@ -39,6 +51,11 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '600',
     color: '#4559A7',
+  },
+  contactTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
   },
   contactItem: {

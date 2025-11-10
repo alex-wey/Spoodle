@@ -48,11 +48,13 @@ export default function SelectClinicScreen() {
     try {
       setLoading(true);
       const response = await clerkApiClient.getClinics();
-      
+
       if (response.data) {
         // Separate Spoodle from other clinics
         const spoodle = response.data.find(c => c.slug === 'spoodle');
-        const otherClinics = response.data.filter(c => c.slug !== 'spoodle');
+        const otherClinics = response.data
+          .filter(c => c.slug !== 'spoodle')
+          .sort((a, b) => a.name.localeCompare(b.name));
         setSpoodleClinic(spoodle || null);
         setClinics(otherClinics);
       }

@@ -3,7 +3,8 @@ import { authenticateClerk } from '../middleware/auth.js';
 import { 
   getAllAvailableClinics, 
   getClinicById, 
-  addUserToClerkOrganization 
+  addUserToClerkOrganization,
+  removeUserFromClerkOrganization
 } from '../utils/clinicSync.js';
 import { assignClinicToPetOwner } from '../utils/userSync.js';
 
@@ -148,6 +149,126 @@ router.post('/select', authenticateClerk, async (req: Request, res: Response) =>
       success: false,
       error: 'Server error',
       message: 'Unable to select clinic'
+    });
+  }
+});
+
+/**
+ * POST /api/clinics/switch
+ * Switch to a different clinic
+ * Requires authentication
+ */
+router.post('/switch', authenticateClerk, async (req: Request, res: Response) => {
+  try {
+    if (!req.auth || !req.petOwner) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required',
+        message: 'Please log in to switch clinics'
+      });
+    }
+
+    const { clinicId } = req.body;
+
+    if (!clinicId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing clinic ID',
+        message: 'Please provide a clinic ID'
+      });
+    }
+
+    // Check if user has a current clinic
+    if (!req.petOwner.clinicId) {
+      return res.status(400).json({
+        success: false,
+        error: 'No current clinic',
+        message: 'You must have a clinic assigned before switching'
+      });
+    }
+
+    // Check if trying to switch to the same clinic
+    if (req.petOwner.clinicId === clinicId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Same clinic',
+        message: 'You are already a member of this clinic'
+      });
+    }
+
+    // Get current clinic info
+    const currentClinic = await getClinicById(req.petOwner.clinicId);
+    if (!currentClinic) {
+      return res.status(404).json({
+        success: false,
+        error: 'Current clinic not found',
+        message: 'Could not find your current clinic'
+      });
+    }
+
+    // Get new clinic info
+    const newClinic = await getClinicById(clinicId);
+    if (!newClinic) {
+      return res.status(404).json({
+        success: false,
+        error: 'Clinic not found',
+        message: 'The selected clinic does not exist'
+      });
+    }
+
+    if (!newClinic.isActive) {
+      return res.status(400).json({
+        success: false,
+        error: 'Clinic inactive',
+        message: 'This clinic is not currently accepting new members'
+      });
+    }
+
+    // Step 1: Remove from current Clerk organization
+    try {
+      await removeUserFromClerkOrganization(req.auth.userId, currentClinic.clerkOrgId);
+    } catch (orgError) {
+      console.error('Warning: Failed to remove user from current Clerk organization:', orgError);
+      // Continue anyway - we'll try to add to new org
+    }
+
+    // Step 2: Add to new Clerk organization
+    try {
+      await addUserToClerkOrganization(req.auth.userId, newClinic.clerkOrgId);
+    } catch (orgError) {
+      console.error('Error: Failed to add user to new Clerk organization:', orgError);
+      // Try to rollback - add user back to original org
+      try {
+        await addUserToClerkOrganization(req.auth.userId, currentClinic.clerkOrgId);
+      } catch (rollbackError) {
+        console.error('Critical: Failed to rollback Clerk org membership:', rollbackError);
+      }
+      
+      return res.status(500).json({
+        success: false,
+        error: 'Organization update failed',
+        message: 'Failed to update your organization membership. Please try again.'
+      });
+    }
+
+    // Step 3: Update database
+    const updatedPetOwner = await assignClinicToPetOwner(req.petOwner.id, clinicId);
+
+    return res.json({
+      success: true,
+      data: {
+        petOwner: updatedPetOwner,
+        previousClinic: currentClinic,
+        newClinic: updatedPetOwner.clinic
+      },
+      message: `Successfully switched from ${currentClinic.name} to ${newClinic.name}`
+    });
+  } catch (error) {
+    console.error('Switch clinic error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error',
+      message: 'Unable to switch clinics'
     });
   }
 });

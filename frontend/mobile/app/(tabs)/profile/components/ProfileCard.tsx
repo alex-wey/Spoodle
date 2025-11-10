@@ -176,9 +176,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 8,
+    position: 'relative',
   },
   nameEditButton: {
     padding: 4,
+    position: 'absolute',
+    top: -16,
+    right: -8,
   },
   nameEditContainer: {
     marginBottom: 8,

@@ -129,6 +129,16 @@ class ClerkApiClient {
         address: string;
         createdAt: string;
         updatedAt: string;
+        clinic: {
+          id: string;
+          clerkOrgId: string;
+          name: string;
+          slug: string;
+          address?: string | null;
+          phoneNumber?: string | null;
+          email?: string | null;
+          imageUrl?: string | null;
+        } | null;
       };
     }>("/auth/me");
 
@@ -562,6 +572,21 @@ class ClerkApiClient {
       };
       message: string;
     }>('/clinics/select', {
+      method: 'POST',
+      body: JSON.stringify({ clinicId }),
+    });
+  }
+
+  async switchClinic(clinicId: string) {
+    return this.request<{
+      success: boolean;
+      data: {
+        petOwner: any;
+        previousClinic: any;
+        newClinic: any;
+      };
+      message: string;
+    }>('/clinics/switch', {
       method: 'POST',
       body: JSON.stringify({ clinicId }),
     });

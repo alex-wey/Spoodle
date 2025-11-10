@@ -45,6 +45,8 @@ router.get('/me', authenticateClerk, async (req: Request, res: Response) => {
       phone: dbUser?.phone ?? req.userProfile?.phone ?? null,
       // Address comes from the User table
       address: dbUser?.address ?? null,
+      // Include clinic data if available (already fetched in middleware)
+      clinic: req.clinic || null,
     };
 
     return res.json({

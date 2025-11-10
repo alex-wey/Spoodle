@@ -137,3 +137,34 @@ export async function addUserToClerkOrganization(userId: string, organizationId:
   }
 }
 
+/**
+ * Remove user from Clerk organization when switching clinics
+ */
+export async function removeUserFromClerkOrganization(userId: string, organizationId: string) {
+  try {
+    // Get the user's membership in the organization
+    const { data: memberships } = await clerk.organizations.getOrganizationMembershipList({
+      organizationId,
+      limit: 100
+    });
+
+    const membership = memberships.find(m => m.publicUserData?.userId === userId);
+
+    if (membership) {
+      await clerk.organizations.deleteOrganizationMembership({
+        organizationId,
+        userId
+      });
+
+      console.log(`✅ Removed user ${userId} from Clerk organization ${organizationId}`);
+      return true;
+    } else {
+      console.log(`ℹ️  User ${userId} was not a member of organization ${organizationId}`);
+      return true;
+    }
+  } catch (error: any) {
+    console.error('Error removing user from Clerk organization:', error);
+    throw error;
+  }
+}
+

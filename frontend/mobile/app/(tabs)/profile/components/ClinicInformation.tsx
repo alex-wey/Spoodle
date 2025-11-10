@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
-import { Mail, Phone, MapPin, Hospital } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
+import { Mail, Phone, MapPin, Hospital, ArrowLeftRight } from 'lucide-react-native';
 
 interface Clinic {
   id: string;
@@ -17,16 +17,54 @@ interface ClinicInformationProps {
   clinic: Clinic;
   clinicImageError: boolean;
   onImageError: () => void;
+  onClinicChange: () => void;
 }
 
 export function ClinicInformation({
   clinic,
   clinicImageError,
   onImageError,
+  onClinicChange,
 }: ClinicInformationProps) {
+  const [localImageError, setLocalImageError] = useState(false);
+
+  const handleImageError = () => {
+    setLocalImageError(true);
+    onImageError();
+  };
+
+  const showImage = clinic.imageUrl && !clinicImageError && !localImageError;
+
+  const handleChange = () => {
+    onClinicChange();
+  };
+
   return (
     <View style={styles.contactCard}>
-      <Text style={styles.contactTitle}>{clinic.name}</Text>
+      <View style={styles.contactTitleRow}>
+        <Text style={styles.contactTitle}>Clinic Information</Text>
+        <TouchableOpacity onPress={handleChange}>
+          <ArrowLeftRight size={18} color="#4559A7" />
+        </TouchableOpacity>
+      </View>
+      
+      {/* Clinic Name Section */}
+      <View style={styles.clinicNameSection}>
+        <View style={styles.clinicIconContainer}>
+          {showImage ? (
+            <Image
+              source={{ uri: clinic.imageUrl! }}
+              style={styles.clinicIconImage}
+              onError={handleImageError}
+            />
+          ) : (
+            <Hospital size={20} color="#4559A7" />
+          )}
+        </View>
+        <View style={styles.clinicNameDetails}>
+          <Text style={styles.clinicName}>{clinic.name}</Text>
+        </View>
+      </View>
       
       {clinic.email ? (
         <View style={styles.contactItem}>
@@ -129,6 +167,11 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '600',
     color: '#4559A7',
+  },
+  contactTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
   },
   contactItem: {
@@ -165,11 +208,37 @@ const styles = StyleSheet.create({
     color: '#4559A7',
     opacity: 0.7,
   },
+  clinicNameSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  clinicIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#ADD7EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+    overflow: 'hidden',
+  },
   clinicIconImage: {
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: '#F3F4F6',
+  },
+  clinicNameDetails: {
+    flex: 1,
+  },
+  clinicName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4559A7',
   },
 });
 

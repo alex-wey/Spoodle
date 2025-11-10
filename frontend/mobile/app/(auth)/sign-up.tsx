@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 80,
+    paddingTop: 110,
     paddingBottom: 40,
     justifyContent: 'flex-start',
   },
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   header: {
-    marginBottom: 40,
+    marginBottom: 24,
     alignItems: 'center',
   },
   title: {
@@ -347,8 +347,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 18,
     alignItems: 'center',
-    marginTop: 40,
-    marginBottom: 16,
+    marginBottom: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
