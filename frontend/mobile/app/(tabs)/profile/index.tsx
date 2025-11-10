@@ -4,26 +4,16 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  Image,
   Alert,
-  ActivityIndicator,
-  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Camera,
-  Save,
-  X,
-  Hospital,
-} from 'lucide-react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { SignOutButton } from './components/SignOutButton';
 import { DeleteAccountButton } from './components/DeleteAccountButton';
+import { ProfileCard } from './components/ProfileCard';
+import { ContactInformation } from './components/ContactInformation';
+import { ClinicInformation } from './components/ClinicInformation';
+import { SpoodleInformation } from './components/SpoodleInformation';
 import * as ImagePicker from 'expo-image-picker';
 import { clerkApiClient } from '../../lib/api';
 
@@ -51,7 +41,9 @@ export default function ProfileScreen() {
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingName, setIsSavingName] = useState(false);
   const [editedAddress, setEditedAddress] = useState({
     street: '',
     city: '',
@@ -125,7 +117,6 @@ export default function ProfileScreen() {
   useEffect(() => {
     fetchProfileData();
   }, [fetchProfileData]);
-
 
   const formatJoinDate = (date: Date | null) => {
     if (!date) return 'Unknown';
@@ -212,8 +203,6 @@ export default function ProfileScreen() {
       
       // Save profile details via updateProfile endpoint
       const response = await clerkApiClient.updateProfile({
-        firstName: editedFirstName || undefined,
-        lastName: editedLastName || undefined,
         phone: editedPhone || undefined,
         address: concatenatedAddress
       });
@@ -222,21 +211,55 @@ export default function ProfileScreen() {
         // Update local state with response data
         setProfile(prev => ({
           ...prev,
-          name: `${response.data.firstName || ''} ${response.data.lastName || ''}`.trim() || prev.name,
           phone: response.data.phone || null,
           address: response.data.address || null,
         }));
         setIsEditing(false);
-        Alert.alert('Success', 'Address updated successfully!');
+        Alert.alert('Success', 'Contact information updated successfully!');
       } else {
-        throw new Error('Failed to update address');
+        throw new Error('Failed to update contact information');
       }
     } catch (error) {
-      console.error('Error saving address:', error);
-      Alert.alert('Error', 'Failed to save address. Please try again.');
+      console.error('Error saving contact information:', error);
+      Alert.alert('Error', 'Failed to save contact information. Please try again.');
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleSaveName = async () => {
+    try {
+      setIsSavingName(true);
+      
+      // Save name via updateProfile endpoint
+      const response = await clerkApiClient.updateProfile({
+        firstName: editedFirstName || undefined,
+        lastName: editedLastName || undefined,
+      });
+
+      if (response.success) {
+        // Update local state with response data
+        setProfile(prev => ({
+          ...prev,
+          name: `${response.data.firstName || ''} ${response.data.lastName || ''}`.trim() || prev.name,
+        }));
+        setIsEditingName(false);
+        Alert.alert('Success', 'Name updated successfully!');
+      } else {
+        throw new Error('Failed to update name');
+      }
+    } catch (error) {
+      console.error('Error saving name:', error);
+      Alert.alert('Error', 'Failed to save name. Please try again.');
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
+  const handleCancelName = () => {
+    // Reset to current profile name - use the already loaded editedFirstName/editedLastName
+    // These are set when profile data is fetched, so just reset editing state
+    setIsEditingName(false);
   };
 
   const handleCancel = () => {
@@ -255,6 +278,10 @@ export default function ProfileScreen() {
     setIsEditing(false);
   };
 
+  const handleAddressChange = (field: 'street' | 'city' | 'state' | 'zip', text: string) => {
+    setEditedAddress(prev => ({ ...prev, [field]: text }));
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView 
@@ -266,308 +293,53 @@ export default function ProfileScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Profile</Text>
-          {isEditing ? (
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                style={styles.saveButton}
-                onPress={handleSave}
-                disabled={isSaving}
-              >
-                {isSaving ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Save size={20} color="#FFFFFF" />
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={handleCancel}
-              >
-                <X size={20} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity onPress={() => setIsEditing(true)}>
-              <Text style={styles.editButtonText}>Edit</Text>
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Profile Card */}
-        <View style={styles.profileCard}>
-          <View style={styles.profileHeader}>
-            <TouchableOpacity 
-              style={styles.avatarContainer} 
-              onPress={pickImage}
-              disabled={isUploadingImage}
-            >
-              <View style={styles.avatar}>
-                {avatarUri ? (
-                  <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
-                ) : (
-                  <User size={40} color="#FFFFFF" />
-                )}
-              </View>
-              <View style={styles.cameraButton}>
-                {isUploadingImage ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Camera size={16} color="#FFFFFF" />
-                )}
-              </View>
-            </TouchableOpacity>
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{profile.name}</Text>
-              <Text style={styles.profileEmail}>Member since {formatJoinDate(profile.createdAt)}</Text>
-            </View>
-          </View>
-        </View>
+        <ProfileCard
+          name={profile.name}
+          memberSince={formatJoinDate(profile.createdAt)}
+          avatarUri={avatarUri}
+          isUploadingImage={isUploadingImage}
+          isEditingName={isEditingName}
+          isSavingName={isSavingName}
+          editedFirstName={editedFirstName}
+          editedLastName={editedLastName}
+          onPickImage={pickImage}
+          onEditName={() => setIsEditingName(true)}
+          onSaveName={handleSaveName}
+          onCancelName={handleCancelName}
+          onFirstNameChange={setEditedFirstName}
+          onLastNameChange={setEditedLastName}
+        />
 
         {/* Contact Information */}
-        <View style={styles.contactCard}>
-          <Text style={styles.contactTitle}>Contact Information</Text>
-          
-          <View style={styles.contactItem}>
-            <View style={styles.contactIconContainer}>
-              <Mail size={20} color="#4559A7" />
-            </View>
-            <View style={styles.contactDetails}>
-              <Text style={styles.contactValue}>{profile.email}</Text>
-              <Text style={styles.contactLabel}>Email Address</Text>
-            </View>
-          </View>
-
-          {/* Name editing */}
-          {isEditing && (
-            <View style={[styles.contactItem, { alignItems: 'flex-start' }]}>
-              <View style={styles.contactIconContainer}>
-                <User size={20} color="#4559A7" />
-              </View>
-              <View style={styles.contactDetails}>
-                <TextInput
-                  style={styles.addressInput}
-                  value={editedFirstName}
-                  onChangeText={setEditedFirstName}
-                  placeholder="First name"
-                  placeholderTextColor="#9CA3AF"
-                />
-                <TextInput
-                  style={[styles.addressInput, { marginTop: 8 }]}
-                  value={editedLastName}
-                  onChangeText={setEditedLastName}
-                  placeholder="Last name"
-                  placeholderTextColor="#9CA3AF"
-                />
-                <Text style={[styles.contactLabel, { marginTop: 8 }]}>Full Name</Text>
-              </View>
-            </View>
-          )}
-
-          {isEditing ? (
-            <View style={styles.contactItem}>
-              <View style={styles.contactIconContainer}>
-                <Phone size={20} color="#4559A7" />
-              </View>
-              <View style={styles.contactDetails}>
-                <TextInput
-                  style={styles.addressInput}
-                  value={editedPhone}
-                  onChangeText={setEditedPhone}
-                  placeholder="Phone number"
-                  placeholderTextColor="#9CA3AF"
-                  keyboardType="phone-pad"
-                />
-                <Text style={styles.contactLabel}>Phone Number</Text>
-              </View>
-            </View>
-          ) : profile.phone ? (
-            <View style={styles.contactItem}>
-              <View style={styles.contactIconContainer}>
-                <Phone size={20} color="#4559A7" />
-              </View>
-              <View style={styles.contactDetails}>
-                <Text style={styles.contactValue}>{profile.phone}</Text>
-                <Text style={styles.contactLabel}>Phone Number</Text>
-              </View>
-            </View>
-          ) : (
-            <View style={styles.contactItem}>
-              <View style={styles.contactIconContainer}>
-                <Phone size={20} color="#4559A7" />
-              </View>
-              <View style={styles.contactDetails}>
-                <Text style={styles.contactValuePlaceholder}>No phone number added</Text>
-                <Text style={styles.contactLabel}>Phone Number</Text>
-              </View>
-            </View>
-          )}
-
-          <View style={[styles.contactItem, { marginBottom: 0, alignItems: 'flex-start' }]}>
-            <View style={[styles.contactIconContainer, { marginTop: 4 }]}>
-              <MapPin size={20} color="#4559A7" />
-            </View>
-            <View style={styles.contactDetails}>
-              {isEditing ? (
-                <View style={styles.addressInputContainer}>
-                  <TextInput
-                    style={styles.addressInput}
-                    value={editedAddress.street}
-                    onChangeText={(text) => setEditedAddress(prev => ({ ...prev, street: text }))}
-                    placeholder="Street Address"
-                    placeholderTextColor="#9CA3AF"
-                  />
-                  <TextInput
-                    style={styles.addressInput}
-                    value={editedAddress.city}
-                    onChangeText={(text) => setEditedAddress(prev => ({ ...prev, city: text }))}
-                    placeholder="City"
-                    placeholderTextColor="#9CA3AF"
-                  />
-                  <View style={styles.addressRow}>
-                    <TextInput
-                      style={[styles.addressInput, { flex: 1, marginRight: 8 }]}
-                      value={editedAddress.state}
-                      onChangeText={(text) => setEditedAddress(prev => ({ ...prev, state: text }))}
-                      placeholder="State"
-                      placeholderTextColor="#9CA3AF"
-                    />
-                    <TextInput
-                      style={[styles.addressInput, { flex: 1 }]}
-                      value={editedAddress.zip}
-                      onChangeText={(text) => setEditedAddress(prev => ({ ...prev, zip: text }))}
-                      placeholder="Zip Code"
-                      placeholderTextColor="#9CA3AF"
-                      keyboardType="number-pad"
-                    />
-                  </View>
-                </View>
-              ) : (
-                profile.address ? (
-                  <View>
-                    {(() => {
-                      const parts = profile.address.split(',').map(p => p.trim());
-                      const street = parts[0] || '';
-                      const city = parts[1] || '';
-                      const state = parts[2] || '';
-                      const zip = parts[3] || '';
-                      
-                      return (
-                        <>
-                          <Text style={styles.contactValue}>{street}</Text>
-                          <Text style={styles.contactValue}>{city}, {state} {zip}</Text>
-                        </>
-                      );
-                    })()}
-                  </View>
-                ) : (
-                  <Text style={styles.contactValuePlaceholder}>No address added</Text>
-                )
-              )}
-              <Text style={styles.contactLabel}>Home Address</Text>
-            </View>
-          </View>
-        </View>
+        <ContactInformation
+          email={profile.email}
+          phone={profile.phone}
+          address={profile.address}
+          isEditing={isEditing}
+          isSaving={isSaving}
+          editedPhone={editedPhone}
+          editedAddress={editedAddress}
+          onEdit={() => setIsEditing(true)}
+          onSave={handleSave}
+          onCancel={handleCancel}
+          onPhoneChange={setEditedPhone}
+          onAddressChange={handleAddressChange}
+        />
 
         {/* Clinic Information */}
         {clinic && clinic.slug !== 'spoodle' && (
-          <View style={styles.contactCard}>
-            <Text style={styles.contactTitle}>{clinic.name}</Text>
-            
-            {clinic.email ? (
-              <View style={styles.contactItem}>
-                <View style={styles.contactIconContainer}>
-                  <Mail size={20} color="#4559A7" />
-                </View>
-                <View style={styles.contactDetails}>
-                  <Text style={styles.contactValue}>{clinic.email}</Text>
-                  <Text style={styles.contactLabel}>Email Address</Text>
-                </View>
-              </View>
-            ) : (
-              <View style={styles.contactItem}>
-                <View style={styles.contactIconContainer}>
-                  <Mail size={20} color="#4559A7" />
-                </View>
-                <View style={styles.contactDetails}>
-                  <Text style={styles.contactValuePlaceholder}>No email address added</Text>
-                  <Text style={styles.contactLabel}>Email Address</Text>
-                </View>
-              </View>
-            )}
-
-            {clinic.phoneNumber ? (
-              <View style={styles.contactItem}>
-                <View style={styles.contactIconContainer}>
-                  <Phone size={20} color="#4559A7" />
-                </View>
-                <View style={styles.contactDetails}>
-                  <Text style={styles.contactValue}>{clinic.phoneNumber}</Text>
-                  <Text style={styles.contactLabel}>Phone Number</Text>
-                </View>
-              </View>
-            ) : (
-              <View style={styles.contactItem}>
-                <View style={styles.contactIconContainer}>
-                  <Phone size={20} color="#4559A7" />
-                </View>
-                <View style={styles.contactDetails}>
-                  <Text style={styles.contactValuePlaceholder}>No phone number added</Text>
-                  <Text style={styles.contactLabel}>Phone Number</Text>
-                </View>
-              </View>
-            )}
-
-            {clinic.address ? (
-              <View style={[styles.contactItem, { marginBottom: 0, alignItems: 'flex-start' }]}>
-                <View style={[styles.contactIconContainer, { marginTop: 4 }]}>
-                  <MapPin size={20} color="#4559A7" />
-                </View>
-                <View style={styles.contactDetails}>
-                  {(() => {
-                    const parts = clinic.address.split(',').map(p => p.trim());
-                    const street = parts[0] || '';
-                    const city = parts[1] || '';
-                    const state = parts[2] || '';
-                    const zip = parts[3] || '';
-                    
-                    return (
-                      <>
-                        <Text style={styles.contactValue}>{street}</Text>
-                        <Text style={styles.contactValue}>{city}, {state} {zip}</Text>
-                      </>
-                    );
-                  })()}
-                  <Text style={styles.contactLabel}>Address</Text>
-                </View>
-              </View>
-            ) : (
-              <View style={[styles.contactItem, { marginBottom: 0 }]}>
-                <View style={styles.contactIconContainer}>
-                  <MapPin size={20} color="#4559A7" />
-                </View>
-                <View style={styles.contactDetails}>
-                  <Text style={styles.contactValuePlaceholder}>No address added</Text>
-                  <Text style={styles.contactLabel}>Address</Text>
-                </View>
-              </View>
-            )}
-          </View>
+          <ClinicInformation
+            clinic={clinic}
+            clinicImageError={clinicImageError}
+            onImageError={() => setClinicImageError(true)}
+          />
         )}
 
-        {/* Spoodle Team Contact Information */}
-        <View style={styles.contactCard}>
-          <Text style={styles.contactTitle}>Spoodle Information</Text>
-          
-          <View style={[styles.contactItem, { marginBottom: 0 }]}>
-            <View style={styles.contactIconContainer}>
-              <Mail size={20} color="#4559A7" />
-            </View>
-            <View style={styles.contactDetails}>
-              <Text style={styles.contactValue}>support@spoodle.com</Text>
-              <Text style={styles.contactLabel}>Email Address</Text>
-            </View>
-          </View>
-        </View>
+        {/* Spoodle Information */}
+        <SpoodleInformation />
 
         {/* Account Actions */}
         <View style={styles.actionsCard}>
@@ -604,245 +376,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#4559A7',
   },
-  profileCard: {
-    marginHorizontal: 24,
-    marginBottom: 24,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-    borderWidth: 1,
-    borderColor: '#ADD7EB',
-  },
-  profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginRight: 20,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#4559A7',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  cameraButton: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#3BB272',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  profileName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#4559A7',
-    marginBottom: 8,
-  },
-  profileEmail: {
-    fontSize: 16,
-    color: '#4559A7',
-    opacity: 0.7,
-  },
-  contactCard: {
-    marginHorizontal: 24,
-    marginBottom: 24,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-    borderWidth: 1,
-    borderColor: '#ADD7EB',
-  },
-  contactTitle: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#4559A7',
-    marginBottom: 20,
-  },
-  contactItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  contactIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#ADD7EB',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  contactDetails: {
-    flex: 1,
-  },
-  contactValue: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#4559A7',
-    marginBottom: 4,
-  },
-  contactValuePlaceholder: {
-    fontSize: 18,
-    color: '#4559A7',
-    fontStyle: 'italic',
-    marginBottom: 4,
-  },
-  contactLabel: {
-    fontSize: 16,
-    color: '#4559A7',
-    opacity: 0.7,
-  },
-  accountCard: {
-    marginHorizontal: 24,
-    marginBottom: 24,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-    borderWidth: 1,
-    borderColor: '#ADD7EB',
-  },
-  accountTitle: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#4559A7',
-    marginBottom: 20,
-  },
-  accountItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  accountLabel: {
-    fontSize: 16,
-    color: '#4559A7',
-  },
-  accountValue: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#4559A7',
-  },
-  accountTypeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E75325',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  accountTypeText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginLeft: 6,
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#10B981',
-    marginRight: 8,
-  },
-  statusText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#10B981',
-  },
   actionsCard: {
     marginHorizontal: 24,
     marginBottom: 14,
     backgroundColor: 'transparent',
     padding: 0,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  editButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#4559A7',
-  },
-  saveButton: {
-    padding: 10,
-    borderRadius: 12,
-    backgroundColor: '#3BB272',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cancelButton: {
-    padding: 10,
-    borderRadius: 12,
-    backgroundColor: '#C62828',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  addressInputContainer: {
-    width: '100%',
-    gap: 8,
-  },
-  addressRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  addressInput: {
-    fontSize: 16,
-    color: '#4559A7',
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#ADD7EB',
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    minHeight: 50,
-  },
-  clinicIconImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
   },
 });
