@@ -89,9 +89,18 @@ class ClerkApiClient {
         const error = await response.json().catch(() => ({
           message: "An error occurred",
         }));
-        console.error(`[API] Error Response (${response.status}):`, JSON.stringify(error, null, 2));
-        console.error(`[API] Error URL: ${url}`);
-        console.error(`[API] Error Details:`, error);
+        
+        // Don't log "no clinic assigned" as an error - it's expected during signup
+        const isExpectedSetupError = response.status === 404 && error.requiresSetup;
+        
+        if (!isExpectedSetupError) {
+          console.error(`[API] Error Response (${response.status}):`, JSON.stringify(error, null, 2));
+          console.error(`[API] Error URL: ${url}`);
+          console.error(`[API] Error Details:`, error);
+        } else {
+          console.log(`[API] Setup required: ${error.message}`);
+        }
+        
         const errorObj = new Error(error.message || error.error || `HTTP ${response.status}`);
         (errorObj as any).status = response.status;
         (errorObj as any).statusCode = response.status;
@@ -536,6 +545,10 @@ class ClerkApiClient {
         clerkOrgId: string;
         name: string;
         slug: string;
+        address?: string | null;
+        phoneNumber?: string | null;
+        email?: string | null;
+        imageUrl?: string | null;
       };
     }>('/clinics/my-clinic');
   }

@@ -157,7 +157,7 @@ app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
 });
 
 // Start server
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
   console.log('🔑 Mobile Backend Environment variables loaded:');
   console.log(`  - NODE_ENV: ${NODE_ENV}`);
   console.log(`  - PORT: ${PORT}`);
@@ -181,6 +181,10 @@ const server = app.listen(PORT, () => {
     console.log(`  - Bug Reports: http://${HOST}:${PORT}/api/bug-report/*`);
     console.log(`  - Chatbot: http://${HOST}:${PORT}/api/chatbot/*`);
   }
+
+  // Sync clinics from Clerk on startup
+  const { syncClinicsFromClerk } = await import('./utils/clinicSync.js');
+  await syncClinicsFromClerk();
 });
 
 // Graceful shutdown

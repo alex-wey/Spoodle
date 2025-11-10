@@ -19,23 +19,30 @@ export default function Index() {
   const checkClinicSetup = async () => {
     try {
       setCheckingSetup(true);
+      console.log('[Index] Checking clinic setup...');
       const response = await clerkApiClient.getMyClinic();
       
+      console.log('[Index] Clinic response:', response);
       if (response.success && response.data) {
+        console.log('[Index] User has clinic:', response.data.name);
         setHasClinic(true);
+      } else {
+        console.log('[Index] No clinic data in response');
+        setHasClinic(false);
       }
     } catch (error: any) {
-      console.log('[Index] Clinic check:', error);
+      console.log('[Index] Clinic check error:', error.message || error);
       // If 404 or error, user needs to select clinic
       setHasClinic(false);
     } finally {
       setCheckingSetup(false);
+      console.log('[Index] Clinic check complete');
     }
   };
 
-  // Show loading while Clerk is initializing
-  if (!isLoaded || (isSignedIn && checkingSetup)) {
-    console.log('[Index] Loading...');
+  // Show loading while Clerk is initializing OR checking clinic setup
+  if (!isLoaded || (isSignedIn && hasClinic === null)) {
+    console.log('[Index] Loading... isLoaded:', isLoaded, 'isSignedIn:', isSignedIn, 'hasClinic:', hasClinic);
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
         <ActivityIndicator size="large" color="#4559A7" />
@@ -50,8 +57,9 @@ export default function Index() {
   if (isSignedIn) {
     // Check if user has completed clinic selection
     if (hasClinic === false) {
-      return <Redirect href={'/(auth)/select-clinic' as any} />;
+      return <Redirect href={'/select-clinic'} />;
     }
+    // hasClinic === true, user has clinic
     return <Redirect href="/(tabs)/pets" />;
   }
   

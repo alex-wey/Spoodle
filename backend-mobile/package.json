@@ -19,7 +19,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "seed": "tsx src/scripts/seed.ts"
+    "seed": "tsx src/scripts/seed.ts",
+    "sync-clinics": "tsx src/scripts/syncClinicsFromClerk.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.919.0",

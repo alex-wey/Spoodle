@@ -124,7 +124,7 @@ export default function VerifyContactScreen() {
         // Phone verified successfully, complete signup
         await setActive({ session: signUpAttempt.createdSessionId })
         // Redirect to clinic selection instead of main app
-        router.replace('/(auth)/select-clinic' as any)
+        router.push('/select-clinic')
       } else {
         // Phone verification failed
         showErrorToast('Phone verification failed. Please check your code and try again.')
@@ -135,7 +135,7 @@ export default function VerifyContactScreen() {
         // If already verified, try to complete the signup
         try {
           await setActive({ session: signUp.createdSessionId })
-          router.replace('/(auth)/select-clinic' as any)
+          router.push('/select-clinic')
         } catch {
           showErrorToast('Your phone number is already verified.')
         }

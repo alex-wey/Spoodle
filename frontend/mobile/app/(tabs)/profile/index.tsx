@@ -19,12 +19,24 @@ import {
   Camera,
   Save,
   X,
+  Hospital,
 } from 'lucide-react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { SignOutButton } from './components/SignOutButton';
 import { DeleteAccountButton } from './components/DeleteAccountButton';
 import * as ImagePicker from 'expo-image-picker';
 import { clerkApiClient } from '../../lib/api';
+
+interface Clinic {
+  id: string;
+  clerkOrgId: string;
+  name: string;
+  slug: string;
+  address?: string | null;
+  phoneNumber?: string | null;
+  email?: string | null;
+  imageUrl?: string | null;
+}
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState({
@@ -34,6 +46,8 @@ export default function ProfileScreen() {
     address: null as string | null,
     createdAt: null as Date | null,
   });
+  const [clinic, setClinic] = useState<Clinic | null>(null);
+  const [clinicImageError, setClinicImageError] = useState(false);
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -81,6 +95,18 @@ export default function ProfileScreen() {
         }
       }
 
+      // Fetch clinic information
+      try {
+        const clinicResponse = await clerkApiClient.getMyClinic();
+        if (clinicResponse.success && clinicResponse.data) {
+          setClinic(clinicResponse.data);
+          setClinicImageError(false); // Reset error state when clinic changes
+        }
+      } catch (clinicError) {
+        console.log('No clinic assigned or error fetching:', clinicError);
+        // User might not have selected a clinic yet
+      }
+
       // Fetch profile image from settings
       try {
         const settingsResponse = await clerkApiClient.getSettings();
@@ -105,7 +131,7 @@ export default function ProfileScreen() {
     if (!date) return 'Unknown';
     return date.toLocaleDateString('en-US', { 
       year: 'numeric', 
-      month: 'long' 
+      month: 'short' 
     });
   };
 
@@ -303,7 +329,7 @@ export default function ProfileScreen() {
           
           <View style={styles.contactItem}>
             <View style={styles.contactIconContainer}>
-              <Mail size={24} color="#3B82F6" />
+              <Mail size={20} color="#4559A7" />
             </View>
             <View style={styles.contactDetails}>
               <Text style={styles.contactValue}>{profile.email}</Text>
@@ -315,7 +341,7 @@ export default function ProfileScreen() {
           {isEditing && (
             <View style={[styles.contactItem, { alignItems: 'flex-start' }]}>
               <View style={styles.contactIconContainer}>
-                <User size={24} color="#3B82F6" />
+                <User size={20} color="#4559A7" />
               </View>
               <View style={styles.contactDetails}>
                 <TextInput
@@ -340,7 +366,7 @@ export default function ProfileScreen() {
           {isEditing ? (
             <View style={styles.contactItem}>
               <View style={styles.contactIconContainer}>
-                <Phone size={20} color="#3B82F6" />
+                <Phone size={20} color="#4559A7" />
               </View>
               <View style={styles.contactDetails}>
                 <TextInput
@@ -357,7 +383,7 @@ export default function ProfileScreen() {
           ) : profile.phone ? (
             <View style={styles.contactItem}>
               <View style={styles.contactIconContainer}>
-                <Phone size={20} color="#3B82F6" />
+                <Phone size={20} color="#4559A7" />
               </View>
               <View style={styles.contactDetails}>
                 <Text style={styles.contactValue}>{profile.phone}</Text>
@@ -367,7 +393,7 @@ export default function ProfileScreen() {
           ) : (
             <View style={styles.contactItem}>
               <View style={styles.contactIconContainer}>
-                <Phone size={24} color="#9CA3AF" />
+                <Phone size={20} color="#4559A7" />
               </View>
               <View style={styles.contactDetails}>
                 <Text style={styles.contactValuePlaceholder}>No phone number added</Text>
@@ -378,7 +404,7 @@ export default function ProfileScreen() {
 
           <View style={[styles.contactItem, { marginBottom: 0, alignItems: 'flex-start' }]}>
             <View style={[styles.contactIconContainer, { marginTop: 4 }]}>
-              <MapPin size={24} color={isEditing ? "#3BB272" : "#3B82F6"} />
+              <MapPin size={20} color="#4559A7" />
             </View>
             <View style={styles.contactDetails}>
               {isEditing ? (
@@ -442,13 +468,99 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* Clinic Information */}
+        {clinic && clinic.slug !== 'spoodle' && (
+          <View style={styles.contactCard}>
+            <Text style={styles.contactTitle}>{clinic.name}</Text>
+            
+            {clinic.email ? (
+              <View style={styles.contactItem}>
+                <View style={styles.contactIconContainer}>
+                  <Mail size={20} color="#4559A7" />
+                </View>
+                <View style={styles.contactDetails}>
+                  <Text style={styles.contactValue}>{clinic.email}</Text>
+                  <Text style={styles.contactLabel}>Email Address</Text>
+                </View>
+              </View>
+            ) : (
+              <View style={styles.contactItem}>
+                <View style={styles.contactIconContainer}>
+                  <Mail size={20} color="#4559A7" />
+                </View>
+                <View style={styles.contactDetails}>
+                  <Text style={styles.contactValuePlaceholder}>No email address added</Text>
+                  <Text style={styles.contactLabel}>Email Address</Text>
+                </View>
+              </View>
+            )}
+
+            {clinic.phoneNumber ? (
+              <View style={styles.contactItem}>
+                <View style={styles.contactIconContainer}>
+                  <Phone size={20} color="#4559A7" />
+                </View>
+                <View style={styles.contactDetails}>
+                  <Text style={styles.contactValue}>{clinic.phoneNumber}</Text>
+                  <Text style={styles.contactLabel}>Phone Number</Text>
+                </View>
+              </View>
+            ) : (
+              <View style={styles.contactItem}>
+                <View style={styles.contactIconContainer}>
+                  <Phone size={20} color="#4559A7" />
+                </View>
+                <View style={styles.contactDetails}>
+                  <Text style={styles.contactValuePlaceholder}>No phone number added</Text>
+                  <Text style={styles.contactLabel}>Phone Number</Text>
+                </View>
+              </View>
+            )}
+
+            {clinic.address ? (
+              <View style={[styles.contactItem, { marginBottom: 0, alignItems: 'flex-start' }]}>
+                <View style={[styles.contactIconContainer, { marginTop: 4 }]}>
+                  <MapPin size={20} color="#4559A7" />
+                </View>
+                <View style={styles.contactDetails}>
+                  {(() => {
+                    const parts = clinic.address.split(',').map(p => p.trim());
+                    const street = parts[0] || '';
+                    const city = parts[1] || '';
+                    const state = parts[2] || '';
+                    const zip = parts[3] || '';
+                    
+                    return (
+                      <>
+                        <Text style={styles.contactValue}>{street}</Text>
+                        <Text style={styles.contactValue}>{city}, {state} {zip}</Text>
+                      </>
+                    );
+                  })()}
+                  <Text style={styles.contactLabel}>Address</Text>
+                </View>
+              </View>
+            ) : (
+              <View style={[styles.contactItem, { marginBottom: 0 }]}>
+                <View style={styles.contactIconContainer}>
+                  <MapPin size={20} color="#4559A7" />
+                </View>
+                <View style={styles.contactDetails}>
+                  <Text style={styles.contactValuePlaceholder}>No address added</Text>
+                  <Text style={styles.contactLabel}>Address</Text>
+                </View>
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Spoodle Team Contact Information */}
         <View style={styles.contactCard}>
           <Text style={styles.contactTitle}>Spoodle Information</Text>
           
           <View style={[styles.contactItem, { marginBottom: 0 }]}>
             <View style={styles.contactIconContainer}>
-              <Mail size={24} color="#4559A7" />
+              <Mail size={20} color="#4559A7" />
             </View>
             <View style={styles.contactDetails}>
               <Text style={styles.contactValue}>support@spoodle.com</Text>
@@ -580,9 +692,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   contactIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#ADD7EB',
     justifyContent: 'center',
     alignItems: 'center',
@@ -726,5 +838,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
     minHeight: 50,
+  },
+  clinicIconImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
   },
 });

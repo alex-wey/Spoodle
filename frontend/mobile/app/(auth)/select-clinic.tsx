@@ -32,6 +32,7 @@ interface Clinic {
 export default function SelectClinicScreen() {
   const router = useRouter();
   const [clinics, setClinics] = React.useState<Clinic[]>([]);
+  const [spoodleClinic, setSpoodleClinic] = React.useState<Clinic | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [selecting, setSelecting] = React.useState(false);
   const [error, setError] = React.useState('');
@@ -49,7 +50,11 @@ export default function SelectClinicScreen() {
       const response = await clerkApiClient.getClinics();
       
       if (response.data) {
-        setClinics(response.data);
+        // Separate Spoodle from other clinics
+        const spoodle = response.data.find(c => c.slug === 'spoodle');
+        const otherClinics = response.data.filter(c => c.slug !== 'spoodle');
+        setSpoodleClinic(spoodle || null);
+        setClinics(otherClinics);
       }
     } catch (err: any) {
       console.error('Error fetching clinics:', err);
@@ -122,6 +127,37 @@ export default function SelectClinicScreen() {
     );
   }
 
+  const renderClinicCard = (clinic: Clinic) => (
+    <TouchableOpacity
+      key={clinic.id}
+      style={styles.clinicCard}
+      onPress={() => handleSelectClinic(clinic)}
+      disabled={selecting}
+      activeOpacity={0.7}
+    >
+      <View style={styles.clinicContent}>
+        {clinic.imageUrl ? (
+          <Image 
+            source={{ uri: clinic.imageUrl }} 
+            style={styles.clinicImage}
+          />
+        ) : (
+          <View style={styles.clinicImagePlaceholder}>
+            <Ionicons name="business" size={32} color="#4559A7" />
+          </View>
+        )}
+        
+        <Text style={styles.clinicName}>{clinic.name}</Text>
+        
+        <Ionicons 
+          name="chevron-forward" 
+          size={24} 
+          color="#9CA3AF" 
+        />
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
     <LinearGradient
       colors={['#4559A7', '#5B6FB8', '#3A4A8F']}
@@ -133,7 +169,7 @@ export default function SelectClinicScreen() {
         <View style={styles.header}>
           <Text style={styles.title}>Select Your Clinic</Text>
           <Text style={styles.subtitle}>
-            Choose the veterinary clinic where you bring your pets
+            Select your veterinary clinic from our list of trusted partners:
           </Text>
         </View>
 
@@ -146,69 +182,51 @@ export default function SelectClinicScreen() {
             <View style={styles.emptyState}>
               <Ionicons name="business-outline" size={64} color="rgba(255, 255, 255, 0.5)" />
               <Text style={styles.emptyText}>No clinics available</Text>
-              <Text style={styles.emptySubtext}>
-                Please contact support for assistance
-              </Text>
             </View>
           ) : (
-            clinics.map((clinic) => (
-              <TouchableOpacity
-                key={clinic.id}
-                style={styles.clinicCard}
-                onPress={() => handleSelectClinic(clinic)}
-                disabled={selecting}
-                activeOpacity={0.7}
-              >
-                <View style={styles.clinicContent}>
-                  {clinic.imageUrl ? (
-                    <Image 
-                      source={{ uri: clinic.imageUrl }} 
-                      style={styles.clinicImage}
-                    />
-                  ) : (
-                    <View style={styles.clinicImagePlaceholder}>
-                      <Ionicons name="business" size={32} color="#4559A7" />
-                    </View>
-                  )}
-                  
-                  <View style={styles.clinicInfo}>
-                    <Text style={styles.clinicName}>{clinic.name}</Text>
-                    {clinic.address && (
-                      <View style={styles.clinicDetail}>
-                        <Ionicons name="location-outline" size={16} color="#6B7280" />
-                        <Text style={styles.clinicDetailText} numberOfLines={1}>
-                          {clinic.address}
-                        </Text>
-                      </View>
-                    )}
-                    {clinic.phoneNumber && (
-                      <View style={styles.clinicDetail}>
-                        <Ionicons name="call-outline" size={16} color="#6B7280" />
-                        <Text style={styles.clinicDetailText}>
-                          {clinic.phoneNumber}
-                        </Text>
-                      </View>
-                    )}
-                    {clinic._count && (
-                      <View style={styles.memberCount}>
-                        <Ionicons name="people-outline" size={14} color="#9CA3AF" />
-                        <Text style={styles.memberCountText}>
-                          {clinic._count.petOwners} members
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                  
-                  <Ionicons 
-                    name="chevron-forward" 
-                    size={24} 
-                    color="#9CA3AF" 
-                  />
-                </View>
-              </TouchableOpacity>
-            ))
+            clinics.map((clinic) => renderClinicCard(clinic))
           )}
         </ScrollView>
+
+        {/* Fixed Spoodle Section at Bottom */}
+        {spoodleClinic && (
+          <View style={styles.spoodleSection}>
+            <View style={styles.spoodleDivider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+            
+            <TouchableOpacity
+              style={styles.spoodleCard}
+              onPress={() => handleSelectClinic(spoodleClinic)}
+              disabled={selecting}
+              activeOpacity={0.7}
+            >
+              <View style={styles.spoodleContent}>
+                <View style={styles.spoodleIcon}>
+                  <Image 
+                    source={require('../../assets/images/icon.png')} 
+                    style={styles.spoodleLogo}
+                  />
+                </View>
+                
+                <View style={styles.spoodleInfo}>
+                  <Text style={styles.spoodleTitle}>Can't find your clinic?</Text>
+                  <Text style={styles.spoodleSubtitle}>
+                    Join Spoodle and get started!
+                  </Text>
+                </View>
+                
+                <Ionicons 
+                  name="chevron-forward" 
+                  size={24} 
+                  color="#9CA3AF" 
+                />
+              </View>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Loading Overlay */}
         {selecting && (
@@ -260,10 +278,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 18,
     color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 24,
   },
   scrollView: {
     flex: 1,
@@ -306,10 +324,11 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   clinicName: {
+    flex: 1,
     fontSize: 18,
     fontWeight: '600',
     color: '#1F2937',
-    marginBottom: 6,
+    marginLeft: 16,
   },
   clinicDetail: {
     flexDirection: 'row',
@@ -409,6 +428,66 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     flex: 1,
+  },
+  spoodleSection: {
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+    paddingTop: 16,
+  },
+  spoodleDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  dividerText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 14,
+    fontWeight: '600',
+    paddingHorizontal: 12,
+  },
+  spoodleCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  spoodleContent: {
+    flexDirection: 'row',
+    padding: 20,
+    alignItems: 'center',
+  },
+  spoodleIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  spoodleLogo: {
+    width: 56,
+    height: 56,
+  },
+  spoodleInfo: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  spoodleTitle: {
+    fontSize: 19,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  spoodleSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.85)',
+    lineHeight: 22,
   },
 });
 

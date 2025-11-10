@@ -35,6 +35,10 @@ declare global {
         clerkOrgId: string;
         name: string;
         slug: string;
+        address?: string | null;
+        phoneNumber?: string | null;
+        email?: string | null;
+        imageUrl?: string | null;
       } | null;
       // Minimal profile snapshot from Clerk used for email/display
       userProfile?: {
@@ -102,7 +106,11 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
             id: true,
             clerkOrgId: true,
             name: true,
-            slug: true
+            slug: true,
+            address: true,
+            phoneNumber: true,
+            email: true,
+            imageUrl: true
           }
         });
       }
