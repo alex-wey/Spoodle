@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { createClerkClient, verifyToken } from '@clerk/backend';
 import { getOrCreateUser } from '../utils/userSync.js';
+import { prisma } from '../index.js';
 
 // Initialize Clerk client once
 const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! });
@@ -24,9 +25,17 @@ declare global {
       petOwner?: {
         id: string;
         clerkUserId: string;
+        clinicId: string | null;
         createdAt: Date;
         updatedAt: Date;
       };
+      // User's clinic information
+      clinic?: {
+        id: string;
+        clerkOrgId: string;
+        name: string;
+        slug: string;
+      } | null;
       // Minimal profile snapshot from Clerk used for email/display
       userProfile?: {
         // With exactOptionalPropertyTypes enabled, allow possibly-undefined
@@ -84,10 +93,25 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
         phone: primaryPhoneNumber?.phoneNumber ?? null,
       });
       
+      // Fetch clinic information if assigned
+      let clinic = null;
+      if (petOwner.clinicId) {
+        clinic = await prisma.clinic.findUnique({
+          where: { id: petOwner.clinicId },
+          select: {
+            id: true,
+            clerkOrgId: true,
+            name: true,
+            slug: true
+          }
+        });
+      }
+      
       // Attach objects to request
       // Backward-compat: keep req.user pointing to petOwner
       req.user = petOwner;
       req.petOwner = petOwner;
+      req.clinic = clinic;
 
       // Build userProfile without forcing undefined values
       const userProfile: {

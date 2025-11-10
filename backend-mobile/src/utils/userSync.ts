@@ -93,6 +93,37 @@ export async function getOrCreateUser(clerkUserData: ClerkUserData) {
   });
 }
 
+/**
+ * Assign a clinic to a pet owner
+ * Used during signup clinic selection
+ */
+export async function assignClinicToPetOwner(petOwnerId: string, clinicId: string) {
+  try {
+    const petOwner = await prisma.petOwner.update({
+      where: { id: petOwnerId },
+      data: { clinicId },
+      include: {
+        clinic: true,
+        user: {
+          select: {
+            id: true,
+            clerkUserId: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    console.log(`✅ Assigned clinic ${clinicId} to pet owner ${petOwnerId}`);
+    return petOwner;
+  } catch (error) {
+    console.error('Error assigning clinic to pet owner:', error);
+    throw error;
+  }
+}
+
 export async function updateUserProfile(clerkUserId: string, updateData: {
   firstName?: string;
   lastName?: string;
