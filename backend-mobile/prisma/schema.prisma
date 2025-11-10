@@ -25,14 +25,17 @@ model User {
 model PetOwner {
   id           String       @id @default(uuid())
   clerkUserId  String       @unique
+  clinicId     String?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   bugReports   BugReport[]
   chatMessages ChatMessage[]
   user         User         @relation("UserPetOwner", fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
+  clinic       Clinic?      @relation(fields: [clinicId], references: [id], onDelete: Restrict)
   pets         Pet[]
   settings     Settings?
 
+  @@index([clinicId])
   @@map("pet_owners")
 }
 
@@ -123,4 +126,24 @@ model Settings {
 
   @@index([petOwnerId])
   @@map("settings")
+}
+
+model Clinic {
+  id          String      @id @default(uuid())
+  clerkOrgId  String      @unique
+  name        String
+  slug        String      @unique
+  address     String?
+  phoneNumber String?
+  email       String?
+  imageUrl    String?
+  isActive    Boolean     @default(true)
+  metadata    Json?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  petOwners   PetOwner[]
+
+  @@index([clerkOrgId])
+  @@index([slug])
+  @@map("clinics")
 }
