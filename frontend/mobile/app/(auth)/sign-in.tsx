@@ -1,6 +1,6 @@
 import { useSignIn } from '@clerk/clerk-expo'
 import { Link, useRouter } from 'expo-router'
-import { Text, TextInput, TouchableOpacity, View, StyleSheet, KeyboardAvoidingView, Platform, Animated, ScrollView, Alert } from 'react-native'
+import { Text, TextInput, TouchableOpacity, View, StyleSheet, KeyboardAvoidingView, Platform, Animated, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import React from 'react'
 import { Ionicons } from '@expo/vector-icons'
@@ -56,11 +56,11 @@ export default function Page() {
         identifier: emailAddress,
       })
       
-      Alert.alert(
-        'Check your email',
-        `We've sent a password reset link to ${emailAddress}. Please check your inbox and follow the instructions to reset your password.`,
-        [{ text: 'OK' }]
-      )
+      // Navigate to reset password screen
+      router.push({
+        pathname: '/(auth)/reset-password',
+        params: { email: emailAddress }
+      })
     } catch (err: any) {
       showErrorToast(err?.errors?.[0]?.message || 'Failed to send reset email')
     } finally {
@@ -160,7 +160,7 @@ export default function Page() {
               disabled={isResettingPassword}
             >
               <Text style={styles.forgotPasswordText}>
-                {isResettingPassword ? 'Sending...' : 'Forgot password?'}
+                Forgot password?
               </Text>
             </TouchableOpacity>
 

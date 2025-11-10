@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Mail, Phone, MapPin, Hospital, ArrowLeftRight } from 'lucide-react-native';
 
 interface Clinic {

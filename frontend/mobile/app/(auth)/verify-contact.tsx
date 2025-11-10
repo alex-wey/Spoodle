@@ -58,8 +58,15 @@ export default function VerifyContactScreen() {
   }
 
   // Handle email verification
-  const onVerifyEmailPress = async () => {
+  const onVerifyEmailPress = async (codeToVerify?: string) => {
     if (!isLoaded) return
+
+    const codeValue = codeToVerify || code
+
+    if (codeValue.length !== 6) {
+      showErrorToast('Please enter the complete 6-digit code')
+      return
+    }
 
     setIsLoading(true)
     setError('')
@@ -67,7 +74,7 @@ export default function VerifyContactScreen() {
     try {
       // Use the code the user provided to attempt verification
       const signUpAttempt = await signUp.attemptEmailAddressVerification({
-        code,
+        code: codeValue,
       })
 
       // Check if email verification succeeded (either complete or email is verified)
@@ -104,8 +111,15 @@ export default function VerifyContactScreen() {
   }
 
   // Handle phone verification
-  const onVerifyPhonePress = async () => {
+  const onVerifyPhonePress = async (codeToVerify?: string) => {
     if (!isLoaded) return
+
+    const codeValue = codeToVerify || code
+
+    if (codeValue.length !== 6) {
+      showErrorToast('Please enter the complete 6-digit code')
+      return
+    }
 
     setIsLoading(true)
     setError('')
@@ -113,7 +127,7 @@ export default function VerifyContactScreen() {
     try {
       // Use the code the user provided to attempt verification
       const signUpAttempt = await signUp.attemptPhoneNumberVerification({
-        code,
+        code: codeValue,
       })
 
       // Check if phone verification succeeded
@@ -148,6 +162,23 @@ export default function VerifyContactScreen() {
       }
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  // Handle code input change with auto-verification
+  const handleCodeChange = (newCode: string) => {
+    // Only allow digits
+    const digitsOnly = newCode.replace(/\D/g, '')
+    setCode(digitsOnly)
+    
+    // Auto-verify when 6 digits are entered
+    if (digitsOnly.length === 6 && !isLoading && isLoaded) {
+      // Use the digitsOnly value directly to avoid state update timing issues
+      if (verificationStep === 'email') {
+        onVerifyEmailPress(digitsOnly)
+      } else {
+        onVerifyPhonePress(digitsOnly)
+      }
     }
   }
 
@@ -190,22 +221,21 @@ export default function VerifyContactScreen() {
                   value={code}
                   placeholder="Enter verification code"
                   placeholderTextColor="#6B7280"
-                  onChangeText={(code) => setCode(code)}
+                  onChangeText={handleCodeChange}
                   keyboardType="number-pad"
                   autoCapitalize="none"
+                  maxLength={6}
+                  autoFocus={true}
                 />
               </View>
 
               <TouchableOpacity 
                 style={[styles.primaryButton, isLoading && styles.buttonDisabled]} 
-                onPress={verificationStep === 'email' ? onVerifyEmailPress : onVerifyPhonePress}
+                onPress={() => verificationStep === 'email' ? onVerifyEmailPress() : onVerifyPhonePress()}
                 disabled={isLoading}
               >
                 <Text style={styles.primaryButtonText}>
-                  {isLoading 
-                    ? 'Verifying...' 
-                    : verificationStep === 'email' ? 'Verify Email' : 'Verify Phone'
-                  }
+                  {verificationStep === 'email' ? 'Verify Email' : 'Verify Phone'}
                 </Text>
               </TouchableOpacity>
             </View>

@@ -233,7 +233,7 @@ export default function SignUpScreen() {
               disabled={isLoading}
             >
               <Text style={styles.primaryButtonText}>
-                {isLoading ? 'Creating Account...' : 'Continue'}
+                Continue
               </Text>
             </TouchableOpacity>
 

@@ -70,6 +70,7 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: "center",
+    marginTop: -20,
   },
   logoWrapper: {
     alignItems: "center",
@@ -82,7 +83,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 22,
     color: "rgba(255, 255, 255, 0.95)",
-    marginTop: -150,
+    marginTop: -160,
     textAlign: "center",
     fontWeight: "600",
     letterSpacing: 0.5,

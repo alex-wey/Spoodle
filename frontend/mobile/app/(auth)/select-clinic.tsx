@@ -214,7 +214,7 @@ export default function SelectClinicScreen() {
                 </View>
                 
                 <View style={styles.spoodleInfo}>
-                  <Text style={styles.spoodleTitle}>Can't find your clinic?</Text>
+                  <Text style={styles.spoodleTitle}>Can&apos;t find your clinic?</Text>
                   <Text style={styles.spoodleSubtitle}>
                     Join Spoodle and get started!
                   </Text>
