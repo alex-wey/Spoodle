@@ -506,6 +506,53 @@ class ClerkApiClient {
       body: JSON.stringify(data),
     });
   }
+
+  // Clinic endpoints
+  async getClinics() {
+    return this.request<{
+      success: boolean;
+      data: {
+        id: string;
+        clerkOrgId: string;
+        name: string;
+        slug: string;
+        address?: string;
+        phoneNumber?: string;
+        email?: string;
+        imageUrl?: string;
+        _count?: {
+          petOwners: number;
+        };
+      }[];
+      count: number;
+    }>('/clinics');
+  }
+
+  async getMyClinic() {
+    return this.request<{
+      success: boolean;
+      data: {
+        id: string;
+        clerkOrgId: string;
+        name: string;
+        slug: string;
+      };
+    }>('/clinics/my-clinic');
+  }
+
+  async selectClinic(clinicId: string) {
+    return this.request<{
+      success: boolean;
+      data: {
+        petOwner: any;
+        clinic: any;
+      };
+      message: string;
+    }>('/clinics/select', {
+      method: 'POST',
+      body: JSON.stringify({ clinicId }),
+    });
+  }
 }
 
 export const clerkApiClient = new ClerkApiClient(`${API_BASE_URL}/api`);
