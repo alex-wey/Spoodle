@@ -369,8 +369,7 @@ const styles = StyleSheet.create({
   },
   spoodleSection: {
     paddingHorizontal: 24,
-    paddingBottom: 24,
-    paddingTop: 8,
+    paddingBottom: 60,
     backgroundColor: '#FFFFFF',
   },
   spoodleDivider: {

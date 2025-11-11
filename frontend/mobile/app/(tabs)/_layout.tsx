@@ -123,11 +123,31 @@ export default function TabLayout() {
         options={{ href: null }}
       />
       <Tabs.Screen
+        name="profile/components/ClinicInformation"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="profile/components/ClinicSwitchModal"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="profile/components/ContactInformation"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
         name="profile/components/DeleteAccountButton"
         options={{ href: null }}
       />
       <Tabs.Screen
+        name="profile/components/ProfileCard"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
         name="profile/components/SignOutButton"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="profile/components/SpoodleInformation"
         options={{ href: null }}
       />
     </Tabs>
