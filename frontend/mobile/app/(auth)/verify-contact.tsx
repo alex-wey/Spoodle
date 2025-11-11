@@ -136,9 +136,14 @@ export default function VerifyContactScreen() {
       
       if (phoneVerified || signUpAttempt.status === 'complete') {
         // Phone verified successfully, complete signup
-        await setActive({ session: signUpAttempt.createdSessionId })
-        // Redirect to clinic selection instead of main app
-        router.push('/select-clinic')
+        try {
+          await setActive({ session: signUpAttempt.createdSessionId })
+          // Redirect to clinic selection instead of main app
+          router.push('/(auth)/select-clinic')
+        } catch (setActiveError: any) {
+          console.error('Failed to set session active:', setActiveError)
+          showErrorToast('Failed to complete signup. Please try again.')
+        }
       } else {
         // Phone verification failed
         showErrorToast('Phone verification failed. Please check your code and try again.')
@@ -149,8 +154,9 @@ export default function VerifyContactScreen() {
         // If already verified, try to complete the signup
         try {
           await setActive({ session: signUp.createdSessionId })
-          router.push('/select-clinic')
-        } catch {
+          router.push('/(auth)/select-clinic')
+        } catch (setActiveError: any) {
+          console.error('Failed to set session active:', setActiveError)
           showErrorToast('Your phone number is already verified.')
         }
       } else if (err?.errors?.[0]?.code === 'form_code_incorrect') {
@@ -274,7 +280,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 210,
+    paddingTop: 160,
     paddingBottom: 24,
     justifyContent: 'flex-start',
   },

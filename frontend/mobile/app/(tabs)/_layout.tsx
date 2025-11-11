@@ -41,7 +41,7 @@ export default function TabLayout() {
         options={{
           title: "Pets",
           href: "/(tabs)/pets",
-          tabBarIcon: ({ color, size }) => <Dog size={24} color={color} />,
+          tabBarIcon: ({ color }) => <Dog size={24} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -49,7 +49,7 @@ export default function TabLayout() {
         options={{
           title: "Chat",
           href: "/(tabs)/chat",
-          tabBarIcon: ({ color, size }) => <BotMessageSquare size={24} color={color} />,
+          tabBarIcon: ({ color }) => <BotMessageSquare size={24} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -57,7 +57,7 @@ export default function TabLayout() {
         options={{
           title: "Profile",
           href: "/(tabs)/profile",
-          tabBarIcon: ({ color, size }) => <User size={24} color={color} />,
+          tabBarIcon: ({ color }) => <User size={24} color={color} />,
         }}
       />
       {/* Hide all other routes from tab bar */}

@@ -57,7 +57,7 @@ export default function Index() {
   if (isSignedIn) {
     // Check if user has completed clinic selection
     if (hasClinic === false) {
-      return <Redirect href={'/select-clinic'} />;
+      return <Redirect href="/(auth)/select-clinic" />;
     }
     // hasClinic === true, user has clinic
     return <Redirect href="/(tabs)/pets" />;

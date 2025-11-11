@@ -370,15 +370,13 @@ const styles = StyleSheet.create({
   spoodleSection: {
     paddingHorizontal: 24,
     paddingBottom: 24,
-    paddingTop: 16,
+    paddingTop: 8,
     backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
   },
   spoodleDivider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   dividerLine: {
     flex: 1,

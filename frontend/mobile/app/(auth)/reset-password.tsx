@@ -163,15 +163,20 @@ export default function ResetPasswordScreen() {
 
       // Check if sign-in is complete
       if (result.status === 'complete') {
-        // Set the active session
-        await setActive({ session: result.createdSessionId })
-        
-        // Clear sensitive data
-        setNewPassword('')
-        setConfirmPassword('')
-        
-        // Navigate to home screen
-        router.replace('/')
+        try {
+          // Set the active session
+          await setActive({ session: result.createdSessionId })
+          
+          // Clear sensitive data
+          setNewPassword('')
+          setConfirmPassword('')
+          
+          // Navigate to home screen
+          router.replace('/')
+        } catch (setActiveError: any) {
+          console.error('Failed to set session active:', setActiveError)
+          showErrorToast('Failed to complete password reset. Please try again.')
+        }
       } else {
         showErrorToast('Password reset incomplete. Please try again.')
       }

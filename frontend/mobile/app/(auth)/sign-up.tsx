@@ -113,7 +113,7 @@ export default function SignUpScreen() {
         phoneNumber: formattedPhone,
       });
 
-        // Send user an email with verification code
+      // Send user an email with verification code
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
 
       // Navigate to verify contact screen
@@ -175,6 +175,8 @@ export default function SignUpScreen() {
                   onChangeText={(name) => setFirstName(name)}
                   autoComplete="given-name"
                   autoCapitalize="words"
+                  spellCheck={false}
+                  autoCorrect={false}
                 />
               </View>
               <View style={[styles.inputContainer, styles.nameField]}>
@@ -186,6 +188,8 @@ export default function SignUpScreen() {
                   onChangeText={(name) => setLastName(name)}
                   autoComplete="family-name"
                   autoCapitalize="words"
+                  spellCheck={false}
+                  autoCorrect={false}
                 />
               </View>
             </View>
@@ -200,6 +204,8 @@ export default function SignUpScreen() {
                 onChangeText={(email) => setEmailAddress(email)}
                 keyboardType="email-address"
                 autoComplete="email"
+                spellCheck={false}
+                autoCorrect={false}
               />
             </View>
 
@@ -212,6 +218,8 @@ export default function SignUpScreen() {
                 onChangeText={(phone) => setPhoneNumber(phone)}
                 keyboardType="phone-pad"
                 autoComplete="tel"
+                spellCheck={false}
+                autoCorrect={false}
               />
             </View>
 
@@ -224,6 +232,8 @@ export default function SignUpScreen() {
                 secureTextEntry={true}
                 onChangeText={(password) => setPassword(password)}
                 autoComplete="password"
+                spellCheck={false}
+                autoCorrect={false}
               />
             </View>
 

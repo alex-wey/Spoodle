@@ -23,7 +23,7 @@ export default function PetsScreen() {
   };
 
   const handlePetPress = (petId: string) => {
-    router.push(`/pets/${petId}/profile`);
+    router.push(`/(tabs)/pets/${petId}/profile` as any);
   };
 
   const handlePetDocuments = (petId: string) => {
@@ -71,7 +71,7 @@ export default function PetsScreen() {
               </Text>
               <TouchableOpacity
                 style={styles.addFirstPetButton}
-                onPress={() => router.push("/pets/add")}
+                onPress={() => router.push("/(tabs)/pets/add")}
               >
                 <Plus size={20} color="white" />
                 <Text style={styles.addFirstPetButtonText}>Add Your First Pet</Text>
@@ -90,7 +90,7 @@ export default function PetsScreen() {
 
               <TouchableOpacity
                 style={styles.addButton}
-                onPress={() => router.push("/pets/add")}
+                onPress={() => router.push("/(tabs)/pets/add")}
                 activeOpacity={0.7}
               >
                 <Plus size={24} color="#4F46E5" />

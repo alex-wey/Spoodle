@@ -82,14 +82,19 @@ export default function Page() {
       // If sign-in process is complete, set the created session as active
       // and redirect the user
       if (signInAttempt.status === 'complete') {
-        await setActive({ session: signInAttempt.createdSessionId })
-        router.replace('/')
+        try {
+          await setActive({ session: signInAttempt.createdSessionId })
+          router.replace('/')
+        } catch (setActiveError: any) {
+          console.error('Failed to set session active:', setActiveError)
+          showErrorToast('Failed to complete sign in. Please try again.')
+        }
       } else {
         // If the status isn't complete, check why. User might need to
         // complete further steps.
         showErrorToast('Sign in incomplete. Please try again.')
       }
-    } catch {
+    } catch (err: any) {
       // See https://clerk.com/docs/guides/development/custom-flows/error-handling
       // for more info on error handling
       showErrorToast('Invalid email or password')
@@ -139,6 +144,8 @@ export default function Page() {
                 onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
                 keyboardType="email-address"
                 autoComplete="email"
+                spellCheck={false}
+                autoCorrect={false}
               />
             </View>
 
@@ -151,6 +158,8 @@ export default function Page() {
                 secureTextEntry={true}
                 onChangeText={(password) => setPassword(password)}
                 autoComplete="password"
+                spellCheck={false}
+                autoCorrect={false}
               />
             </View>
 
