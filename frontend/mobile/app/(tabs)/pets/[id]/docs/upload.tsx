@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   Alert,
   TextInput,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -33,6 +36,32 @@ export default function UploadDocumentScreen() {
   const [hospitalName, setHospitalName] = useState('');
   const [vetName, setVetName] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Refs for scrolling
+  const scrollViewRef = useRef<ScrollView>(null);
+  const customFileNameRef = useRef<View>(null);
+  const notesRef = useRef<View>(null);
+
+  // Function to scroll to input when focused
+  const scrollToInput = (ref: React.RefObject<View | null>) => {
+    if (ref.current && scrollViewRef.current) {
+      setTimeout(() => {
+        ref.current?.measureLayout(
+          scrollViewRef.current as any,
+          (x, y, width, height) => {
+            scrollViewRef.current?.scrollTo({
+              y: y - 20, // Offset to show some space above the input
+              animated: true,
+            });
+          },
+          () => {
+            // Fallback if measureLayout fails
+            console.log('measureLayout failed');
+          }
+        );
+      }, 100); // Small delay to ensure keyboard animation has started
+    }
+  };
 
   // Update category when preselectedCategory changes
   React.useEffect(() => {
@@ -121,18 +150,6 @@ export default function UploadDocumentScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedPet || !category || !fileName || !fileUri) {
-      Alert.alert('Missing Information', 'Please select a pet, category and file.');
-      return;
-    }
-
-    console.log('📤 Starting upload...');
-    console.log('  Pet:', selectedPet.id);
-    console.log('  Category:', category);
-    console.log('  File:', fileName);
-    console.log('  File URI:', fileUri);
-    console.log('  File Type:', fileType);
-
     setIsSubmitting(true);
     try {
       const formData = new FormData();
@@ -209,21 +226,28 @@ export default function UploadDocumentScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+        keyboardVerticalOffset={0}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity 
-            onPress={() => router.push(`/(tabs)/pets/${petId}/docs` as any)} 
-            style={styles.backButton}
-          >
-            <ArrowLeft size={24} color="#4559A7" />
-          </TouchableOpacity>
-          <Text style={styles.title}>Upload Document</Text>
-          <View style={styles.headerSpacer} />
-        </View>
+        <ScrollView 
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity 
+              onPress={() => router.push(`/(tabs)/pets/${petId}/docs` as any)} 
+              style={styles.backButton}
+            >
+              <ArrowLeft size={24} color="#4559A7" />
+            </TouchableOpacity>
+            <Text style={styles.title}>Upload Document</Text>
+            <View style={styles.headerSpacer} />
+          </View>
 
         {/* Single Form */}
         <View style={styles.form}>
@@ -284,7 +308,7 @@ export default function UploadDocumentScreen() {
           </View>
 
           {/* Custom File Name */}
-          <View style={styles.inputGroup}>
+          <View style={styles.inputGroup} ref={customFileNameRef}>
             <Text style={styles.label}>Custom File Name (optional)</Text>
             <View style={styles.inputContainer}>
               <FileText size={20} color="#4559A7" style={styles.inputIcon} />
@@ -293,47 +317,14 @@ export default function UploadDocumentScreen() {
                 placeholder="Enter custom name for the file"
                 value={customFileName}
                 onChangeText={setCustomFileName}
+                onFocus={() => scrollToInput(customFileNameRef)}
                 placeholderTextColor="#a2acd3"
               />
             </View>
           </View>
 
-          {/* Hospital Name - Only for Veterinary Notes */}
-          {category === 'veterinary_notes' && (
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Hospital/Clinic Name</Text>
-              <View style={styles.inputContainer}>
-                <MapPin size={20} color="#4559A7" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter hospital or clinic name"
-                  value={hospitalName}
-                  onChangeText={setHospitalName}
-                  placeholderTextColor="#a2acd3"
-                />
-              </View>
-            </View>
-          )}
-
-          {/* Vet Name - Only for Veterinary Notes */}
-          {category === 'veterinary_notes' && (
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Veterinarian Name (optional)</Text>
-              <View style={styles.inputContainer}>
-                <Stethoscope size={20} color="#4559A7" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter veterinarian name"
-                  value={vetName}
-                  onChangeText={setVetName}
-                  placeholderTextColor="#a2acd3"
-                />
-              </View>
-            </View>
-          )}
-
           {/* Notes - For all categories */}
-          <View style={styles.inputGroup}>
+          <View style={styles.inputGroup} ref={notesRef}>
             <Text style={styles.label}>Notes (optional)</Text>
             <View style={[styles.inputContainer, styles.textAreaContainer]}>
               <FileEdit size={20} color="#4559A7" style={styles.textAreaIcon} />
@@ -342,6 +333,7 @@ export default function UploadDocumentScreen() {
                 placeholder="Add any additional notes"
                 value={notes}
                 onChangeText={setNotes}
+                onFocus={() => scrollToInput(notesRef)}
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
@@ -366,7 +358,8 @@ export default function UploadDocumentScreen() {
             )}
           </TouchableOpacity>
         </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -375,6 +368,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  keyboardAvoidingView: {
+    flex: 1,
   },
   scrollView: {
     flex: 1,
