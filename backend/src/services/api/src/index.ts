@@ -10,6 +10,7 @@ import petsRoutes from '../../../routes/pets.js';
 import appointmentsRoutes from '../../../routes/appointments.js';
 import tasksRoutes from '../../../routes/tasks.js';
 import medicalRecordsRoutes from '../../../routes/medicalRecords.js';
+import documentsRoutes from '../../../routes/documents.js';
 import searchRoutes from '../../../routes/search.js';
 import notificationsRoutes from '../../../routes/notifications.js';
 import uploadsRoutes from '../../../routes/uploads.js';
@@ -59,6 +60,7 @@ app.use('/api/pets', petsRoutes);
 app.use('/api/appointments', appointmentsRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/medical-records', medicalRecordsRoutes);
+app.use('/api/documents', documentsRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/uploads', uploadsRoutes);
@@ -74,6 +76,7 @@ app.get('/api', (req: Request, res: Response) => {
       appointments: '/api/appointments',
       tasks: '/api/tasks',
       medicalRecords: '/api/medical-records',
+      documents: '/api/documents',
       search: '/api/search',
       notifications: '/api/notifications',
       uploads: '/uploads'
@@ -94,6 +97,7 @@ app.use('/api/*', (req: Request, res: Response) => {
       '/api/appointments',
       '/api/tasks',
       '/api/medical-records',
+      '/api/documents',
       '/api/search',
       '/api/notifications',
       '/uploads'

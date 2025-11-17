@@ -41,6 +41,23 @@ export interface MedicalRecord {
   vetId?: string;
 }
 
+export interface Document {
+  documentId: string;
+  petId: string;
+  ownerId: string;
+  category: 'past_appointments' | 'x_ray_documents' | 'diagnostic_reports' | 'blood_test_reports' | 'vaccination_history';
+  hospitalName: string;
+  fileName: string;
+  originalFileName: string;
+  filePath: string;
+  fileSize: number;
+  mimeType: string;
+  date: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface Task {
   taskId: string;
   petId: string;

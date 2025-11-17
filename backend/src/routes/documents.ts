@@ -5,7 +5,7 @@ import multer from 'multer';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import db from '../database/crud/index.js';
-import { User, Pet } from '../database/entities/index.js';
+import { User, Pet, Document } from '../database/entities/index.js';
 import { validateRequest, validationSchemas, commonSchemas } from '../middleware/validation.js';
 import { authenticateToken } from '../middleware/auth.js';
 
@@ -21,7 +21,7 @@ const storage = multer.diskStorage({
       await fs.mkdir(documentsDir, { recursive: true });
       cb(null, documentsDir);
     } catch (error) {
-      cb(error, '');
+      cb(error instanceof Error ? error : new Error(String(error)), '');
     }
   },
   filename: (req, file, cb) => {
@@ -74,7 +74,7 @@ router.get('/', async (req: Request, res: Response) => {
     }
     
     // Sort by creation date (most recent first)
-    allDocuments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    allDocuments.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     
     res.json({
       success: true,
@@ -120,7 +120,7 @@ router.get('/category/:category',
       }
       
       // Sort by creation date (most recent first)
-      allDocuments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      allDocuments.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       
       res.json({
         success: true,
@@ -166,7 +166,7 @@ router.get('/pet/:petId',
       const documents = await db.getDocumentsByPet(petId);
       
       // Sort by creation date (most recent first)
-      documents.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      documents.sort((a: Document, b: Document) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       
       res.json({
         success: true,

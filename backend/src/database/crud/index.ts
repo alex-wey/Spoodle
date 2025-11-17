@@ -1,6 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { User, Pet, MedicalRecord, Task, Appointment } from '../entities/index.js';
+import { User, Pet, MedicalRecord, Task, Appointment, Document } from '../entities/index.js';
 
 // Utility function to generate unique IDs
 function generateId(): string {
@@ -39,7 +39,7 @@ async function writeJson(filePath: string, data: any, options?: { spaces?: numbe
 }
 
 
-export type TableName = 'users' | 'pets' | 'medicalRecords' | 'tasks' | 'appointments' | 'clinics' | 'vetProfiles' | 'notifications';
+export type TableName = 'users' | 'pets' | 'medicalRecords' | 'tasks' | 'appointments' | 'clinics' | 'vetProfiles' | 'notifications' | 'documents';
 
 export interface DatabaseConfig {
   dataDir: string;
@@ -60,7 +60,7 @@ export class LocalDatabase {
     await ensureDir(this.dataDir);
     
     // Create initial table files if they don't exist
-    const tables: TableName[] = ['users', 'pets', 'medicalRecords', 'tasks', 'appointments', 'clinics', 'vetProfiles', 'notifications'];
+    const tables: TableName[] = ['users', 'pets', 'medicalRecords', 'tasks', 'appointments', 'clinics', 'vetProfiles', 'notifications', 'documents'];
     
     for (const table of tables) {
       const filePath = path.join(this.dataDir, `${table}.json`);
@@ -176,6 +176,7 @@ export class LocalDatabase {
       clinics: 'clinicId',
       vetProfiles: 'vetId',
       notifications: 'notificationId',
+      documents: 'documentId',
     };
     return idFields[tableName];
   }
@@ -211,6 +212,18 @@ export class LocalDatabase {
 
   async getMedicalRecordsByPet(petId: string): Promise<MedicalRecord[]> {
     return await this.findWhere<MedicalRecord>('medicalRecords', record => record.petId === petId);
+  }
+
+  async getDocumentsByPet(petId: string, category?: string): Promise<Document[]> {
+    const documents = await this.findWhere<Document>('documents', doc => doc.petId === petId);
+    if (category) {
+      return documents.filter(doc => doc.category === category);
+    }
+    return documents;
+  }
+
+  async createDocument(document: Omit<Document, 'createdAt' | 'updatedAt'>): Promise<Document> {
+    return await this.create<Document>('documents', document);
   }
 
   // Clear cache (useful for testing)
