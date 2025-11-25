@@ -18,6 +18,11 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# Build artifacts (don't commit to repo!)
+*.aab
+*.apk
+*.ipa
+
 # Metro
 .metro-health-check*
 
@@ -37,4 +42,5 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-app-example
+# Google Play service account (keep secure!)
+google-service-account.json
