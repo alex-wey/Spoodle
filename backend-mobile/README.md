@@ -210,6 +210,50 @@ This backend is configured for Railway deployment:
 
 4. **Health Check**: `https://your-app.railway.app/health`
 
+## Deployment Strategy & Backwards Compatibility
+
+### The Mobile App Store Challenge
+
+The backend can deploy to Railway instantly, but mobile apps go through unpredictable App Store and Play Store review cycles (1-3 days for iOS, hours to days for Android). This creates a coordination problem: backend changes may go live before users have access to the updated mobile app.
+
+### Core Principle: Backwards Compatibility
+
+Always deploy backend changes that maintain compatibility with existing mobile app versions in production. This ensures users on older app versions continue to work seamlessly while new versions are in review.
+
+**Safe Changes (Deploy Anytime):**
+- Adding new optional fields to API responses
+- Creating new endpoints that old apps don't call
+- Making required fields optional (with sensible defaults)
+- Adding new query parameters with default values
+- Improving performance or fixing bugs that don't change behavior
+
+**Breaking Changes (Avoid or Coordinate):**
+- Removing fields from responses that old apps expect
+- Renaming fields or changing their data types
+- Making optional fields suddenly required
+- Removing or renaming existing endpoints
+- Changing authentication requirements
+
+### Recommended Approaches
+
+**API Versioning**: When breaking changes are necessary, introduce versioned endpoints (e.g., `/api/v1/pets` and `/api/v2/pets`). Old mobile apps continue using v1 while new versions use v2. This allows independent deployment of backend improvements.
+
+**Feature Flags**: For major new features, add a configuration endpoint that returns enabled features based on the client's app version. Deploy the backend with features "off," then enable them once the mobile app is approved. This requires no redeployment.
+
+**Minimum Version Enforcement**: Include app version headers in requests and validate them server-side. If a critical security update requires breaking changes, return a "must upgrade" response to force users to update their apps.
+
+### Deployment Workflow
+
+The typical workflow is backend-first: deploy backward-compatible backend changes, submit the mobile app for review, and features become available immediately upon approval. Old app versions continue functioning without interruption.
+
+For monitoring, log the app version from request headers to understand which versions are actively being used in production. This helps determine when it's safe to deprecate old API versions.
+
+### Production vs Development
+
+In development, iterate quickly without worrying about compatibility. In production, treat every deployment as if thousands of users are on versions you deployed weeks ago, because they are. App store reviews and user update behavior mean version fragmentation is inevitable.
+
+The mobile app currently points to the Railway production URL configured in `eas.json`. Any breaking backend changes must coordinate with a new mobile app release cycle.
+
 ## Environment Variables
 
 See `env.example` for all required environment variables:
