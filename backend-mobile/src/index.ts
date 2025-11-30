@@ -22,7 +22,6 @@ const app = express();
 const PORT = process.env.PORT!;
 const NODE_ENV = process.env.NODE_ENV!;
 const IS_PRODUCTION = NODE_ENV === 'production';
-const HOST = process.env.HOST!;
 
 // Initialize Prisma client
 export const prisma = new PrismaClient({
@@ -170,16 +169,16 @@ const server = app.listen(PORT, async () => {
     console.log(`📱 Mobile app should connect to: https://${domain}`);
     console.log(`🔍 API Health Check: https://${domain}/health`);
   } else {
-    console.log(`🚀 Spoodle MOBILE Backend API running on http://${HOST}:${PORT}`);
-    console.log(`📱 Mobile app should connect to: http://${HOST}:${PORT}`);
+    console.log(`🚀 Spoodle MOBILE Backend API running on http://localhost:${PORT}`);
+    console.log(`📱 Mobile app should connect to: http://localhost:${PORT}`);
     console.log(`🔍 Mobile API endpoints available at:`);
-    console.log(`  - Health: http://${HOST}:${PORT}/health`);
-    console.log(`  - Auth: http://${HOST}:${PORT}/api/auth/*`);
-    console.log(`  - Dashboard: http://${HOST}:${PORT}/api/dashboard/*`);
-    console.log(`  - Pets: http://${HOST}:${PORT}/api/pets/*`);
-    console.log(`  - Documents: http://${HOST}:${PORT}/api/documents/*`);
-    console.log(`  - Bug Reports: http://${HOST}:${PORT}/api/bug-report/*`);
-    console.log(`  - Chatbot: http://${HOST}:${PORT}/api/chatbot/*`);
+    console.log(`  - Health: http://localhost:${PORT}/health`);
+    console.log(`  - Auth: http://localhost:${PORT}/api/auth/*`);
+    console.log(`  - Dashboard: http://localhost:${PORT}/api/dashboard/*`);
+    console.log(`  - Pets: http://localhost:${PORT}/api/pets/*`);
+    console.log(`  - Documents: http://localhost:${PORT}/api/documents/*`);
+    console.log(`  - Bug Reports: http://localhost:${PORT}/api/bug-report/*`);
+    console.log(`  - Chatbot: http://localhost:${PORT}/api/chatbot/*`);
   }
 
   // Sync clinics from Clerk on startup
