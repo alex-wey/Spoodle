@@ -6,7 +6,6 @@ import { clerkApiClient } from './lib/api';
 
 export default function Index() {
   const { isSignedIn, isLoaded } = useAuth();
-  const [checkingSetup, setCheckingSetup] = useState(false);
   const [hasClinic, setHasClinic] = useState<boolean | null>(null);
 
   // Check if user has completed clinic selection
@@ -18,7 +17,6 @@ export default function Index() {
 
   const checkClinicSetup = async () => {
     try {
-      setCheckingSetup(true);
       console.log('[Index] Checking clinic setup...');
       const response = await clerkApiClient.getMyClinic();
       
@@ -35,7 +33,6 @@ export default function Index() {
       // If 404 or error, user needs to select clinic
       setHasClinic(false);
     } finally {
-      setCheckingSetup(false);
       console.log('[Index] Clinic check complete');
     }
   };

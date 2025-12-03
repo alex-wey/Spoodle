@@ -10,8 +10,6 @@ export default function SignUpScreen() {
   const { isLoaded, signUp } = useSignUp()
   const router = useRouter()
 
-  const [emailAddress, setEmailAddress] = React.useState('')
-  const [password, setPassword] = React.useState('')
   const [firstName, setFirstName] = React.useState('')
   const [lastName, setLastName] = React.useState('')
   const [phoneNumber, setPhoneNumber] = React.useState('')
@@ -45,12 +43,6 @@ export default function SignUpScreen() {
     }, 2000)
   }
 
-  // Validate email format
-  const isValidEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email)
-  }
-
   // Validate phone number format (US format: 10 digits)
   const isValidPhoneNumber = (phone: string) => {
     const digitsOnly = phone.replace(/\D/g, '')
@@ -63,18 +55,10 @@ export default function SignUpScreen() {
     
     if (!firstName.trim()) missingFields.push('first name')
     if (!lastName.trim()) missingFields.push('last name')
-    if (!emailAddress.trim()) missingFields.push('email')
     if (!phoneNumber.trim()) missingFields.push('phone number')
-    if (!password.trim()) missingFields.push('password')
 
     if (missingFields.length > 0) {
       showErrorToast(`Please fill out: ${missingFields.join(', ')}`)
-      return false
-    }
-
-    // Validate email format
-    if (!isValidEmail(emailAddress)) {
-      showErrorToast('Please enter a valid email address')
       return false
     }
 
@@ -104,24 +88,22 @@ export default function SignUpScreen() {
       const digitsOnly = phoneNumber.replace(/\D/g, '')
       const formattedPhone = `+1${digitsOnly}`
 
-      // Start sign-up process using email and password
+      // Start sign-up process using phone number (passwordless)
       await signUp.create({
-        emailAddress,
-        password,
         firstName,
         lastName,
         phoneNumber: formattedPhone,
       });
 
-      // Send user an email with verification code
-      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
+      // Prepare phone verification
+      await signUp.preparePhoneNumberVerification({ strategy: 'phone_code' })
 
-      // Navigate to verify contact screen
+      // Navigate to verify contact screen (phone verification only)
       router.push({
         pathname: '/(auth)/verify-contact',
         params: { 
-          email: emailAddress,
-          phone: formattedPhone
+          phone: formattedPhone,
+          flow: 'sign-up'
         }
       })
     } catch (err: any) {
@@ -145,18 +127,18 @@ export default function SignUpScreen() {
         style={styles.keyboardAvoidingView}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+        
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-          
           <View style={styles.header}>
             <Text style={styles.title}>Sign Up</Text>
             <Text style={styles.subtitle}>
@@ -197,41 +179,12 @@ export default function SignUpScreen() {
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
-                autoCapitalize="none"
-                value={emailAddress}
-                placeholder="Enter email"
-                placeholderTextColor="#9CA3AF"
-                onChangeText={(email) => setEmailAddress(email)}
-                keyboardType="email-address"
-                autoComplete="email"
-                spellCheck={false}
-                autoCorrect={false}
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
                 value={phoneNumber}
                 placeholder="Enter phone number"
                 placeholderTextColor="#9CA3AF"
                 onChangeText={(phone) => setPhoneNumber(phone)}
                 keyboardType="phone-pad"
                 autoComplete="tel"
-                spellCheck={false}
-                autoCorrect={false}
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                value={password}
-                placeholder="Enter password"
-                placeholderTextColor="#9CA3AF"
-                secureTextEntry={true}
-                onChangeText={(password) => setPassword(password)}
-                autoComplete="password"
                 spellCheck={false}
                 autoCorrect={false}
               />
@@ -297,8 +250,9 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
+    top: 16,
     left: 24,
-    zIndex: 10,
+    zIndex: 100,
     padding: 8,
   },
   header: {

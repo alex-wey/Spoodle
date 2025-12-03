@@ -17,37 +17,22 @@ export const DeleteAccountButton = () => {
 
   const handleDeleteAccount = async () => {
     if (Platform.OS === 'web') {
-      const first = window.confirm('Are you sure you want to permanently delete your account? This cannot be undone.');
-      if (!first) return;
-      const second = window.confirm('Final confirmation: delete your account and all data forever?');
-      if (!second) return;
+      const confirmed = window.confirm('Are you sure you want to permanently delete your account? This cannot be undone.');
+      if (!confirmed) return;
       await executeDeletion();
       return;
     }
 
     // native flow with Alert buttons
     Alert.alert(
-      'Delete Account',
-      'Are you sure you want to permanently delete your account? This action cannot be undone and will remove all your data including pets, documents, medical records, bug reports, and chat history.',
+      'Final Confirmation',
+      'Are you sure you want to permanently delete your account? This action cannot be undone and will remove all your data.',
       [
         { text: 'Cancel', style: 'cancel' },
         { 
-          text: 'Delete Account', 
+          text: 'Yes, delete forever',
           style: 'destructive',
-          onPress: () => {
-            Alert.alert(
-              'Final Confirmation',
-              'This is your last chance to cancel. Are you absolutely sure you want to delete your account?',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Yes, Delete Forever',
-                  style: 'destructive',
-                  onPress: () => executeDeletion()
-                }
-              ]
-            );
-          }
+          onPress: () => executeDeletion()
         }
       ]
     );

@@ -23,7 +23,7 @@ export default function LandingScreen() {
                 style={styles.logo}
                 resizeMode="contain"
               />
-              <Text style={styles.subtitle}>Your Pet&apos;s Health Companion</Text>
+              <Text style={styles.subtitle}>Your Pet&apos;s Health, Simplified</Text>
             </View>
           </View>
 

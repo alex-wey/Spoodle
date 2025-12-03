@@ -7,14 +7,13 @@ import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 
 export default function Page() {
-  const { signIn, setActive, isLoaded } = useSignIn()
+  const { signIn, isLoaded, setActive } = useSignIn()
   const router = useRouter()
 
-  const [emailAddress, setEmailAddress] = React.useState('')
-  const [password, setPassword] = React.useState('')
+  const [phoneNumber, setPhoneNumber] = React.useState('')
   const [error, setError] = React.useState('')
+  const [isLoading, setIsLoading] = React.useState(false)
   const [showToast, setShowToast] = React.useState(false)
-  const [isResettingPassword, setIsResettingPassword] = React.useState(false)
   const toastOpacity = React.useRef(new Animated.Value(0)).current
 
   // Show toast notification
@@ -42,62 +41,83 @@ export default function Page() {
     }, 2000)
   }
 
-  // Handle forgot password
-  const onForgotPasswordPress = async () => {
-    if (!emailAddress) {
-      showErrorToast('Please enter your email address first')
-      return
-    }
-
-    setIsResettingPassword(true)
-    try {
-      await signIn?.create({
-        strategy: 'reset_password_email_code',
-        identifier: emailAddress,
-      })
-      
-      // Navigate to reset password screen
-      router.push({
-        pathname: '/(auth)/reset-password',
-        params: { email: emailAddress }
-      })
-    } catch (err: any) {
-      showErrorToast(err?.errors?.[0]?.message || 'Failed to send reset email')
-    } finally {
-      setIsResettingPassword(false)
-    }
+  // Validate phone number format (US format: 10 digits)
+  const isValidPhoneNumber = (phone: string) => {
+    const digitsOnly = phone.replace(/\D/g, '')
+    return digitsOnly.length === 10
   }
 
   // Handle the submission of the sign-in form
   const onSignInPress = async () => {
     if (!isLoaded) return
 
-    // Start the sign-in process using the email and password provided
+    // Validate phone number
+    if (!phoneNumber.trim()) {
+      showErrorToast('Please enter your phone number')
+      return
+    }
+
+    if (!isValidPhoneNumber(phoneNumber)) {
+      showErrorToast('Please enter a valid 10-digit phone number')
+      return
+    }
+
+    setIsLoading(true)
+    setError('')
+
     try {
+      // Format phone number to E.164 format
+      const digitsOnly = phoneNumber.replace(/\D/g, '')
+      const formattedPhone = `+1${digitsOnly}`
+
+      // Start sign-in process using phone number
       const signInAttempt = await signIn.create({
-        identifier: emailAddress,
-        password,
+        identifier: formattedPhone,
       })
 
-      // If sign-in process is complete, set the created session as active
-      // and redirect the user
+      // Check if sign-in is already complete (no verification needed)
       if (signInAttempt.status === 'complete') {
         try {
           await setActive({ session: signInAttempt.createdSessionId })
           router.replace('/')
+          return
         } catch (setActiveError: any) {
           console.error('Failed to set session active:', setActiveError)
           showErrorToast('Failed to complete sign in. Please try again.')
+          return
         }
-      } else {
-        // If the status isn't complete, check why. User might need to
-        // complete further steps.
-        showErrorToast('Sign in incomplete. Please try again.')
       }
+
+      // Check if phone verification is needed
+      // Get the phone number ID from supported first factors
+      const phoneFactor = signInAttempt.supportedFirstFactors?.find(
+        (factor) => factor.strategy === 'phone_code'
+      ) as { strategy: 'phone_code'; phoneNumberId: string } | undefined
+
+      if (phoneFactor) {
+        // Prepare phone verification
+        await signIn.prepareFirstFactor({
+          strategy: 'phone_code',
+          phoneNumberId: phoneFactor.phoneNumberId,
+        })
+      } else {
+        showErrorToast('Phone verification is not available. Please try again.')
+        return
+      }
+
+      // Navigate to verify contact screen
+      router.push({
+        pathname: '/(auth)/verify-contact',
+        params: { 
+          phone: formattedPhone,
+          flow: 'sign-in'
+        }
+      })
     } catch (err: any) {
-      // See https://clerk.com/docs/guides/development/custom-flows/error-handling
-      // for more info on error handling
-      showErrorToast('Invalid email or password')
+      console.error(err)
+      showErrorToast(err?.errors?.[0]?.message || 'Sign in failed. Please try again.')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -114,18 +134,18 @@ export default function Page() {
         style={styles.keyboardAvoidingView}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+        
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-          
           <View style={styles.header}>
             <Text style={styles.title}>Sign in</Text>
             <Text style={styles.subtitle}>
@@ -137,44 +157,23 @@ export default function Page() {
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
-                autoCapitalize="none"
-                value={emailAddress}
-                placeholder="Enter email"
-                placeholderTextColor="#6B7280"
-                onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
-                keyboardType="email-address"
-                autoComplete="email"
-                spellCheck={false}
-                autoCorrect={false}
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                value={password}
-                placeholder="Enter password"
-                placeholderTextColor="#6B7280"
-                secureTextEntry={true}
-                onChangeText={(password) => setPassword(password)}
-                autoComplete="password"
+                value={phoneNumber}
+                placeholder="Enter phone number"
+                placeholderTextColor="#9CA3AF"
+                onChangeText={(phone) => setPhoneNumber(phone)}
+                keyboardType="phone-pad"
+                autoComplete="tel"
                 spellCheck={false}
                 autoCorrect={false}
               />
             </View>
 
             <TouchableOpacity 
-              style={styles.forgotPasswordButton}
-              onPress={onForgotPasswordPress}
-              disabled={isResettingPassword}
+              style={[styles.primaryButton, isLoading && styles.buttonDisabled]} 
+              onPress={onSignInPress}
+              disabled={isLoading}
             >
-              <Text style={styles.forgotPasswordText}>
-                Forgot password?
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.primaryButton} onPress={onSignInPress}>
-              <Text style={styles.primaryButtonText}>Sign In</Text>
+              <Text style={styles.primaryButtonText}>Continue</Text>
             </TouchableOpacity>
 
             <View style={styles.footer}>
@@ -221,14 +220,15 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 160,
+    paddingTop: 150,
     paddingBottom: 40,
     justifyContent: 'flex-start',
   },
   backButton: {
     position: 'absolute',
+    top: 16,
     left: 24,
-    zIndex: 10,
+    zIndex: 100,
     padding: 8,
   },
   header: {
@@ -275,29 +275,20 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  forgotPasswordButton: {
-    alignSelf: 'center',
-    marginTop: -8,
-    marginBottom: -20,
-  },
-  forgotPasswordText: {
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 16,
-    fontWeight: '500',
-    textDecorationLine: 'underline',
-  },
   primaryButton: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     paddingVertical: 18,
     alignItems: 'center',
-    marginTop: 40,
     marginBottom: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 5,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   primaryButtonText: {
     color: '#4559A7',

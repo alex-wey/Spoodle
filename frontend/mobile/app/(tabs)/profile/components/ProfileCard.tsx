@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, TextInput } from 'react-native';
 import { User, Camera, Pen, Save, X } from 'lucide-react-native';
-import { TextInput } from 'react-native';
 
 interface ProfileCardProps {
   name: string;

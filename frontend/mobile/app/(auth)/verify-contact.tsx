@@ -1,23 +1,25 @@
 import * as React from 'react'
 import { Text, TextInput, TouchableOpacity, View, StyleSheet, KeyboardAvoidingView, Platform, Animated } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useSignUp } from '@clerk/clerk-expo'
+import { useSignUp, useSignIn } from '@clerk/clerk-expo'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 
 export default function VerifyContactScreen() {
-  const { isLoaded, signUp, setActive } = useSignUp()
+  const { isLoaded: isSignUpLoaded, signUp, setActive: setSignUpActive } = useSignUp()
+  const { isLoaded: isSignInLoaded, signIn, setActive: setSignInActive } = useSignIn()
   const router = useRouter()
   const params = useLocalSearchParams()
-  const emailAddress = params.email as string
   const phoneNumber = params.phone as string
+  const flow = (params.flow as 'sign-in' | 'sign-up') || 'sign-up'
+
+  const isLoaded = flow === 'sign-in' ? isSignInLoaded : isSignUpLoaded
 
   const [code, setCode] = React.useState('')
   const [error, setError] = React.useState('')
   const [isLoading, setIsLoading] = React.useState(false)
   const [showToast, setShowToast] = React.useState(false)
-  const [verificationStep, setVerificationStep] = React.useState<'email' | 'phone'>('email')
   const toastOpacity = React.useRef(new Animated.Value(0)).current
 
   // Show toast notification
@@ -45,70 +47,35 @@ export default function VerifyContactScreen() {
     }, 2000)
   }
 
-  // Send phone verification code when moving to phone step
-  const sendPhoneVerificationCode = async () => {
-    if (!signUp) return
-    
-    try {
-      await signUp.preparePhoneNumberVerification({ strategy: 'phone_code' })
-    } catch (err: any) {
-      console.error('Error sending phone verification code:', err)
-      showErrorToast(err?.errors?.[0]?.message || 'Failed to send verification code')
-    }
-  }
-
-  // Handle email verification
-  const onVerifyEmailPress = async (codeToVerify?: string) => {
-    if (!isLoaded) return
-
-    const codeValue = codeToVerify || code
-
-    if (codeValue.length !== 6) {
-      showErrorToast('Please enter the complete 6-digit code')
-      return
-    }
-
-    setIsLoading(true)
-    setError('')
-
-    try {
-      // Use the code the user provided to attempt verification
-      const signUpAttempt = await signUp.attemptEmailAddressVerification({
-        code: codeValue,
-      })
-
-      // Check if email verification succeeded (either complete or email is verified)
-      // The overall status might not be 'complete' yet if phone verification is still pending
-      const emailVerified = signUpAttempt.verifications?.emailAddress?.status === 'verified' ||
-                           signUpAttempt.status === 'complete'
+  // Send phone verification code on mount (if not already sent)
+  React.useEffect(() => {
+    const sendPhoneVerificationCode = async () => {
+      if (!isLoaded) return
       
-      if (emailVerified) {
-        // Email verified successfully, move to phone verification
-        setCode('') // Clear the code for phone verification
-        setVerificationStep('phone')
-        await sendPhoneVerificationCode()
-      } else {
-        // Email verification failed
-        showErrorToast('Email verification failed. Please check your code and try again.')
+      try {
+        if (flow === 'sign-in' && signIn) {
+          // Get the phone number ID from supported first factors
+          const phoneFactor = signIn.supportedFirstFactors?.find(
+            (factor) => factor.strategy === 'phone_code'
+          ) as { strategy: 'phone_code'; phoneNumberId: string } | undefined
+
+          if (phoneFactor) {
+            await signIn.prepareFirstFactor({
+              strategy: 'phone_code',
+              phoneNumberId: phoneFactor.phoneNumberId,
+            })
+          }
+        } else if (flow === 'sign-up' && signUp) {
+          await signUp.preparePhoneNumberVerification({ strategy: 'phone_code' })
+        }
+      } catch (err: any) {
+        console.error('Error sending phone verification code:', err)
+        // Don't show error toast on mount, as code might already be sent
       }
-    } catch (err: any) {
-      // Handle specific verification errors
-      if (err?.errors?.[0]?.code === 'verification_already_verified') {
-        // If already verified, go to phone verification
-        setCode('')
-        setVerificationStep('phone')
-        await sendPhoneVerificationCode()
-      } else if (err?.errors?.[0]?.code === 'form_code_incorrect') {
-        showErrorToast('Invalid verification code. Please check and try again.')
-      } else if (err?.errors?.[0]?.code === 'form_code_expired') {
-        showErrorToast('Verification code has expired. Please request a new one.')
-      } else {
-        showErrorToast(err?.errors?.[0]?.message || 'Verification failed. Please try again.')
-      }
-    } finally {
-      setIsLoading(false)
     }
-  }
+
+    sendPhoneVerificationCode()
+  }, [signUp, signIn, isLoaded, flow])
 
   // Handle phone verification
   const onVerifyPhonePress = async (codeToVerify?: string) => {
@@ -125,36 +92,67 @@ export default function VerifyContactScreen() {
     setError('')
 
     try {
-      // Use the code the user provided to attempt verification
-      const signUpAttempt = await signUp.attemptPhoneNumberVerification({
-        code: codeValue,
-      })
+      if (flow === 'sign-in' && signIn) {
+        // Handle sign-in verification
+        // Get the phone number ID from supported first factors
+        const phoneFactor = signIn.supportedFirstFactors?.find(
+          (factor) => factor.strategy === 'phone_code'
+        ) as { strategy: 'phone_code'; phoneNumberId: string } | undefined
 
-      // Check if phone verification succeeded
-      const phoneVerified = signUpAttempt.verifications?.phoneNumber?.status === 'verified' ||
-                           signUpAttempt.status === 'complete'
-      
-      if (phoneVerified || signUpAttempt.status === 'complete') {
-        // Phone verified successfully, complete signup
-        try {
-          await setActive({ session: signUpAttempt.createdSessionId })
-          // Redirect to clinic selection instead of main app
-          router.push('/(auth)/select-clinic')
-        } catch (setActiveError: any) {
-          console.error('Failed to set session active:', setActiveError)
-          showErrorToast('Failed to complete signup. Please try again.')
+        if (!phoneFactor) {
+          showErrorToast('Phone verification is not available. Please try again.')
+          return
         }
-      } else {
-        // Phone verification failed
-        showErrorToast('Phone verification failed. Please check your code and try again.')
+
+        const signInAttempt = await signIn.attemptFirstFactor({
+          strategy: 'phone_code',
+          code: codeValue,
+        })
+
+        if (signInAttempt.status === 'complete') {
+          try {
+            await setSignInActive({ session: signInAttempt.createdSessionId })
+            router.replace('/')
+          } catch (setActiveError: any) {
+            console.error('Failed to set session active:', setActiveError)
+            showErrorToast('Failed to complete sign in. Please try again.')
+          }
+        } else {
+          showErrorToast('Phone verification failed. Please check your code and try again.')
+        }
+      } else if (flow === 'sign-up' && signUp) {
+        // Handle sign-up verification
+        const signUpAttempt = await signUp.attemptPhoneNumberVerification({
+          code: codeValue,
+        })
+
+        const phoneVerified = signUpAttempt.verifications?.phoneNumber?.status === 'verified' ||
+                             signUpAttempt.status === 'complete'
+        
+        if (phoneVerified || signUpAttempt.status === 'complete') {
+          try {
+            await setSignUpActive({ session: signUpAttempt.createdSessionId })
+            router.push('/(auth)/select-clinic')
+          } catch (setActiveError: any) {
+            console.error('Failed to set session active:', setActiveError)
+            showErrorToast('Failed to complete signup. Please try again.')
+          }
+        } else {
+          showErrorToast('Phone verification failed. Please check your code and try again.')
+        }
       }
     } catch (err: any) {
       // Handle specific verification errors
       if (err?.errors?.[0]?.code === 'verification_already_verified') {
-        // If already verified, try to complete the signup
+        // If already verified, try to complete the flow
         try {
-          await setActive({ session: signUp.createdSessionId })
-          router.push('/(auth)/select-clinic')
+          if (flow === 'sign-in' && signIn?.createdSessionId) {
+            await setSignInActive({ session: signIn.createdSessionId })
+            router.replace('/')
+          } else if (flow === 'sign-up' && signUp?.createdSessionId) {
+            await setSignUpActive({ session: signUp.createdSessionId })
+            router.push('/(auth)/select-clinic')
+          }
         } catch (setActiveError: any) {
           console.error('Failed to set session active:', setActiveError)
           showErrorToast('Your phone number is already verified.')
@@ -180,11 +178,7 @@ export default function VerifyContactScreen() {
     // Auto-verify when 6 digits are entered
     if (digitsOnly.length === 6 && !isLoading && isLoaded) {
       // Use the digitsOnly value directly to avoid state update timing issues
-      if (verificationStep === 'email') {
-        onVerifyEmailPress(digitsOnly)
-      } else {
-        onVerifyPhonePress(digitsOnly)
-      }
+      onVerifyPhonePress(digitsOnly)
     }
   }
 
@@ -210,13 +204,10 @@ export default function VerifyContactScreen() {
             
             <View style={styles.header}>
               <Text style={styles.title}>
-                {verificationStep === 'email' ? 'Verify your email' : 'Verify your phone'}
+                Verify your phone
               </Text>
               <Text style={styles.subtitle}>
-                {verificationStep === 'email' 
-                  ? `We've sent a verification code to ${emailAddress}`
-                  : `We've sent a verification code to ${phoneNumber}`
-                }
+                We&apos;ve sent a verification code to {phoneNumber}
               </Text>
             </View>
 
@@ -237,11 +228,11 @@ export default function VerifyContactScreen() {
 
               <TouchableOpacity 
                 style={[styles.primaryButton, isLoading && styles.buttonDisabled]} 
-                onPress={() => verificationStep === 'email' ? onVerifyEmailPress() : onVerifyPhonePress()}
+                onPress={() => onVerifyPhonePress()}
                 disabled={isLoading}
               >
                 <Text style={styles.primaryButtonText}>
-                  {verificationStep === 'email' ? 'Verify Email' : 'Verify Phone'}
+                  Verify Phone
                 </Text>
               </TouchableOpacity>
             </View>

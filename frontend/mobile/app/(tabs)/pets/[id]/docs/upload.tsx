@@ -10,11 +10,10 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Upload, FileText, ChevronDown, Trash2, MapPin, Stethoscope, FileEdit } from 'lucide-react-native';
+import { ArrowLeft, Upload, FileText, ChevronDown, Trash2, FileEdit } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { usePetStore } from '../../../../store/pets';
 import { clerkApiClient } from '../../../../lib/api';
@@ -34,7 +33,6 @@ export default function UploadDocumentScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [hospitalName, setHospitalName] = useState('');
-  const [vetName, setVetName] = useState('');
   const [notes, setNotes] = useState('');
 
   // Refs for scrolling
@@ -77,7 +75,6 @@ export default function UploadDocumentScreen() {
       setFileUri('');
       setFileType('');
       setHospitalName('');
-      setVetName('');
       setNotes('');
     }
   }, [preselectedCategory]);
@@ -93,7 +90,6 @@ export default function UploadDocumentScreen() {
     setFileUri('');
     setFileType('');
     setHospitalName('');
-    setVetName('');
     setNotes('');
     setIsSubmitting(false);
   };

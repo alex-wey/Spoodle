@@ -87,14 +87,23 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
     // Fetch full user data from Clerk
     const { id, firstName, lastName, primaryEmailAddress, primaryPhoneNumber } = await clerk.users.getUser(userId);
 
+    // Phone is mandatory for passwordless authentication
+    if (!primaryPhoneNumber?.phoneNumber) {
+      return res.status(400).json({
+        success: false,
+        error: 'Phone number required',
+        message: 'Phone number is required for authentication'
+      });
+    }
+
     // Sync user to database (creates User + PetOwner if doesn't exist)
     try {
       const petOwner = await getOrCreateUser({
         clerkUserId: id,
-        email: primaryEmailAddress?.emailAddress!,
+        email: primaryEmailAddress?.emailAddress ?? null,
         firstName: firstName!,
         lastName: lastName!,
-        phone: primaryPhoneNumber?.phoneNumber ?? null,
+        phone: primaryPhoneNumber.phoneNumber,
       });
       
       // Fetch clinic information if assigned

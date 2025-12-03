@@ -90,15 +90,17 @@ class ClerkApiClient {
           message: "An error occurred",
         }));
         
-        // Don't log "no clinic assigned" as an error - it's expected during signup
-        const isExpectedSetupError = response.status === 404 && error.requiresSetup;
+        // Don't log "no clinic assigned" or "clinic not selected" as errors - they're expected during signup
+        const isExpectedSetupError = 
+          (response.status === 404 && error.requiresSetup) ||
+          (response.status === 403 && error.message?.includes('not selected a clinic'));
         
         if (!isExpectedSetupError) {
           console.error(`[API] Error Response (${response.status}):`, JSON.stringify(error, null, 2));
           console.error(`[API] Error URL: ${url}`);
           console.error(`[API] Error Details:`, error);
         } else {
-          console.log(`[API] Setup required: ${error.message}`);
+          console.warn(`[API] Setup required: ${error.message}`);
         }
         
         const errorObj = new Error(error.message || error.error || `HTTP ${response.status}`);

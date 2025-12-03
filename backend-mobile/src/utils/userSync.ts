@@ -5,8 +5,8 @@ export interface ClerkUserData {
   clerkUserId: string;
   firstName: string;
   lastName: string;
-  email: string;
-  phone: string | null;
+  email: string | null;
+  phone: string;
 }
 
 /**
@@ -38,7 +38,7 @@ export async function getOrCreateUser(clerkUserData: ClerkUserData) {
 
     // User doesn't exist, try to create both User and PetOwner
     try {
-      const newUser = await tx.user.create({ data: clerkUserData });
+      await tx.user.create({ data: clerkUserData });
       const petOwner = await tx.petOwner.create({
         data: { clerkUserId: clerkUserData.clerkUserId }
       });
@@ -66,21 +66,24 @@ export async function getOrCreateUser(clerkUserData: ClerkUserData) {
         }
 
         // If not found by clerkUserId, try by email (in case email was the conflict)
-        const userByEmail = await tx.user.findUnique({
-          where: { email: clerkUserData.email },
-          include: { petOwner: true }
-        });
-
-        if (userByEmail?.petOwner) {
-          return userByEmail.petOwner;
-        }
-
-        if (userByEmail && !userByEmail.petOwner) {
-          // User exists by email but no PetOwner - create it
-          const petOwner = await tx.petOwner.create({
-            data: { clerkUserId: userByEmail.clerkUserId }
+        // Only try email lookup if email is provided
+        if (clerkUserData.email) {
+          const userByEmail = await tx.user.findUnique({
+            where: { email: clerkUserData.email },
+            include: { petOwner: true }
           });
-          return petOwner;
+
+          if (userByEmail?.petOwner) {
+            return userByEmail.petOwner;
+          }
+
+          if (userByEmail && !userByEmail.petOwner) {
+            // User exists by email but no PetOwner - create it
+            const petOwner = await tx.petOwner.create({
+              data: { clerkUserId: userByEmail.clerkUserId }
+            });
+            return petOwner;
+          }
         }
 
         // If we get here, something unexpected happened
