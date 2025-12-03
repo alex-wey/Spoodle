@@ -402,7 +402,7 @@ Your current `app.json` already has:
     "package": "com.spoodleapp.spoodleapp",
     "versionCode": 1,
     "adaptiveIcon": {
-      "foregroundImage": "./assets/images/adaptive-icon.png",
+      "foregroundImage": "./assets/images/icon.png",
       "backgroundColor": "#ffffff"
     },
     "permissions": [
