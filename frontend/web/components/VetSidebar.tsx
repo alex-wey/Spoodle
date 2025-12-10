@@ -93,19 +93,6 @@ export function VetSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        {/* User info section at bottom */}
-        <div className="mt-auto p-2 border-t border-white/20">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-medium text-white">DR</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">Dr. Sarah Chen</p>
-              <p className="text-xs text-white/80">Veterinarian</p>
-            </div>
-          </div>
-        </div>
       </SidebarContent>
     </Sidebar>
   );
