@@ -1,5 +1,5 @@
 import { Tabs, Redirect } from "expo-router";
-import { Dog, BotMessageSquare, User } from "lucide-react-native";
+import { Dog, BotMessageSquare, User, Calendar } from "lucide-react-native";
 import { useAuth } from '@clerk/clerk-expo';
 import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -50,6 +50,14 @@ export default function TabLayout() {
           title: "Chat",
           href: "/(tabs)/chat",
           tabBarIcon: ({ color }) => <BotMessageSquare size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="tasks/index"
+        options={{
+          title: "Tasks",
+          href: "/(tabs)/tasks",
+          tabBarIcon: ({ color }) => <Calendar size={24} color={color} />,
         }}
       />
       <Tabs.Screen

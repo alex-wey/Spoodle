@@ -71,7 +71,12 @@ class ClerkApiClient {
       const token = await this.tokenGetter();
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
+        console.log(`[API] Authorization header added, token length: ${token.length}`);
+      } else {
+        console.warn(`[API] Token getter returned null/undefined for ${endpoint}`);
       }
+    } else {
+      console.warn(`[API] No token getter configured for ${endpoint}`);
     }
 
     const url = `${this.baseUrl}${endpoint}`;
@@ -589,6 +594,116 @@ class ClerkApiClient {
     }>('/clinics/switch', {
       method: 'POST',
       body: JSON.stringify({ clinicId }),
+    });
+  }
+
+  // Task endpoints
+  async getTasks(petId?: string | 'all', startDate?: Date | string, endDate?: Date | string) {
+    const params = new URLSearchParams();
+    if (petId) params.append('petId', petId);
+    if (startDate) params.append('startDate', typeof startDate === 'string' ? startDate : startDate.toISOString());
+    if (endDate) params.append('endDate', typeof endDate === 'string' ? endDate : endDate.toISOString());
+    
+    const query = params.toString();
+    return this.request<{
+      success: boolean;
+      data: any[];
+    }>(`/tasks${query ? `?${query}` : ''}`);
+  }
+
+  async getTask(taskId: string) {
+    return this.request<{
+      success: boolean;
+      data: any;
+    }>(`/tasks/${taskId}`);
+  }
+
+  async createTask(task: {
+    petId: string;
+    taskType: string;
+    title: string;
+    description?: string;
+    scheduledDate: Date | string;
+    scheduledTime: string;
+    notes?: string;
+    carePlanId?: string;
+    reminderId?: string;
+    recurring?: boolean;
+    recurrencePattern?: string;
+    recurrenceDaysOfWeek?: number[];
+    recurrenceEndDate?: Date | string;
+    recurrenceTimes?: string[];
+  }) {
+    return this.request<{
+      success: boolean;
+      data: any;
+      message: string;
+    }>('/tasks', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...task,
+        scheduledDate: typeof task.scheduledDate === 'string' ? task.scheduledDate : task.scheduledDate.toISOString(),
+        recurrenceEndDate: task.recurrenceEndDate 
+          ? (typeof task.recurrenceEndDate === 'string' ? task.recurrenceEndDate : task.recurrenceEndDate.toISOString())
+          : undefined,
+        // Send arrays as-is, backend will handle stringification
+        recurrenceDaysOfWeek: task.recurrenceDaysOfWeek,
+        recurrenceTimes: task.recurrenceTimes,
+      }),
+    });
+  }
+
+  async updateTask(taskId: string, updates: {
+    title?: string;
+    description?: string;
+    scheduledDate?: Date | string;
+    scheduledTime?: string;
+    taskType?: string;
+    completed?: boolean;
+    notes?: string;
+    completedAt?: Date | string;
+    completedBy?: string;
+    completedByName?: string;
+  }) {
+    return this.request<{
+      success: boolean;
+      data: any;
+      message: string;
+    }>(`/tasks/${taskId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        ...updates,
+        scheduledDate: updates.scheduledDate 
+          ? (typeof updates.scheduledDate === 'string' ? updates.scheduledDate : updates.scheduledDate.toISOString())
+          : undefined,
+        completedAt: updates.completedAt
+          ? (typeof updates.completedAt === 'string' ? updates.completedAt : updates.completedAt.toISOString())
+          : undefined,
+      }),
+    });
+  }
+
+  async deleteTask(taskId: string) {
+    return this.request<{
+      success: boolean;
+      message: string;
+    }>(`/tasks/${taskId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async completeTask(taskId: string, data?: {
+    completedAt?: Date | string;
+    completedBy?: string;
+    completedByName?: string;
+    notes?: string;
+  }) {
+    return this.updateTask(taskId, {
+      completed: true,
+      completedAt: data?.completedAt || new Date(),
+      completedBy: data?.completedBy,
+      completedByName: data?.completedByName,
+      notes: data?.notes,
     });
   }
 }

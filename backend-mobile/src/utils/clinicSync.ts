@@ -26,10 +26,17 @@ export async function syncClinicsFromClerk() {
 
     for (const org of organizations) {
       try {
-        // Check if clinic already exists
-        const existingClinic = await prisma.clinic.findUnique({
-          where: { clerkOrgId: org.id }
+        // First check if clinic exists by slug (prioritize existing clinics)
+        let existingClinic = await prisma.clinic.findUnique({
+          where: { slug: org.slug }
         });
+
+        // If not found by slug, check by clerkOrgId
+        if (!existingClinic) {
+          existingClinic = await prisma.clinic.findUnique({
+            where: { clerkOrgId: org.id }
+          });
+        }
 
         const clinicData: any = {
           clerkOrgId: org.id,
@@ -43,14 +50,14 @@ export async function syncClinicsFromClerk() {
         };
 
         if (existingClinic) {
-          // Update existing clinic
+          // Update existing clinic (found by slug or clerkOrgId)
           await prisma.clinic.update({
             where: { id: existingClinic.id },
             data: clinicData
           });
           updated++;
         } else {
-          // Create new clinic
+          // Only create new clinic if it doesn't exist by slug OR clerkOrgId
           await prisma.clinic.create({
             data: clinicData
           });

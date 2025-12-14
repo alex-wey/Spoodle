@@ -24,14 +24,46 @@ const queryClient = new QueryClient({
 
 // Component to initialize API client with auth token
 function ApiInitializer({ children }: { children: React.ReactNode }) {
-  const { getToken } = useAuth();
+  const { getToken, isSignedIn, isLoaded } = useAuth();
 
   useEffect(() => {
-    // Set up the API client with the token getter from Clerk
-    if (getToken) {
-      clerkApiClient.setTokenGetter(getToken);
+    if (!isLoaded) {
+      console.log('[DEBUG] ApiInitializer - Waiting for Clerk to load...');
+      return;
     }
-  }, [getToken]);
+    
+    if (!isSignedIn) {
+      console.log('[DEBUG] ApiInitializer - User not signed in, clearing token getter');
+      clerkApiClient.clearTokenGetter();
+      return;
+    }
+    
+    if (getToken) {
+      const tokenGetter = async (): Promise<string | null> => {
+        try {
+          const token = await getToken();
+          if (token) {
+            return token;
+          }
+        } catch (error) {
+          console.error('[DEBUG] Token retrieval failed:', error);
+        }
+        return null;
+      };
+      clerkApiClient.setTokenGetter(tokenGetter);
+      console.log('[DEBUG] ApiInitializer - Token getter configured');
+      
+      // Test token retrieval
+      tokenGetter().then((token) => {
+        console.log('[DEBUG] Token test result:', token ? `Token exists (length: ${token.length})` : 'Token is NULL');
+      }).catch((error) => {
+        console.error('[DEBUG] Token test failed:', error);
+      });
+    } else {
+      console.warn('[DEBUG] ApiInitializer - getToken is not available');
+      clerkApiClient.clearTokenGetter();
+    }
+  }, [getToken, isSignedIn, isLoaded]);
 
   return <>{children}</>;
 }

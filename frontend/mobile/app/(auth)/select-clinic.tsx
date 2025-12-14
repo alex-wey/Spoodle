@@ -39,9 +39,25 @@ export default function SelectClinicScreen() {
   const [showToast, setShowToast] = React.useState(false);
   const toastOpacity = React.useRef(new Animated.Value(0)).current;
 
-  // Fetch available clinics
+  // Check if user already has a clinic and redirect if they do
   React.useEffect(() => {
-    fetchClinics();
+    const checkExistingClinic = async () => {
+      try {
+        const response = await clerkApiClient.getMyClinic();
+        if (response.success && response.data) {
+          // User already has a clinic, redirect to main app
+          router.replace('/(tabs)/pets');
+          return;
+        }
+        // No clinic, proceed to fetch clinics
+        fetchClinics();
+      } catch (error) {
+        // Error or no clinic, proceed to fetch clinics
+        fetchClinics();
+      }
+    };
+    
+    checkExistingClinic();
   }, []);
 
   const fetchClinics = async () => {

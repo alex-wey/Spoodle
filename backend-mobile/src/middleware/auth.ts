@@ -145,7 +145,10 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
       req.userProfile = userProfile;
     } catch (syncError) {
       console.error('User sync error:', syncError);
-      // Continue anyway - the auth is still valid even if sync fails
+      console.error('User sync error details:', JSON.stringify(syncError, null, 2));
+      // If sync fails, we still have valid auth but no petOwner
+      // This will cause routes that require petOwner to fail with 401
+      // This is intentional - user needs to complete setup first
     }
 
     return next();
