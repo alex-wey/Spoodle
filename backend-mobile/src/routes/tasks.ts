@@ -105,9 +105,18 @@ router.get('/:id', async (req: Request, res: Response) => {
       });
     }
 
+    const taskId = req.params.id;
+    if (!taskId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid task ID',
+        message: 'Task ID is required'
+      });
+    }
+
     const task = await prisma.task.findFirst({
       where: {
-        id: req.params.id,
+        id: taskId,
         pet: {
           ownerId: req.petOwner.id
         }
@@ -279,10 +288,19 @@ async function handleUpdateTask(req: Request, res: Response) {
       });
     }
 
+    const taskId = req.params.id;
+    if (!taskId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid task ID',
+        message: 'Task ID is required'
+      });
+    }
+
     // Verify task belongs to user
     const existingTask = await prisma.task.findFirst({
       where: {
-        id: req.params.id,
+        id: taskId,
         pet: {
           ownerId: req.petOwner.id
         }
@@ -355,7 +373,7 @@ async function handleUpdateTask(req: Request, res: Response) {
     }
 
     const task = await prisma.task.update({
-      where: { id: req.params.id },
+      where: { id: taskId },
       data: updateData,
       include: {
         pet: {
@@ -393,10 +411,19 @@ router.patch('/:id/complete', async (req: Request, res: Response) => {
       });
     }
 
+    const taskId = req.params.id;
+    if (!taskId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid task ID',
+        message: 'Task ID is required'
+      });
+    }
+
     // Verify task belongs to user
     const existingTask = await prisma.task.findFirst({
       where: {
-        id: req.params.id,
+        id: taskId,
         pet: {
           ownerId: req.petOwner.id
         }
@@ -414,7 +441,7 @@ router.patch('/:id/complete', async (req: Request, res: Response) => {
     const { completedAt, completedBy, completedByName, notes } = req.body;
 
     const task = await prisma.task.update({
-      where: { id: req.params.id },
+      where: { id: taskId },
       data: {
         completed: true,
         completedAt: completedAt ? new Date(completedAt) : new Date(),
@@ -458,10 +485,19 @@ router.delete('/:id', async (req: Request, res: Response) => {
       });
     }
 
+    const taskId = req.params.id;
+    if (!taskId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid task ID',
+        message: 'Task ID is required'
+      });
+    }
+
     // Verify task belongs to user
     const existingTask = await prisma.task.findFirst({
       where: {
-        id: req.params.id,
+        id: taskId,
         pet: {
           ownerId: req.petOwner.id
         }
@@ -477,7 +513,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     await prisma.task.delete({
-      where: { id: req.params.id }
+      where: { id: taskId }
     });
 
     return res.json({

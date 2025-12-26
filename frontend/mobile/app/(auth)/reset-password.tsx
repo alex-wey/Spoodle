@@ -3,7 +3,7 @@ import { Text, TextInput, TouchableOpacity, View, StyleSheet, KeyboardAvoidingVi
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useSignIn } from '@clerk/clerk-expo'
 import { useRouter, useLocalSearchParams } from 'expo-router'
-import { Ionicons } from '@expo/vector-icons'
+import { ArrowLeft, AlertCircle } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 
 export default function ResetPasswordScreen() {
@@ -221,7 +221,7 @@ export default function ResetPasswordScreen() {
               style={styles.backButton}
               onPress={() => router.back()}
             >
-              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+              <ArrowLeft size={24} color="#FFFFFF" />
             </TouchableOpacity>
             
             <View style={styles.header}>
@@ -332,7 +332,7 @@ export default function ResetPasswordScreen() {
             pointerEvents="none"
           >
             <View style={styles.toast}>
-              <Ionicons name="alert-circle" size={20} color="#FCA5A5" />
+              <AlertCircle size={20} color="#FCA5A5" />
               <Text style={styles.toastText}>{error}</Text>
             </View>
           </Animated.View>
