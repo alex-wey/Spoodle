@@ -1,6 +1,6 @@
-# Spoodle Mobile Backend
+# Spoodle Backend API
 
-A dedicated Express.js API server for the Spoodle mobile application, completely separate from the web backend.
+A comprehensive Express.js API server for the Spoodle platform, serving both mobile and web applications.
 
 ## Overview
 
@@ -106,7 +106,7 @@ The API will be available at `http://localhost:3002`
 ## Project Structure
 
 ```
-backend-mobile/
+backend/
 ├── src/                    # Main application code
 │   ├── index.ts           # Main server with environment-aware config
 │   ├── routes/            # API route handlers
@@ -267,4 +267,4 @@ See `env.example` for all required environment variables:
 
 ## License
 
-Private - Spoodle Mobile Backend
+Private - Spoodle Backend API

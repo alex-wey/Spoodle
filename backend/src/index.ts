@@ -161,7 +161,7 @@ app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
 
 // Start server
 const server = app.listen(PORT, async () => {
-  console.log('🔑 Mobile Backend Environment variables loaded:');
+  console.log('🔑 Backend Environment variables loaded:');
   console.log(`  - NODE_ENV: ${NODE_ENV}`);
   console.log(`  - PORT: ${PORT}`);
   console.log(`  - DATABASE_URL: ${process.env.DATABASE_URL ? '✅ Set' : '❌ Not set'}`);
@@ -169,13 +169,13 @@ const server = app.listen(PORT, async () => {
   
   if (IS_PRODUCTION) {
     const domain = process.env.RAILWAY_PUBLIC_DOMAIN;
-    console.log(`🚀 Spoodle MOBILE Backend API running in PRODUCTION`);
-    console.log(`📱 Mobile app should connect to: https://${domain}`);
+    console.log(`🚀 Spoodle Backend API running in PRODUCTION`);
+    console.log(`📱 Apps should connect to: https://${domain}`);
     console.log(`🔍 API Health Check: https://${domain}/health`);
   } else {
-    console.log(`🚀 Spoodle MOBILE Backend API running on http://localhost:${PORT}`);
-    console.log(`📱 Mobile app should connect to: http://localhost:${PORT}`);
-    console.log(`🔍 Mobile API endpoints available at:`);
+    console.log(`🚀 Spoodle Backend API running on http://localhost:${PORT}`);
+    console.log(`📱 Apps should connect to: http://localhost:${PORT}`);
+    console.log(`🔍 API endpoints available at:`);
     console.log(`  - Health: http://localhost:${PORT}/health`);
     console.log(`  - Auth: http://localhost:${PORT}/api/auth/*`);
     console.log(`  - Dashboard: http://localhost:${PORT}/api/dashboard/*`);

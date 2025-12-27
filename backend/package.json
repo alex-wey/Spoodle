@@ -1,7 +1,7 @@
 {
-  "name": "@spoodle/backend-mobile",
+  "name": "@spoodle/backend",
   "version": "1.0.0",
-  "description": "Spoodle Mobile Backend API",
+  "description": "Spoodle Backend API",
   "type": "module",
   "private": true,
   "scripts": {
