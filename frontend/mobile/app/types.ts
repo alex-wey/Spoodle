@@ -61,12 +61,41 @@ export interface Task {
   taskType: string;
   title: string;
   description?: string;
-  date: Date | string;
-  times: string[];
+  scheduledDate: Date | string;
+  scheduledTime: string; // e.g., "09:00" for 9am
   completed: boolean;
+  completedAt?: Date | string;
+  completedBy?: string; // user ID who checked it off
+  completedByName?: string; // name of person who checked it off
   notes?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  carePlanId?: string;
+  reminderId?: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+export interface CreateTask {
+  petId: string;
+  taskType: string;
+  title: string;
+  description?: string;
+  scheduledDate: Date | string;
+  scheduledTime: string;
+  notes?: string;
+  carePlanId?: string;
+  reminderId?: string;
+}
+
+export interface UpdateTask {
+  title?: string;
+  description?: string;
+  scheduledDate?: Date | string;
+  scheduledTime?: string;
+  completed?: boolean;
+  notes?: string;
+  completedAt?: Date | string;
+  completedBy?: string;
+  completedByName?: string;
 }
 
 export interface Document {

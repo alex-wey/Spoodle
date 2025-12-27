@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Building, AlertCircle, ChevronRight } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { clerkApiClient } from '../lib/api';
 
@@ -39,9 +39,25 @@ export default function SelectClinicScreen() {
   const [showToast, setShowToast] = React.useState(false);
   const toastOpacity = React.useRef(new Animated.Value(0)).current;
 
-  // Fetch available clinics
+  // Check if user already has a clinic and redirect if they do
   React.useEffect(() => {
-    fetchClinics();
+    const checkExistingClinic = async () => {
+      try {
+        const response = await clerkApiClient.getMyClinic();
+        if (response.success && response.data) {
+          // User already has a clinic, redirect to main app
+          router.replace('/(tabs)/pets');
+          return;
+        }
+        // No clinic, proceed to fetch clinics
+        fetchClinics();
+      } catch (error) {
+        // Error or no clinic, proceed to fetch clinics
+        fetchClinics();
+      }
+    };
+    
+    checkExistingClinic();
   }, []);
 
   const fetchClinics = async () => {
@@ -145,14 +161,13 @@ export default function SelectClinicScreen() {
           />
         ) : (
           <View style={styles.clinicImagePlaceholder}>
-            <Ionicons name="business" size={32} color="#4559A7" />
+            <Building size={32} color="#4559A7" />
           </View>
         )}
         
         <Text style={styles.clinicName}>{clinic.name}</Text>
         
-        <Ionicons 
-          name="chevron-forward" 
+        <ChevronRight 
           size={24} 
           color="#9CA3AF" 
         />
@@ -182,7 +197,7 @@ export default function SelectClinicScreen() {
         >
           {clinics.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons name="business-outline" size={64} color="rgba(255, 255, 255, 0.5)" />
+              <Building size={64} color="rgba(255, 255, 255, 0.5)" />
               <Text style={styles.emptyText}>No clinics available</Text>
             </View>
           ) : (
@@ -220,8 +235,7 @@ export default function SelectClinicScreen() {
                   </Text>
                 </View>
                 
-                <Ionicons 
-                  name="chevron-forward" 
+                <ChevronRight 
                   size={24} 
                   color="#9CA3AF" 
                 />
@@ -249,7 +263,7 @@ export default function SelectClinicScreen() {
             ]}
           >
             <View style={styles.toast}>
-              <Ionicons name="alert-circle" size={20} color="#FCA5A5" />
+              <AlertCircle size={20} color="#FCA5A5" />
               <Text style={styles.toastText}>{error}</Text>
             </View>
           </Animated.View>

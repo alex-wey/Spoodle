@@ -3,7 +3,7 @@ import { Link, useRouter } from 'expo-router'
 import { Text, TextInput, TouchableOpacity, View, StyleSheet, KeyboardAvoidingView, Platform, Animated, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import React from 'react'
-import { Ionicons } from '@expo/vector-icons'
+import { ArrowLeft, AlertCircle } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 
 export default function Page() {
@@ -123,7 +123,7 @@ export default function Page() {
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            <ArrowLeft size={24} color="#FFFFFF" />
           </TouchableOpacity>
           
           <View style={styles.header}>
@@ -198,7 +198,7 @@ export default function Page() {
           ]}
         >
           <View style={styles.toast}>
-            <Ionicons name="alert-circle" size={20} color="#FCA5A5" />
+            <AlertCircle size={20} color="#FCA5A5" />
             <Text style={styles.toastText}>{error}</Text>
           </View>
         </Animated.View>

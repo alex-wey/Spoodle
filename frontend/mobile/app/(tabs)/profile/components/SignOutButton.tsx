@@ -6,6 +6,7 @@ import { LogOut } from 'lucide-react-native';
 import { usePetStore } from '../../../store/pets';
 import { useDocumentStore } from '../../../store/documents';
 import { useChatStore } from '../../../store/chat';
+import { clerkApiClient } from '../../../lib/api';
 
 export const SignOutButton = () => {
   // Use `useClerk()` to access the `signOut()` function
@@ -27,6 +28,7 @@ export const SignOutButton = () => {
         clearPets();
         clearDocuments();
         clearAllChatSessions();
+        clerkApiClient.clearTokenGetter();
         await signOut();
       } catch (e) {
         console.error('❌ Clerk signOut error:', e);
@@ -47,6 +49,7 @@ export const SignOutButton = () => {
             clearPets();
             clearDocuments();
             clearAllChatSessions();
+            clerkApiClient.clearTokenGetter();
             await signOut();
           } catch (e) {
             console.error('❌ Clerk signOut error:', e);

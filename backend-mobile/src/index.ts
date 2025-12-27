@@ -14,6 +14,7 @@ import bugReportRoutes from './routes/bug-report.js';
 import chatbotRoutes from './routes/chatbot.js';
 import settingsRoutes from './routes/settings.js';
 import clinicsRoutes from './routes/clinics.js';
+import tasksRoutes from './routes/tasks.js';
 
 // Load environment variables
 dotenv.config();
@@ -78,6 +79,7 @@ app.use('/api/bug-report', bugReportRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/clinics', clinicsRoutes);
+app.use('/api/tasks', tasksRoutes);
 
 // API documentation endpoint
 app.get('/api', (req: Request, res: Response) => {
@@ -91,7 +93,8 @@ app.get('/api', (req: Request, res: Response) => {
       bugReport: '/api/bug-report',
       chatbot: '/api/chatbot',
       settings: '/api/settings',
-      clinics: '/api/clinics'
+      clinics: '/api/clinics',
+      tasks: '/api/tasks'
     },
     documentation: 'Mobile API for Spoodle pet management app'
   });
@@ -109,7 +112,8 @@ app.use('/api/*', (req: Request, res: Response) => {
       '/api/documents',
       '/api/dashboard',
       '/api/bug-report',
-      '/api/chatbot'
+      '/api/chatbot',
+      '/api/tasks'
     ]
   });
 });

@@ -1,6 +1,6 @@
 'use client';
 
-import { BotMessageSquare, Send, Users, Zap, AlertCircle } from "lucide-react";
+import { MessageSquare, Send, Users, Zap, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function MessagesPage() {
@@ -12,7 +12,7 @@ export default function MessagesPage() {
           <div className="relative">
             <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl"></div>
             <div className="relative bg-primary/10 p-6 rounded-full">
-              <BotMessageSquare className="h-16 w-16 text-primary" />
+              <MessageSquare className="h-16 w-16 text-primary" />
             </div>
           </div>
         </div>

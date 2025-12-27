@@ -22,13 +22,15 @@ router.get('/', async (req: Request, res: Response) => {
     return res.json({
       success: true,
       data: clinics,
-      count: clinics.length
+      count: clinics.length,
+      message: 'Clinics retrieved successfully'
     });
   } catch (error) {
     console.error('Get clinics error:', error);
     return res.status(500).json({
       success: false,
-      error: 'Server error'
+      error: 'Server error',
+      message: 'Unable to retrieve clinics'
     });
   }
 });
@@ -59,13 +61,15 @@ router.get('/my-clinic', authenticateClerk, async (req: Request, res: Response) 
 
     return res.json({
       success: true,
-      data: req.clinic
+      data: req.clinic,
+      message: 'Clinic retrieved successfully'
     });
   } catch (error) {
     console.error('Get my clinic error:', error);
     return res.status(500).json({
       success: false,
-      error: 'Server error'
+      error: 'Server error',
+      message: 'Unable to retrieve clinic'
     });
   }
 });
