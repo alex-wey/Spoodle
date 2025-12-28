@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "build": "tsc",
-    "dev": "tsx watch --clear-screen=false src/index.ts",
+    "dev": "npm run prisma:push && tsx watch --clear-screen=false src/index.ts",
     "start": "npx prisma migrate deploy && node dist/index.js",
     "postinstall": "npm run prisma:generate",
     "clean": "rm -rf dist",
@@ -16,6 +16,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push --skip-generate && prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio"

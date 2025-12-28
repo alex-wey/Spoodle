@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { createClerkClient, verifyToken } from '@clerk/backend';
-import { getOrCreateUser } from '../utils/userSync.js';
+import { getOrCreateUser, assignClinicToPetOwner } from '../utils/userSync.js';
+import { getOrCreateStaff, assignClinicToStaff } from '../utils/staffSync.js';
 import { prisma } from '../index.js';
 
 // Initialize Clerk client once
@@ -20,16 +21,24 @@ declare global {
         clerkUserId: string;
         createdAt: Date;
         updatedAt: Date;
-      };
-      // Explicit DB owner used for authorization/ownership checks
+      } | undefined;
+      // Explicit DB owner used for authorization/ownership checks (pet owners)
       petOwner?: {
         id: string;
         clerkUserId: string;
         clinicId: string | null;
         createdAt: Date;
         updatedAt: Date;
-      };
-      // User's clinic information
+      } | undefined;
+      // Staff member record (clinic staff)
+      staff?: {
+        id: string;
+        clerkUserId: string;
+        clinicId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+      } | undefined;
+      // User's clinic information (from either petOwner or staff)
       clinic?: {
         id: string;
         clerkOrgId: string;
@@ -40,6 +49,8 @@ declare global {
         email?: string | null;
         imageUrl?: string | null;
       } | null;
+      // User type: 'petOwner' | 'staff' | 'both'
+      userType?: 'petOwner' | 'staff' | 'both';
       // Minimal profile snapshot from Clerk used for email/display
       userProfile?: {
         // With exactOptionalPropertyTypes enabled, allow possibly-undefined
@@ -87,39 +98,145 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
     // Fetch full user data from Clerk
     const { id, firstName, lastName, primaryEmailAddress, primaryPhoneNumber } = await clerk.users.getUser(userId);
 
-    // Sync user to database (creates User + PetOwner if doesn't exist)
+    // Get user's organization memberships to determine if they're staff or pet owner
+    let organizationId: string | null = null;
+    let isStaff = false;
+    let userRole: string | null = null;
+
     try {
-      const petOwner = await getOrCreateUser({
+      // Get all organizations
+      const { data: organizations } = await clerk.organizations.getOrganizationList({
+        limit: 100
+      });
+
+      // Check user's membership in each organization
+      for (const org of organizations) {
+        try {
+          const { data: memberships } = await clerk.organizations.getOrganizationMembershipList({
+            organizationId: org.id,
+            userId: [userId],
+            limit: 1
+          });
+          
+          if (memberships && memberships.length > 0 && memberships[0]) {
+            organizationId = org.id;
+            userRole = memberships[0].role || null;
+            // Check if user has staff role (org:admin, org:member with staff metadata, etc.)
+            // For now, we'll consider any org member as potential staff
+            // You can refine this based on your Clerk role setup
+            isStaff = userRole?.includes('admin') || userRole?.includes('staff') || false;
+            break;
+          }
+        } catch (error) {
+          // Continue to next organization
+          continue;
+        }
+      }
+    } catch (orgError) {
+      console.warn('Could not fetch organization memberships:', orgError);
+      // Continue - user might not be in any org yet
+    }
+
+    // Sync user to database
+    try {
+      const clerkUserData = {
         clerkUserId: id,
         email: primaryEmailAddress?.emailAddress!,
         firstName: firstName!,
         lastName: lastName!,
         phone: primaryPhoneNumber?.phoneNumber ?? null,
-      });
-      
-      // Fetch clinic information if assigned
+      };
+
+      // Determine user type and create/get appropriate records
+      let petOwner: Awaited<ReturnType<typeof getOrCreateUser>> | undefined = undefined;
+      let staff: Awaited<ReturnType<typeof getOrCreateStaff>> | undefined = undefined;
       let clinic = null;
-      if (petOwner.clinicId) {
-        clinic = await prisma.clinic.findUnique({
-          where: { id: petOwner.clinicId },
-          select: {
-            id: true,
-            clerkOrgId: true,
-            name: true,
-            slug: true,
-            address: true,
-            phoneNumber: true,
-            email: true,
-            imageUrl: true
-          }
+      let userType: 'petOwner' | 'staff' | 'both' = 'petOwner';
+
+      // If user is in an organization, check if they're staff
+      if (organizationId && isStaff) {
+        // Get or create Staff record
+        staff = await getOrCreateStaff(clerkUserData);
+        
+        // Sync clinic from organization
+        const clinicFromOrg = await prisma.clinic.findUnique({
+          where: { clerkOrgId: organizationId }
         });
+
+        if (clinicFromOrg && !staff.clinicId) {
+          // Assign clinic to staff if not already assigned
+          staff = await assignClinicToStaff(staff.id, clinicFromOrg.id);
+        }
+
+        if (staff.clinicId) {
+          clinic = await prisma.clinic.findUnique({
+            where: { id: staff.clinicId },
+            select: {
+              id: true,
+              clerkOrgId: true,
+              name: true,
+              slug: true,
+              address: true,
+              phoneNumber: true,
+              email: true,
+              imageUrl: true
+            }
+          });
+        }
+
+        userType = 'staff';
       }
-      
+
+      // Also check/create PetOwner (user can be both)
+      try {
+        petOwner = await getOrCreateUser(clerkUserData);
+        
+        // If user is in an organization but not staff, sync clinic to petOwner
+        if (organizationId && !isStaff && petOwner && !petOwner.clinicId) {
+          const clinicFromOrg = await prisma.clinic.findUnique({
+            where: { clerkOrgId: organizationId }
+          });
+
+          if (clinicFromOrg) {
+            petOwner = await assignClinicToPetOwner(petOwner.id, clinicFromOrg.id);
+          }
+        }
+
+        // Fetch clinic information if petOwner has one
+        if (petOwner?.clinicId && !clinic) {
+          clinic = await prisma.clinic.findUnique({
+            where: { id: petOwner.clinicId },
+            select: {
+              id: true,
+              clerkOrgId: true,
+              name: true,
+              slug: true,
+              address: true,
+              phoneNumber: true,
+              email: true,
+              imageUrl: true
+            }
+          });
+        }
+
+        // Update userType if both exist
+        if (staff && petOwner) {
+          userType = 'both';
+        } else if (!staff && petOwner) {
+          userType = 'petOwner';
+        }
+      } catch (petOwnerError) {
+        console.warn('Could not create/get PetOwner:', petOwnerError);
+        // Continue - user might be staff only
+      }
+
       // Attach objects to request
-      // Backward-compat: keep req.user pointing to petOwner
-      req.user = petOwner;
+      // Backward-compat: keep req.user pointing to petOwner if exists, otherwise staff
+      req.user = petOwner || staff;
       req.petOwner = petOwner;
+      req.staff = staff;
       req.clinic = clinic;
+      req.userType = userType;
 
       // Build userProfile without forcing undefined values
       const userProfile: {

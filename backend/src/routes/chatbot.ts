@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { validateRequest } from '../middleware/validation.js';
 import { authenticateClerk } from '../middleware/auth.js';
 import { prisma } from '../index.js';
+import { verifyPetClinicAccess } from '../utils/clinicAuth.js';
 import OpenAI from 'openai';
 
 const router = Router();
@@ -78,26 +79,34 @@ router.post('/chat',
   validateRequest({ body: chatMessageSchema }),
   async (req: Request, res: Response) => {
     try {
-      const { message, petId } = req.body;
-      
-      // Get the PetOwner ID for this user
-      const petOwner = await prisma.petOwner.findUnique({
-        where: { clerkUserId: req.user!.clerkUserId }
-      });
-      
-      if (!petOwner) {
-        return res.status(500).json({
+      if (!req.petOwner && !req.staff) {
+        return res.status(401).json({
           success: false,
-          error: 'Pet owner not found',
-          message: 'Unable to find pet owner record. Please contact support.'
+          error: 'Authentication required',
+          message: 'Please log in to use the chatbot'
         });
       }
+
+      const { message, petId } = req.body;
       
-      // Verify the pet belongs to the user
+      // Verify the pet belongs to user's clinic
+      const hasAccess = await verifyPetClinicAccess(req, petId as string);
+
+      if (!hasAccess) {
+        return res.status(404).json({
+          success: false,
+          error: 'Pet not found',
+          message: 'The specified pet does not exist or you do not have permission to access it'
+        });
+      }
+
+      // Get pet for chatbot context
       const pet = await prisma.pet.findFirst({
         where: {
           id: petId as string,
-          ownerId: petOwner.id
+          petOwner: {
+            clinicId: req.petOwner?.clinicId || req.staff?.clinicId || null
+          }
         }
       });
 
@@ -150,30 +159,20 @@ router.get('/history/:petId',
   }),
   async (req: Request, res: Response) => {
     try {
-      const { petId } = req.params;
-      
-      // Get the PetOwner ID for this user
-      const petOwner = await prisma.petOwner.findUnique({
-        where: { clerkUserId: req.user!.clerkUserId }
-      });
-      
-      if (!petOwner) {
-        return res.status(500).json({
+      if (!req.petOwner && !req.staff) {
+        return res.status(401).json({
           success: false,
-          error: 'Pet owner not found',
-          message: 'Unable to find pet owner record. Please contact support.'
+          error: 'Authentication required',
+          message: 'Please log in to view chat history'
         });
       }
-      
-      // Verify the pet belongs to the user
-      const pet = await prisma.pet.findFirst({
-        where: {
-          id: petId as string,
-          ownerId: petOwner.id
-        }
-      });
 
-      if (!pet) {
+      const { petId } = req.params;
+      
+      // Verify the pet belongs to user's clinic
+      const hasAccess = await verifyPetClinicAccess(req, petId as string);
+
+      if (!hasAccess) {
         return res.status(404).json({
           success: false,
           error: 'Pet not found',

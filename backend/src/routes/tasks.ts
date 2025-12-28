@@ -1,16 +1,17 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../index.js';
 import { authenticateClerk } from '../middleware/auth.js';
+import { getClinicScopedTaskWhere, verifyPetClinicAccess } from '../utils/clinicAuth.js';
 
 const router = Router();
 
 // Apply authentication to all task routes
 router.use(authenticateClerk);
 
-// Get all tasks for the authenticated user
+// Get all tasks for the authenticated user (petOwner or staff)
 router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.petOwner) {
+    if (!req.petOwner && !req.staff) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -20,11 +21,10 @@ router.get('/', async (req: Request, res: Response) => {
 
     const { petId, startDate, endDate } = req.query;
 
-    // Build where clause
+    // Build where clause with clinic filtering
+    const baseWhere = getClinicScopedTaskWhere(req);
     const where: any = {
-      pet: {
-        ownerId: req.petOwner.id
-      }
+      ...baseWhere
     };
 
     // Filter by pet if specified
@@ -97,7 +97,7 @@ router.get('/', async (req: Request, res: Response) => {
 // Get a specific task
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.petOwner) {
+    if (!req.petOwner && !req.staff) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -117,9 +117,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     const task = await prisma.task.findFirst({
       where: {
         id: taskId,
-        pet: {
-          ownerId: req.petOwner.id
-        }
+        ...getClinicScopedTaskWhere(req)
       },
       include: {
         pet: {
@@ -158,7 +156,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 // Create a new task
 router.post('/', async (req: Request, res: Response) => {
   try {
-    if (!req.petOwner) {
+    if (!req.petOwner && !req.staff) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -189,19 +187,14 @@ router.post('/', async (req: Request, res: Response) => {
       });
     }
 
-    // Verify pet belongs to the user
-    const pet = await prisma.pet.findFirst({
-      where: {
-        id: petId,
-        ownerId: req.petOwner.id
-      }
-    });
+    // Verify pet belongs to user's clinic
+    const hasAccess = await verifyPetClinicAccess(req, petId);
 
-    if (!pet) {
+    if (!hasAccess) {
       return res.status(400).json({
         success: false,
         error: 'Invalid pet',
-        message: 'Pet not found or does not belong to you'
+        message: 'Pet not found or does not belong to your clinic'
       });
     }
 
@@ -281,7 +274,7 @@ router.patch('/:id', async (req: Request, res: Response) => {
 // Shared update handler
 async function handleUpdateTask(req: Request, res: Response) {
   try {
-    if (!req.petOwner) {
+    if (!req.petOwner && !req.staff) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required'
@@ -297,13 +290,11 @@ async function handleUpdateTask(req: Request, res: Response) {
       });
     }
 
-    // Verify task belongs to user
+    // Verify task belongs to user's clinic
     const existingTask = await prisma.task.findFirst({
       where: {
         id: taskId,
-        pet: {
-          ownerId: req.petOwner.id
-        }
+        ...getClinicScopedTaskWhere(req)
       }
     });
 
@@ -404,7 +395,7 @@ async function handleUpdateTask(req: Request, res: Response) {
 // Mark task as completed
 router.patch('/:id/complete', async (req: Request, res: Response) => {
   try {
-    if (!req.petOwner) {
+    if (!req.petOwner && !req.staff) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required'
@@ -420,13 +411,11 @@ router.patch('/:id/complete', async (req: Request, res: Response) => {
       });
     }
 
-    // Verify task belongs to user
+    // Verify task belongs to user's clinic
     const existingTask = await prisma.task.findFirst({
       where: {
         id: taskId,
-        pet: {
-          ownerId: req.petOwner.id
-        }
+        ...getClinicScopedTaskWhere(req)
       }
     });
 
@@ -478,7 +467,7 @@ router.patch('/:id/complete', async (req: Request, res: Response) => {
 // Delete a task
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.petOwner) {
+    if (!req.petOwner && !req.staff) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required'
@@ -494,13 +483,11 @@ router.delete('/:id', async (req: Request, res: Response) => {
       });
     }
 
-    // Verify task belongs to user
+    // Verify task belongs to user's clinic
     const existingTask = await prisma.task.findFirst({
       where: {
         id: taskId,
-        pet: {
-          ownerId: req.petOwner.id
-        }
+        ...getClinicScopedTaskWhere(req)
       }
     });
 

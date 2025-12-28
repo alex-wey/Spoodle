@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { prisma } from '../index.js';
 import { validateRequest, commonSchemas } from '../middleware/validation.js';
 import { authenticateClerk } from '../middleware/auth.js';
+import { getClinicScopedDocumentWhere, verifyPetClinicAccess } from '../utils/clinicAuth.js';
 
 const router = Router();
 
@@ -96,10 +97,10 @@ const upload = multer({
 // Apply authentication to all document routes
 router.use(authenticateClerk);
 
-// Get all documents for the authenticated user
+// Get all documents for the authenticated user (petOwner or staff)
 router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
+    if (!req.petOwner && !req.staff) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -108,11 +109,7 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     const documents = await prisma.document.findMany({
-      where: {
-        pet: {
-          ownerId: req.user.id
-        }
-      },
+      where: getClinicScopedDocumentWhere(req),
       include: {
         pet: {
           select: {
@@ -156,7 +153,7 @@ router.get('/category/:category',
       console.log('📂 [Documents] Received query:', JSON.stringify(req.query, null, 2));
       console.log('📂 [Documents] User authenticated:', !!req.user);
       
-      if (!req.user) {
+      if (!req.petOwner && !req.staff) {
         return res.status(401).json({
           success: false,
           error: 'Authentication required',
@@ -169,9 +166,7 @@ router.get('/category/:category',
       
       const documents = await prisma.document.findMany({
         where: {
-          pet: {
-            ownerId: req.user!.id
-          },
+          ...getClinicScopedDocumentWhere(req),
           category: category as string
         },
         include: {
@@ -212,7 +207,7 @@ router.get('/pet/:petId/category/:category',
   }),
   async (req: Request, res: Response) => {
     try {
-      if (!req.user) {
+      if (!req.petOwner && !req.staff) {
         return res.status(401).json({
           success: false,
           error: 'Authentication required',
@@ -222,15 +217,10 @@ router.get('/pet/:petId/category/:category',
 
       const { petId, category } = req.params;
       
-      // Verify pet belongs to the authenticated user
-      const pet = await prisma.pet.findFirst({
-        where: {
-          id: petId as string,
-          ownerId: req.user!.id
-        }
-      });
+      // Verify pet belongs to user's clinic
+      const hasAccess = await verifyPetClinicAccess(req, petId as string);
       
-      if (!pet) {
+      if (!hasAccess) {
         return res.status(404).json({
           success: false,
           error: 'Pet not found',
@@ -242,9 +232,7 @@ router.get('/pet/:petId/category/:category',
         where: { 
           petId: petId as string,
           category: category as string,
-          pet: {
-            ownerId: req.user!.id
-          }
+          ...getClinicScopedDocumentWhere(req)
         },
         include: {
           pet: {
@@ -274,22 +262,79 @@ router.get('/pet/:petId/category/:category',
   }
 );
 
+// Get documents for a specific pet (clinic staff view)
+// This endpoint allows clinic staff to view documents for pets in their clinic
+// Note: This is now redundant with the main /pet/:petId endpoint which handles both petOwner and staff
+// Keeping for backward compatibility
+router.get('/clinic/pet/:petId',
+  validateRequest({ params: z.object({ petId: commonSchemas.id }) }),
+  async (req: Request, res: Response) => {
+    try {
+      if (!req.staff && !req.petOwner) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          message: 'Please log in to view documents'
+        });
+      }
+
+      const { petId } = req.params;
+
+      // Verify pet belongs to user's clinic
+      const hasAccess = await verifyPetClinicAccess(req, petId as string);
+      
+      if (!hasAccess) {
+        return res.status(404).json({
+          success: false,
+          error: 'Pet not found',
+          message: 'The requested pet does not exist or does not belong to your clinic'
+        });
+      }
+
+      // Get all documents for this pet (already filtered by clinic access)
+      const documents = await prisma.document.findMany({
+        where: { 
+          petId: petId as string,
+          ...getClinicScopedDocumentWhere(req)
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      
+      return res.json({
+        success: true,
+        data: documents,
+        message: 'Documents retrieved successfully'
+      });
+    } catch (error) {
+      console.error('Get clinic pet documents error:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Server error',
+        message: 'Unable to retrieve documents'
+      });
+    }
+  }
+);
+
 // Get documents for a specific pet
 router.get('/pet/:petId',
   validateRequest({ params: z.object({ petId: commonSchemas.id }) }),
   async (req: Request, res: Response) => {
     try {
+      if (!req.petOwner && !req.staff) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          message: 'Please log in to view documents'
+        });
+      }
+
       const { petId } = req.params;
       
-      // Verify pet belongs to the authenticated user
-      const pet = await prisma.pet.findFirst({
-        where: { 
-          id: petId as string,
-          ownerId: req.user!.id
-        }
-      });
+      // Verify pet belongs to user's clinic
+      const hasAccess = await verifyPetClinicAccess(req, petId as string);
       
-      if (!pet) {
+      if (!hasAccess) {
         return res.status(404).json({
           success: false,
           error: 'Pet not found',
@@ -300,9 +345,7 @@ router.get('/pet/:petId',
       const documents = await prisma.document.findMany({
         where: { 
           petId: petId as string,
-          pet: {
-            ownerId: req.user!.id
-          }
+          ...getClinicScopedDocumentWhere(req)
         },
         orderBy: { createdAt: 'desc' }
       });
@@ -328,14 +371,20 @@ router.get('/:id',
   validateRequest({ params: z.object({ id: commonSchemas.id }) }),
   async (req: Request, res: Response) => {
     try {
+      if (!req.petOwner && !req.staff) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          message: 'Please log in to view documents'
+        });
+      }
+
       const { id } = req.params;
       
       const document = await prisma.document.findFirst({
         where: { 
           id: id as string,
-          pet: {
-            ownerId: req.user!.id
-          }
+          ...getClinicScopedDocumentWhere(req)
         },
         include: {
           pet: {
@@ -393,12 +442,21 @@ router.post('/upload',
       console.log('  Body:', req.body);
       console.log('  Headers:', req.headers);
       
-      if (!req.user) {
+      if (!req.petOwner && !req.staff) {
         console.log('❌ No user authenticated');
         return res.status(401).json({
           success: false,
           error: 'Authentication required',
           message: 'Please log in to upload documents'
+        });
+      }
+
+      // Only pet owners can upload documents (staff view but don't upload)
+      if (!req.petOwner) {
+        return res.status(403).json({
+          success: false,
+          error: 'Permission denied',
+          message: 'Only pet owners can upload documents'
         });
       }
 
@@ -418,62 +476,43 @@ router.post('/upload',
       console.log('  FileName:', userFileName);
       console.log('  File details:', req.file);
       
-      // If petId is provided, verify pet belongs to the user
-      // Note: req.user is actually a PetOwner object from userSync
+      // If petId is provided, verify pet belongs to the user's clinic
       let selectedPetId = petId;
       if (petId) {
-        const petOwnerId = req.user!.id; // This is the PetOwner ID
+        const petOwnerId = req.petOwner!.id;
         console.log('🔍 Pet lookup:', {
           petId,
           petOwnerId,
-          clerkUserId: req.user!.clerkUserId,
-          userObject: req.user
+          clerkUserId: req.petOwner!.clerkUserId,
+          clinicId: req.petOwner!.clinicId
         });
         
-        // First, verify the PetOwner exists and get their pets
-        const petOwner = await prisma.petOwner.findUnique({
-          where: { id: petOwnerId },
-          include: { pets: true }
-        });
+        // Verify pet belongs to petOwner and their clinic
+        const hasAccess = await verifyPetClinicAccess(req, petId as string);
         
-        if (!petOwner) {
-          console.error('❌ PetOwner not found:', petOwnerId);
-          return res.status(500).json({
-            success: false,
-            error: 'Account error',
-            message: 'Unable to verify pet ownership. Please try again.'
-          });
-        }
-        
-        console.log(`📋 PetOwner found with ${petOwner.pets.length} pets`);
-        
-        // Now check if the requested pet belongs to this PetOwner
-        const pet = await prisma.pet.findFirst({
-          where: {
-            id: petId as string,
-            ownerId: petOwnerId
-          }
-        });
-        
-        console.log('🔍 Pet lookup result:', pet ? { id: pet.id, name: pet.name } : 'NOT FOUND');
-        
-        if (!pet) {
-          console.error('❌ Pet not found or does not belong to user:', {
+        if (!hasAccess) {
+          console.error('❌ Pet not found or does not belong to user/clinic:', {
             requestedPetId: petId,
             petOwnerId,
-            availablePets: petOwner.pets.map(p => ({ id: p.id, name: p.name }))
+            clinicId: req.petOwner!.clinicId
           });
           return res.status(400).json({
             success: false,
             error: 'Invalid pet',
-            message: 'Pet not found or does not belong to you'
+            message: 'Pet not found or does not belong to your clinic'
           });
         }
+        
+        console.log('✅ Pet verified for clinic access');
       } else {
-        // If no petId provided, get the user's first pet
-        const petOwnerId = req.user!.id;
+        // If no petId provided, get the user's first pet from their clinic
+        const petOwnerId = req.petOwner!.id;
+        const clinicWhere = req.petOwner!.clinicId 
+          ? { ownerId: petOwnerId, petOwner: { clinicId: req.petOwner!.clinicId } }
+          : { ownerId: petOwnerId };
+        
         const userPets = await prisma.pet.findMany({
-          where: { ownerId: petOwnerId },
+          where: clinicWhere,
           take: 1
         });
         
@@ -650,13 +689,19 @@ router.get('/download/:id',
       const { id } = req.params;
       const wantJson = req.query.json === '1' || (req.headers.accept || '').includes('application/json');
       
-      // Check if document exists and belongs to user
+      if (!req.petOwner && !req.staff) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          message: 'Please log in to download documents'
+        });
+      }
+
+      // Check if document exists and belongs to user's clinic
       const document = await prisma.document.findFirst({
         where: { 
           id: id as string,
-          pet: {
-            ownerId: req.user!.id
-          }
+          ...getClinicScopedDocumentWhere(req)
         }
       });
       
@@ -769,13 +814,28 @@ router.delete('/:id',
     try {
       const { id } = req.params;
       
-      // Check if document exists and belongs to user
+      if (!req.petOwner && !req.staff) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          message: 'Please log in to delete documents'
+        });
+      }
+
+      // Only pet owners can delete documents
+      if (!req.petOwner) {
+        return res.status(403).json({
+          success: false,
+          error: 'Permission denied',
+          message: 'Only pet owners can delete documents'
+        });
+      }
+
+      // Check if document exists and belongs to user's clinic
       const existingDocument = await prisma.document.findFirst({
         where: { 
           id: id as string,
-          pet: {
-            ownerId: req.user!.id
-          }
+          ...getClinicScopedDocumentWhere(req)
         }
       });
       

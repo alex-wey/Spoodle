@@ -4,7 +4,7 @@ CREATE TABLE "users" (
     "clerkUserId" TEXT NOT NULL,
     "firstName" TEXT NOT NULL,
     "lastName" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
+    "email" TEXT,
     "phone" TEXT,
     "address" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -17,6 +17,7 @@ CREATE TABLE "users" (
 CREATE TABLE "pet_owners" (
     "id" TEXT NOT NULL,
     "clerkUserId" TEXT NOT NULL,
+    "clinicId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -103,11 +104,70 @@ CREATE TABLE "settings" (
     CONSTRAINT "settings_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "clinics" (
+    "id" TEXT NOT NULL,
+    "clerkOrgId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "address" TEXT,
+    "phoneNumber" TEXT,
+    "email" TEXT,
+    "imageUrl" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "metadata" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "clinics_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "staff" (
+    "id" TEXT NOT NULL,
+    "clerkUserId" TEXT NOT NULL,
+    "clinicId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "staff_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "tasks" (
+    "id" TEXT NOT NULL,
+    "petId" TEXT NOT NULL,
+    "taskType" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "scheduledDate" TIMESTAMP(3) NOT NULL,
+    "scheduledTime" TEXT NOT NULL,
+    "completed" BOOLEAN NOT NULL DEFAULT false,
+    "completedAt" TIMESTAMP(3),
+    "completedBy" TEXT,
+    "completedByName" TEXT,
+    "notes" TEXT,
+    "carePlanId" TEXT,
+    "reminderId" TEXT,
+    "recurring" BOOLEAN NOT NULL DEFAULT false,
+    "recurrencePattern" TEXT,
+    "recurrenceDaysOfWeek" TEXT,
+    "recurrenceEndDate" TIMESTAMP(3),
+    "recurrenceTimes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "tasks_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_clerkUserId_key" ON "users"("clerkUserId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_phone_key" ON "users"("phone");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "pet_owners_clerkUserId_key" ON "pet_owners"("clerkUserId");
@@ -139,8 +199,47 @@ CREATE UNIQUE INDEX "settings_petOwnerId_key" ON "settings"("petOwnerId");
 -- CreateIndex
 CREATE INDEX "settings_petOwnerId_idx" ON "settings"("petOwnerId");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "clinics_clerkOrgId_key" ON "clinics"("clerkOrgId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "clinics_slug_key" ON "clinics"("slug");
+
+-- CreateIndex
+CREATE INDEX "clinics_clerkOrgId_idx" ON "clinics"("clerkOrgId");
+
+-- CreateIndex
+CREATE INDEX "clinics_slug_idx" ON "clinics"("slug");
+
+-- CreateIndex
+CREATE INDEX "pet_owners_clinicId_idx" ON "pet_owners"("clinicId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "staff_clerkUserId_key" ON "staff"("clerkUserId");
+
+-- CreateIndex
+CREATE INDEX "staff_clinicId_idx" ON "staff"("clinicId");
+
+-- CreateIndex
+CREATE INDEX "tasks_petId_idx" ON "tasks"("petId");
+
+-- CreateIndex
+CREATE INDEX "tasks_scheduledDate_idx" ON "tasks"("scheduledDate");
+
+-- CreateIndex
+CREATE INDEX "tasks_completed_idx" ON "tasks"("completed");
+
+-- CreateIndex
+CREATE INDEX "tasks_taskType_idx" ON "tasks"("taskType");
+
+-- CreateIndex
+CREATE INDEX "tasks_recurring_idx" ON "tasks"("recurring");
+
 -- AddForeignKey
 ALTER TABLE "pet_owners" ADD CONSTRAINT "pet_owners_clerkUserId_fkey" FOREIGN KEY ("clerkUserId") REFERENCES "users"("clerkUserId") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "pet_owners" ADD CONSTRAINT "pet_owners_clinicId_fkey" FOREIGN KEY ("clinicId") REFERENCES "clinics"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "pets" ADD CONSTRAINT "pets_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "pet_owners"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -157,3 +256,11 @@ ALTER TABLE "chat_messages" ADD CONSTRAINT "chat_messages_petOwnerId_fkey" FOREI
 -- AddForeignKey
 ALTER TABLE "settings" ADD CONSTRAINT "settings_petOwnerId_fkey" FOREIGN KEY ("petOwnerId") REFERENCES "pet_owners"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+-- AddForeignKey
+ALTER TABLE "staff" ADD CONSTRAINT "staff_clerkUserId_fkey" FOREIGN KEY ("clerkUserId") REFERENCES "users"("clerkUserId") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "staff" ADD CONSTRAINT "staff_clinicId_fkey" FOREIGN KEY ("clinicId") REFERENCES "clinics"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "tasks" ADD CONSTRAINT "tasks_petId_fkey" FOREIGN KEY ("petId") REFERENCES "pets"("id") ON DELETE CASCADE ON UPDATE CASCADE;

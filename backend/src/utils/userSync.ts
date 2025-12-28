@@ -38,7 +38,7 @@ export async function getOrCreateUser(clerkUserData: ClerkUserData) {
 
     // User doesn't exist, try to create both User and PetOwner
     try {
-      const newUser = await tx.user.create({ data: clerkUserData });
+      await tx.user.create({ data: clerkUserData });
       const petOwner = await tx.petOwner.create({
         data: { clerkUserId: clerkUserData.clerkUserId }
       });
