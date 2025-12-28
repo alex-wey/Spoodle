@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Alert, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Alert, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, ChevronLeft, ChevronRight, X, Trash2, Save } from 'lucide-react-native';
 import { getTaskTypeLabel } from './constants';
@@ -245,7 +245,17 @@ export function TaskFormModal({
           <View style={{ width: 24 }} />
         </View>
 
-        <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoidingView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
+          <ScrollView
+            style={styles.modalBody}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.scrollViewContent}
+          >
           {/* Task Type Dropdown */}
           <View style={styles.section}>
             <TaskTypeDropdown
@@ -477,7 +487,7 @@ export function TaskFormModal({
 
           {/* Notes Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Notes (Optional)</Text>
+            <Text style={styles.sectionLabel}>Notes (optional)</Text>
             <TextInput
               style={styles.notesInput}
               placeholder="Add any notes for this task..."
@@ -490,7 +500,13 @@ export function TaskFormModal({
           </View>
 
           {/* Save Button */}
-          <TouchableOpacity style={styles.saveTaskButton} onPress={handleSave}>
+          <TouchableOpacity
+            style={[
+              styles.saveTaskButton,
+              !showDeleteButton && styles.saveTaskButtonWithPadding,
+            ]}
+            onPress={handleSave}
+          >
             <Save size={20} color="#FFFFFF" />
             <Text style={styles.saveTaskButtonText}>{saveButtonText}</Text>
           </TouchableOpacity>
@@ -502,7 +518,8 @@ export function TaskFormModal({
               <Text style={styles.deleteButtonText}>Delete Task</Text>
             </TouchableOpacity>
           )}
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>
   );
@@ -527,9 +544,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2937',
   },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
   modalBody: {
     flex: 1,
     paddingHorizontal: 20,
+  },
+  scrollViewContent: {
+    paddingBottom: 20,
   },
   section: {
     marginTop: 24,
@@ -800,6 +823,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     minHeight: 56,
+  },
+  saveTaskButtonWithPadding: {
+    marginBottom: 40,
   },
   saveTaskButtonText: {
     fontSize: 18,

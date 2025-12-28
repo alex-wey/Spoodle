@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ScrollView, TouchableOpacity, Text, Image, StyleSheet } from 'react-native';
-import { getSafeImageSource } from '../../../lib/imageUtils';
+import { getSafeImageSource } from '../../lib/imageUtils';
 
 interface Pet {
   id: string;

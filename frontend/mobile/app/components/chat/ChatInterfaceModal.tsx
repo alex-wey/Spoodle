@@ -13,8 +13,8 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, Send } from 'lucide-react-native';
 import { useAuth, useUser } from '@clerk/clerk-expo';
-import { useChatStore, Message } from '../../../store/chat';
-import { getApiBaseUrl } from '../../../lib/api';
+import { useChatStore, Message } from '../../store/chat';
+import { getApiBaseUrl } from '../../lib/api';
 
 // Get API base URL from environment
 const API_BASE_URL = getApiBaseUrl();

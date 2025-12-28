@@ -10,7 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { X, Hospital } from 'lucide-react-native';
-import { clerkApiClient } from '../../../lib/api';
+import { clerkApiClient } from '../../lib/api';
 
 interface Clinic {
   id: string;
@@ -60,10 +60,10 @@ export function ClinicSwitchModal({
       
       if (response.data) {
         // Separate Spoodle from other clinics
-        const spoodle = response.data.find(c => c.slug === 'spoodle' && c.id !== currentClinicId);
+        const spoodle = response.data.find((c: Clinic) => c.slug === 'spoodle' && c.id !== currentClinicId);
         const otherClinics = response.data
-          .filter(c => c.slug !== 'spoodle' && c.id !== currentClinicId)
-          .sort((a, b) => a.name.localeCompare(b.name));
+          .filter((c: Clinic) => c.slug !== 'spoodle' && c.id !== currentClinicId)
+          .sort((a: Clinic, b: Clinic) => a.name.localeCompare(b.name));
         setSpoodleClinic(spoodle || null);
         setClinics(otherClinics);
       }
@@ -181,7 +181,7 @@ export function ClinicSwitchModal({
                   <View style={styles.spoodleContent}>
                     <View style={styles.spoodleIcon}>
                       <Image
-                        source={require('../../../../assets/images/icon.png')}
+                        source={require('../../../assets/images/icon.png')}
                         style={styles.spoodleLogo}
                       />
                     </View>

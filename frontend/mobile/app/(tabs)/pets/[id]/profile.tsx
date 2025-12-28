@@ -8,10 +8,10 @@ import { clerkApiClient } from "../../../lib/api";
 import { getSafeImageSource } from "../../../lib/imageUtils";
 import { usePetStore } from "../../../store/pets";
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { InfoRow } from "./components/InfoRow";
-import { SpeciesSelector, getSpeciesIcon } from "./components/SpeciesSelector";
-import { BiologicalSexSelector, getBiologicalSexIcon } from "./components/BiologicalSexSelector";
-import { EditableList, TagList } from "./components/EditableList";
+import { InfoRow } from "../../../components/pets/[id]/InfoRow";
+import { SpeciesSelector, getSpeciesIcon } from "../../../components/pets/[id]/SpeciesSelector";
+import { BiologicalSexSelector, getBiologicalSexIcon } from "../../../components/pets/[id]/BiologicalSexSelector";
+import { EditableList, TagList } from "../../../components/pets/[id]/EditableList";
 
 interface PetProfile {
   petId: string;
