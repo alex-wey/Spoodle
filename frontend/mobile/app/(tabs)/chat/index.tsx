@@ -5,8 +5,8 @@ import { BotMessageSquare, Dog, Clock, Bug, Heart, Apple, Lightbulb, Bell } from
 import { useRouter } from "expo-router";
 import { usePetStore } from "../../store/pets";
 import { useChatStore } from "../../store/chat";
-import PetSelectionModal from "../pets/components/PetSelectionModal";
-import ChatInterfaceModal from "./components/ChatInterfaceModal";
+import PetSelectionModal from "../../components/pets/PetSelectionModal";
+import ChatInterfaceModal from "../../components/chat/ChatInterfaceModal";
 import { FAB } from "../../components/FAB";
 
 export default function ChatScreen() {

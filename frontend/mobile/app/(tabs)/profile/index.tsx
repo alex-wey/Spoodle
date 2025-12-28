@@ -9,13 +9,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
-import { SignOutButton } from './components/SignOutButton';
-import { DeleteAccountButton } from './components/DeleteAccountButton';
-import { ProfileCard } from './components/ProfileCard';
-import { ContactInformation } from './components/ContactInformation';
-import { ClinicInformation } from './components/ClinicInformation';
-import { SpoodleInformation } from './components/SpoodleInformation';
-import { ClinicSwitchModal } from './components/ClinicSwitchModal';
+import { SignOutButton } from '../../components/profile/SignOutButton';
+import { DeleteAccountButton } from '../../components/profile/DeleteAccountButton';
+import { ProfileCard } from '../../components/profile/ProfileCard';
+import { ContactInformation } from '../../components/profile/ContactInformation';
+import { ClinicInformation } from '../../components/profile/ClinicInformation';
+import { SpoodleInformation } from '../../components/profile/SpoodleInformation';
+import { ClinicSwitchModal } from '../../components/profile/ClinicSwitchModal';
 import * as ImagePicker from 'expo-image-picker';
 import { clerkApiClient } from '../../lib/api';
 

@@ -68,7 +68,6 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <User size={24} color={color} />,
         }}
       />
-      {/* Hide all other routes from tab bar */}
       <Tabs.Screen
         name="pets/[id]/profile"
         options={{ href: null }}
@@ -95,67 +94,6 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="index"
-        options={{ href: null }}
-      />
-      {/* Hide component files from tab bar */}
-      <Tabs.Screen
-        name="chat/components/ChatInterfaceModal"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="chat/components/ChatbotIntroModal"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="pets/components/PetCard"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="pets/components/PetSelectionModal"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="pets/[id]/components/BiologicalSexSelector"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="pets/[id]/components/EditableList"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="pets/[id]/components/InfoRow"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="pets/[id]/components/SpeciesSelector"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="profile/components/ClinicInformation"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="profile/components/ClinicSwitchModal"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="profile/components/ContactInformation"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="profile/components/DeleteAccountButton"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="profile/components/ProfileCard"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="profile/components/SignOutButton"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="profile/components/SpoodleInformation"
         options={{ href: null }}
       />
     </Tabs>

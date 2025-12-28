@@ -1,8 +1,8 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { FileText, ChevronRight } from "lucide-react-native";
-import type { Pet } from "../../../types";
-import { calculateAge } from "../../../lib/utils";
-import { getSafeImageSource } from "../../../lib/imageUtils";
+import type { Pet } from "../../types";
+import { calculateAge } from "../../lib/utils";
+import { getSafeImageSource } from "../../lib/imageUtils";
 
 interface PetCardProps {
   pet: Pet;

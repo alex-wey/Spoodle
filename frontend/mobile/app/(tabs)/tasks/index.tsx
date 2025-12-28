@@ -14,15 +14,15 @@ import { useFocusEffect } from '@react-navigation/native';
 import { usePetStore } from '../../store/pets';
 import { useUser } from '@clerk/clerk-expo';
 import { clerkApiClient } from '../../lib/api';
-import PetSelectionModal from '../pets/components/PetSelectionModal';
+import PetSelectionModal from '../../components/pets/PetSelectionModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { PetSelector } from './components/PetSelector';
-import { MonthNavigation } from './components/MonthNavigation';
-import { DateSelector } from './components/DateSelector';
-import { TaskCalendar } from './components/TaskCalendar';
-import { TaskDetailModal } from './components/TaskDetailModal';
-import { EditTasksModal } from './components/EditTasksModal';
-import { TaskFormModal } from './components/TaskFormModal';
+import { PetSelector } from '../../components/tasks/PetSelector';
+import { MonthNavigation } from '../../components/tasks/MonthNavigation';
+import { DateSelector } from '../../components/tasks/DateSelector';
+import { TaskCalendar } from '../../components/tasks/TaskCalendar';
+import { TaskDetailModal } from '../../components/tasks/TaskDetailModal';
+import { EditTasksModal } from '../../components/tasks/EditTasksModal';
+import { TaskFormModal } from '../../components/tasks/TaskFormModal';
 
 export default function TaskCalendarScreen() {
   const { pets, selectedPetId, selectPet, fetchPets } = usePetStore();
@@ -434,11 +434,9 @@ export default function TaskCalendarScreen() {
           }
         }
         
-        if (fromCalendar) {
-          fetchTasks();
-        } else {
-          fetchAllTasks();
-        }
+        // Always refresh both views to ensure consistency
+        fetchTasks();
+        fetchAllTasks();
         
         if (taskModalVisible && (selectedTask?.id === task.id || task._combinedFrom?.includes(selectedTask?.id))) {
           setTaskModalVisible(false);
@@ -491,11 +489,9 @@ export default function TaskCalendarScreen() {
         Alert.alert('Success', 'This occurrence has been skipped and will be hidden from the calendar.');
       }
       
-      if (fromCalendar) {
-        fetchTasks();
-      } else {
-        fetchAllTasks();
-      }
+      // Always refresh both views to ensure consistency
+      fetchTasks();
+      fetchAllTasks();
       
       if (taskModalVisible && selectedTask?.id === task.id) {
         setTaskModalVisible(false);
@@ -526,11 +522,9 @@ export default function TaskCalendarScreen() {
         Alert.alert('Success', `All occurrences of "${taskTitle}" have been deleted!`);
       }
       
-      if (fromCalendar) {
-        fetchTasks();
-      } else {
-        fetchAllTasks();
-      }
+      // Always refresh both views to ensure consistency
+      fetchTasks();
+      fetchAllTasks();
       
       if (taskModalVisible) {
         setTaskModalVisible(false);

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, Bug, Dog } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { usePetStore } from "../../store/pets";
-import { PetCard } from "./components/PetCard";
+import { PetCard } from "../../components/pets/PetCard";
 import { FAB } from "../../components/FAB";
 
 export default function PetsScreen() {
