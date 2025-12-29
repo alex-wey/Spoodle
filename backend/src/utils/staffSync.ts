@@ -59,7 +59,7 @@ export async function getOrCreateStaff(clerkUserData: ClerkUserData) {
         if (existingUser && !existingUser.staff) {
           // User exists but no Staff - create it
           const staff = await tx.staff.create({
-            data: { clerkUserId: clerkUserData.clerkUserId }
+            data: { clerkUserId: existingUser.clerkUserId }
           });
           return staff;
         }

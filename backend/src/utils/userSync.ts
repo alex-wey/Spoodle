@@ -60,7 +60,7 @@ export async function getOrCreateUser(clerkUserData: ClerkUserData) {
         if (existingUser && !existingUser.petOwner) {
           // User exists but no PetOwner - create it
           const petOwner = await tx.petOwner.create({
-            data: { clerkUserId: clerkUserData.clerkUserId }
+            data: { clerkUserId: existingUser.clerkUserId }
           });
           return petOwner;
         }

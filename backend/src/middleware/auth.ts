@@ -165,21 +165,10 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
       let clinic = null;
       let userType: 'petOwner' | 'staff' = 'petOwner';
 
-      console.log(`🔄 Syncing user ${id} to database:`, {
-        email: clerkUserData.email,
-        firstName: clerkUserData.firstName,
-        lastName: clerkUserData.lastName,
-        organizationId,
-        isStaff,
-        userRole
-      });
-
       // If user is in an organization and is staff, create staff record
       if (organizationId && isStaff) {
-        console.log(`👨‍⚕️ User ${id} is staff member in organization ${organizationId}`);
         // Get or create Staff record
         staff = await getOrCreateStaff(clerkUserData);
-        console.log(`✅ Staff record created/found: ${staff.id}`);
         
         // Sync clinic from organization
         const clinicFromOrg = await prisma.clinic.findUnique({
@@ -211,10 +200,8 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
       } else {
         // User is NOT staff, so they're a pet owner
         // Only create PetOwner if user is not staff
-        console.log(`🐾 User ${id} is a pet owner (not staff)`);
         try {
           petOwner = await getOrCreateUser(clerkUserData);
-          console.log(`✅ PetOwner record created/found: ${petOwner.id}`);
           
           // If user is in an organization but not staff, sync clinic to petOwner
           if (organizationId && !isStaff && petOwner && !petOwner.clinicId) {
@@ -283,17 +270,8 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
       }
 
       req.userProfile = userProfile;
-      
-      console.log(`✅ User sync completed for ${id}:`, {
-        userType,
-        hasPetOwner: !!petOwner,
-        hasStaff: !!staff,
-        hasClinic: !!clinic
-      });
     } catch (syncError) {
-      console.error('❌ User sync error:', syncError);
-      console.error('User sync error details:', JSON.stringify(syncError, null, 2));
-      console.error('User sync error stack:', syncError instanceof Error ? syncError.stack : 'No stack trace');
+      console.error('User sync error:', syncError);
       // If sync fails, we still have valid auth but no petOwner/staff
       // This will cause routes that require petOwner/staff to fail with 401
       // This is intentional - user needs to complete setup first or fix their Clerk profile
