@@ -1,147 +1,43 @@
 import { Router, Request, Response } from 'express';
-import { v4 as uuidv4 } from 'uuid';
-import Joi from 'joi';
-import db from '../database/crud/index.js';
-import { Pet, User, CreatePetRequest } from '../database/entities/index.js';
+import { prisma } from '../index.js';
 import { validateRequest, validationSchemas, commonSchemas } from '../middleware/validation.js';
-import { authenticateToken, optionalAuth } from '../middleware/auth.js';
+import { authenticateClerk } from '../middleware/auth.js';
+import { getClinicScopedPetWhere, verifyPetClinicAccess } from '../utils/clinicAuth.js';
 
 const router = Router();
 
-// ===== VET/CLINIC ROUTES (No Auth Required for Demo) =====
+// Apply authentication to all pet routes
+router.use(authenticateClerk);
 
-// Get all pets (for vets/clinic staff)
-router.get('/all',
-  optionalAuth,
-  async (req: Request, res: Response) => {
-    try {
-      const pets = await db.findAll<Pet>('pets');
-      const users = await db.findAll<User>('users');
-      
-      // Create user lookup map
-      const userMap = new Map(users.map(user => [user.petOwnerId, user]));
-      
-      // Enrich pets with owner information
-      const petsWithOwners = pets.map(pet => ({
-        ...pet,
-        owner: userMap.get(pet.ownerId) ? {
-          id: userMap.get(pet.ownerId)!.petOwnerId,
-          name: userMap.get(pet.ownerId)!.username,
-          email: userMap.get(pet.ownerId)!.email,
-          phone: userMap.get(pet.ownerId)!.phoneNumber,
-          address: userMap.get(pet.ownerId)!.address
-        } : null
-      }));
-      
-      res.json({
-        success: true,
-        data: petsWithOwners,
-        count: petsWithOwners.length,
-        message: 'All pets retrieved successfully'
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'Server error',
-        message: 'Unable to retrieve pets'
-      });
-    }
+// Helper function to validate and clean image URLs
+function validateImageUrl(imageUrl: string | null | undefined): string | null {
+  if (!imageUrl) return null;
+  
+  // Reject blob URLs
+  if (imageUrl.startsWith('blob:')) {
+    console.warn('Rejected blob URL:', imageUrl);
+    return null;
   }
-);
-
-// Get a specific pet by ID with owner details (for vets)
-router.get('/:id/details',
-  optionalAuth,
-  validateRequest({ params: Joi.object({ id: commonSchemas.id }) }),
-  async (req: Request, res: Response) => {
-    try {
-      const { id } = req.params;
-      
-      const pet = await db.findById<Pet>('pets', id);
-      
-      if (!pet) {
-        return res.status(404).json({
-          success: false,
-          error: 'Pet not found',
-          message: 'The requested pet does not exist'
-        });
-      }
-
-      // Get owner information
-      const users = await db.findAll<User>('users');
-      const owner = users.find(user => user.petOwnerId === pet.ownerId);
-      
-      const petWithOwner = {
-        ...pet,
-        owner: owner ? {
-          id: owner.petOwnerId,
-          name: owner.username,
-          email: owner.email,
-          phone: owner.phoneNumber,
-          address: owner.address
-        } : null
-      };
-      
-      res.json({
-        success: true,
-        data: petWithOwner,
-        message: 'Pet retrieved successfully'
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'Server error',
-        message: 'Unable to retrieve pet'
-      });
-    }
+  
+  // Accept base64 data URLs
+  if (imageUrl.startsWith('data:image/')) {
+    return imageUrl;
   }
-);
-
-// Get medical records for a specific pet (for vets)
-router.get('/:id/medical-records',
-  optionalAuth,
-  validateRequest({ params: Joi.object({ id: commonSchemas.id }) }),
-  async (req: Request, res: Response) => {
-    try {
-      const { id } = req.params;
-      
-      const pet = await db.findById<Pet>('pets', id);
-      
-      if (!pet) {
-        return res.status(404).json({
-          success: false,
-          error: 'Pet not found',
-          message: 'The requested pet does not exist'
-        });
-      }
-
-      const records = await db.getMedicalRecordsByPet(id);
-      
-      res.json({
-        success: true,
-        data: records,
-        count: records.length,
-        message: 'Medical records retrieved successfully'
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'Server error',
-        message: 'Unable to retrieve medical records'
-      });
-    }
+  
+  // Accept regular HTTP/HTTPS URLs
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl;
   }
-);
+  
+  // Reject other types
+  console.warn('Rejected invalid image URL:', imageUrl);
+  return null;
+}
 
-// ===== PET OWNER ROUTES (Auth Required) =====
-
-// Apply authentication to remaining pet routes
-router.use(authenticateToken);
-
-// Get all pets for the authenticated user
+// Get all pets for the authenticated user (petOwner or staff)
 router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
+    if (!req.petOwner && !req.staff) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -149,15 +45,47 @@ router.get('/', async (req: Request, res: Response) => {
       });
     }
 
-    const pets = await db.getPetsByOwner(req.user.petOwnerId);
+    const pets = await prisma.pet.findMany({
+      where: getClinicScopedPetWhere(req),
+      include: {
+        petOwner: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+                address: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Transform pets to include owner information
+    const petsWithOwners = pets.map(pet => ({
+      ...pet,
+      owner: pet.petOwner?.user ? {
+        id: pet.petOwner.user.id,
+        name: `${pet.petOwner.user.firstName} ${pet.petOwner.user.lastName}`.trim(),
+        email: pet.petOwner.user.email,
+        phone: pet.petOwner.user.phone,
+        address: pet.petOwner.user.address
+      } : null
+    }));
     
-    res.json({
+    return res.json({
       success: true,
-      data: pets,
+      data: petsWithOwners,
       message: 'Pets retrieved successfully'
     });
   } catch (error) {
-    res.status(500).json({
+    console.error('Get pets error:', error);
+    return res.status(500).json({
       success: false,
       error: 'Server error',
       message: 'Unable to retrieve pets'
@@ -167,37 +95,81 @@ router.get('/', async (req: Request, res: Response) => {
 
 // Get a specific pet by ID
 router.get('/:id',
-  validateRequest({ params: Joi.object({ id: commonSchemas.id }) }),
+  validateRequest({ params: { id: commonSchemas.id } }),
   async (req: Request, res: Response) => {
     try {
+      if (!req.petOwner && !req.staff) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          message: 'Please log in to view pets'
+        });
+      }
+
       const { id } = req.params;
       
-      const pet = await db.findById<Pet>('pets', id);
+      // Verify pet belongs to user's clinic
+      const hasAccess = await verifyPetClinicAccess(req, id as string);
+      
+      if (!hasAccess) {
+        return res.status(404).json({
+          success: false,
+          error: 'Pet not found',
+          message: 'The requested pet does not exist or you do not have permission to view it'
+        });
+      }
+
+      const pet = await prisma.pet.findFirst({
+        where: { 
+          id: id as string,
+          ...getClinicScopedPetWhere(req)
+        },
+        include: {
+          petOwner: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                  phone: true,
+                  address: true
+                }
+              }
+            }
+          }
+        }
+      });
       
       if (!pet) {
         return res.status(404).json({
           success: false,
           error: 'Pet not found',
-          message: 'The requested pet does not exist'
+          message: 'The requested pet does not exist or you do not have permission to view it'
         });
       }
 
-      // Verify pet belongs to the authenticated user
-      if (pet.ownerId !== req.user?.petOwnerId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied',
-          message: 'You do not have permission to view this pet'
-        });
-      }
+      // Transform pet to include owner information
+      const petWithOwner = {
+        ...pet,
+        owner: pet.petOwner?.user ? {
+          id: pet.petOwner.user.id,
+          name: `${pet.petOwner.user.firstName} ${pet.petOwner.user.lastName}`.trim(),
+          email: pet.petOwner.user.email,
+          phone: pet.petOwner.user.phone,
+          address: pet.petOwner.user.address
+        } : null
+      };
       
-      res.json({
+      return res.json({
         success: true,
-        data: pet,
+        data: petWithOwner,
         message: 'Pet retrieved successfully'
       });
     } catch (error) {
-      res.status(500).json({
+      console.error('Get pet error:', error);
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to retrieve pet'
@@ -208,39 +180,60 @@ router.get('/:id',
 
 // Create a new pet
 router.post('/',
-  validateRequest({ body: validationSchemas.createPet }),
+  // validateRequest({ body: validationSchemas.createPet }), // TEMPORARILY DISABLED FOR DEBUGGING
   async (req: Request, res: Response) => {
     try {
-      if (!req.user) {
+      if (!req.petOwner) {
         return res.status(401).json({
           success: false,
           error: 'Authentication required',
-          message: 'Please log in to create pets'
+          message: 'Please log in to create pets. Only pet owners can create pets.'
         });
       }
 
-      const petData: CreatePetRequest = req.body;
+      const petData = req.body;
       
-      const newPet = await db.createPet({
-        petId: uuidv4(),
-        ownerId: req.user.petOwnerId,
-        name: petData.name,
-        breed: petData.breed,
-        dateOfBirth: petData.dateOfBirth,
-        gender: petData.gender,
-        spayedNeutered: petData.spayedNeutered,
-        weight: petData.weight,
-        allergies: petData.allergies || [],
-        dietaryRestrictions: petData.dietaryRestrictions || []
+      // Validate and clean image URL
+      const cleanImageUrl = validateImageUrl(petData.imageUrl);
+
+      // DEBUG: Log what we're trying to create
+      console.log('🐕 Attempting to create pet:');
+      console.log('   PetOwner ID:', req.petOwner.id);
+      console.log('   Clinic ID:', req.petOwner.clinicId);
+      console.log('   Pet Name:', petData.name);
+      console.log('   Species:', petData.species);
+      console.log('   Image URL:', cleanImageUrl ? 'Valid image URL provided' : 'No valid image URL');
+      
+      // Create pet using Prisma
+      const newPet = await prisma.pet.create({
+        data: {
+          name: petData.name,
+          species: petData.species || 'Dog',
+          breed: petData.breed || null,
+          dateOfBirth: petData.dateOfBirth || null,
+          biologicalSex: petData.biologicalSex || null,
+          spayedNeutered: petData.spayedNeutered || false,
+          weight: petData.weight || null,
+          allergies: petData.allergies || [],
+          dietaryRestrictions: petData.dietaryRestrictions || [],
+          imageUrl: cleanImageUrl,
+          ownerId: req.petOwner.id
+        }
       });
       
-      res.status(201).json({
+      console.log('✅ Pet created successfully:', newPet.id);
+      
+      return res.status(201).json({
         success: true,
         data: newPet,
         message: 'Pet created successfully'
       });
     } catch (error) {
-      res.status(500).json({
+      console.error('❌ CREATE PET ERROR:');
+      console.error('Error name:', (error as any).name);
+      console.error('Error message:', (error as any).message);
+      console.error('Full error:', error);
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to create pet'
@@ -252,49 +245,72 @@ router.post('/',
 // Update a pet
 router.put('/:id',
   validateRequest({ 
-    params: Joi.object({ id: commonSchemas.id }),
+    params: { id: commonSchemas.id },
     body: validationSchemas.updatePet 
   }),
   async (req: Request, res: Response) => {
     try {
+      if (!req.petOwner && !req.staff) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          message: 'Please log in to update pets'
+        });
+      }
+
       const { id } = req.params;
       
-      // Check if pet exists and belongs to user
-      const existingPet = await db.findById<Pet>('pets', id);
+      // Verify pet belongs to user's clinic
+      const hasAccess = await verifyPetClinicAccess(req, id as string);
+      
+      if (!hasAccess) {
+        return res.status(404).json({
+          success: false,
+          error: 'Pet not found',
+          message: 'The requested pet does not exist or you do not have permission to update it'
+        });
+      }
+
+      // Check if pet exists in clinic
+      const existingPet = await prisma.pet.findFirst({
+        where: { 
+          id: id as string,
+          ...getClinicScopedPetWhere(req)
+        }
+      });
       
       if (!existingPet) {
         return res.status(404).json({
           success: false,
           error: 'Pet not found',
-          message: 'The requested pet does not exist'
+          message: 'The requested pet does not exist or you do not have permission to update it'
         });
       }
 
-      if (existingPet.ownerId !== req.user?.petOwnerId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied',
-          message: 'You do not have permission to update this pet'
-        });
+      const updateData = { ...req.body };
+      
+      // Validate and clean image URL if provided
+      if (updateData.imageUrl !== undefined) {
+        updateData.imageUrl = validateImageUrl(updateData.imageUrl);
+      }
+      
+      if (updateData.dateOfBirth) {
+        updateData.dateOfBirth = new Date(updateData.dateOfBirth);
       }
 
-      const updatedPet = await db.update<Pet>('pets', id, req.body);
+      const updatedPet = await prisma.pet.update({
+        where: { id: id as string },
+        data: updateData
+      });
       
-      if (!updatedPet) {
-        return res.status(500).json({
-          success: false,
-          error: 'Update failed',
-          message: 'Unable to update pet'
-        });
-      }
-      
-      res.json({
+      return res.json({
         success: true,
         data: updatedPet,
         message: 'Pet updated successfully'
       });
     } catch (error) {
-      res.status(500).json({
+      console.error('Update pet error:', error);
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to update pet'
@@ -305,46 +321,57 @@ router.put('/:id',
 
 // Delete a pet
 router.delete('/:id',
-  validateRequest({ params: Joi.object({ id: commonSchemas.id }) }),
+  validateRequest({ params: { id: commonSchemas.id } }),
   async (req: Request, res: Response) => {
     try {
+      if (!req.petOwner) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          message: 'Only pet owners can delete pets'
+        });
+      }
+
       const { id } = req.params;
       
-      // Check if pet exists and belongs to user
-      const existingPet = await db.findById<Pet>('pets', id);
+      // Verify pet belongs to user's clinic
+      const hasAccess = await verifyPetClinicAccess(req, id as string);
+      
+      if (!hasAccess) {
+        return res.status(404).json({
+          success: false,
+          error: 'Pet not found',
+          message: 'The requested pet does not exist or you do not have permission to delete it'
+        });
+      }
+
+      // Check if pet exists in clinic
+      const existingPet = await prisma.pet.findFirst({
+        where: { 
+          id: id as string,
+          ...getClinicScopedPetWhere(req)
+        }
+      });
       
       if (!existingPet) {
         return res.status(404).json({
           success: false,
           error: 'Pet not found',
-          message: 'The requested pet does not exist'
+          message: 'The requested pet does not exist or you do not have permission to delete it'
         });
       }
 
-      if (existingPet.ownerId !== req.user?.petOwnerId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied',
-          message: 'You do not have permission to delete this pet'
-        });
-      }
-
-      const deleted = await db.delete('pets', id);
+      await prisma.pet.delete({
+        where: { id: id as string }
+      });
       
-      if (!deleted) {
-        return res.status(500).json({
-          success: false,
-          error: 'Delete failed',
-          message: 'Unable to delete pet'
-        });
-      }
-      
-      res.json({
+      return res.json({
         success: true,
         message: 'Pet deleted successfully'
       });
     } catch (error) {
-      res.status(500).json({
+      console.error('Delete pet error:', error);
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to delete pet'
@@ -353,90 +380,76 @@ router.delete('/:id',
   }
 );
 
-// Get pet's medical records
-router.get('/:id/records',
-  validateRequest({ params: Joi.object({ id: commonSchemas.id }) }),
-  async (req: Request, res: Response) => {
-    try {
-      const { id } = req.params;
-      
-      // Check if pet exists and belongs to user
-      const existingPet = await db.findById<Pet>('pets', id);
-      
-      if (!existingPet) {
-        return res.status(404).json({
-          success: false,
-          error: 'Pet not found',
-          message: 'The requested pet does not exist'
-        });
-      }
-
-      if (existingPet.ownerId !== req.user?.petOwnerId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied',
-          message: 'You do not have permission to view this pet\'s records'
-        });
-      }
-
-      const records = await db.getMedicalRecordsByPet(id);
-      
-      res.json({
-        success: true,
-        data: records,
-        message: 'Medical records retrieved successfully'
-      });
-    } catch (error) {
-      res.status(500).json({
+// Get all pets for a clinic (clinic staff view)
+// This endpoint is for clinic staff to view all pets belonging to their clinic's pet owners
+// Note: This is now redundant with the main GET / endpoint which handles both petOwner and staff
+// Keeping for backward compatibility
+router.get('/clinic', authenticateClerk, async (req: Request, res: Response) => {
+  try {
+    if (!req.staff && !req.petOwner) {
+      return res.status(401).json({
         success: false,
-        error: 'Server error',
-        message: 'Unable to retrieve medical records'
+        error: 'Authentication required',
+        message: 'Please log in to view clinic pets'
       });
     }
-  }
-);
 
-// Get pet's tasks
-router.get('/:id/tasks',
-  validateRequest({ params: Joi.object({ id: commonSchemas.id }) }),
-  async (req: Request, res: Response) => {
-    try {
-      const { id } = req.params;
-      
-      // Check if pet exists and belongs to user
-      const existingPet = await db.findById<Pet>('pets', id);
-      
-      if (!existingPet) {
-        return res.status(404).json({
-          success: false,
-          error: 'Pet not found',
-          message: 'The requested pet does not exist'
-        });
-      }
-
-      if (existingPet.ownerId !== req.user?.petOwnerId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied',
-          message: 'You do not have permission to view this pet\'s tasks'
-        });
-      }
-
-      const tasks = await db.getTasksByPet(id);
-      
-      res.json({
-        success: true,
-        data: tasks,
-        message: 'Tasks retrieved successfully'
-      });
-    } catch (error) {
-      res.status(500).json({
+    if (!req.clinic) {
+      return res.status(403).json({
         success: false,
-        error: 'Server error',
-        message: 'Unable to retrieve tasks'
+        error: 'No clinic access',
+        message: 'You must be assigned to a clinic to view clinic pets'
       });
     }
+
+    // Get all pets in the clinic (already filtered by getClinicScopedPetWhere)
+    const pets = await prisma.pet.findMany({
+      where: getClinicScopedPetWhere(req),
+      include: {
+        petOwner: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+                address: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Transform pets to include owner information
+    const petsWithOwners = pets.map(pet => ({
+      ...pet,
+      owner: pet.petOwner.user ? {
+        id: pet.petOwner.user.id,
+        name: `${pet.petOwner.user.firstName} ${pet.petOwner.user.lastName}`.trim(),
+        email: pet.petOwner.user.email,
+        phone: pet.petOwner.user.phone,
+        address: pet.petOwner.user.address
+      } : null
+    }));
+
+    return res.json({
+      success: true,
+      data: petsWithOwners,
+      count: petsWithOwners.length,
+      message: 'Clinic pets retrieved successfully'
+    });
+  } catch (error) {
+    console.error('Get clinic pets error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error',
+      message: 'Unable to retrieve clinic pets'
+    });
   }
-);
+});
 
 export default router;

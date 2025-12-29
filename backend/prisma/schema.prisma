@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -8,67 +7,192 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id          String    @id @default(uuid())
+  clerkUserId String    @unique
+  firstName   String
+  lastName    String
+  email       String?   @unique
+  phone       String?   @unique
+  address     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  petOwner    PetOwner? @relation("UserPetOwner")
+  staff       Staff?    @relation("UserStaff")
 
-model Vet {
-  id          String       @id @default(uuid())
-  name        String
-  email       String       @unique
-  phone       String?
-  specialization String?
-  appointments Appointment[]
-  createdAt   DateTime     @default(now())
+  @@map("users")
 }
 
 model PetOwner {
-  id          String     @id @default(uuid())
-  name        String
-  email       String     @unique
-  phone       String?
-  address     String?
-  pets        Pet[]
-  createdAt   DateTime   @default(now())
+  id           String       @id @default(uuid())
+  clerkUserId  String       @unique
+  clinicId     String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  bugReports   BugReport[]
+  chatMessages ChatMessage[]
+  user         User         @relation("UserPetOwner", fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
+  clinic       Clinic?      @relation(fields: [clinicId], references: [id], onDelete: Restrict)
+  pets         Pet[]
+  settings     Settings?
+
+  @@index([clinicId])
+  @@map("pet_owners")
 }
 
 model Pet {
-  id            String           @id @default(uuid())
-  name          String
-  species       String
-  breed         String?
-  gender        String?
-  weight        Float?
-  dateOfBirth   DateTime?
-  owner         PetOwner         @relation(fields: [ownerId], references: [id])
-  ownerId       String
-  appointments  Appointment[]
-  medicalRecords MedicalRecord[]
-  createdAt     DateTime         @default(now())
+  id                  String     @id @default(uuid())
+  name                String
+  species             String
+  biologicalSex       String?
+  breed               String?
+  dateOfBirth         DateTime?
+  weight              Float?
+  spayedNeutered      Boolean    @default(false)
+  allergies           String[]
+  dietaryRestrictions String[]
+  imageUrl            String?
+  ownerId             String
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  documents           Document[]
+  tasks               Task[]
+  petOwner            PetOwner   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@map("pets")
 }
 
-model Appointment {
-  id              String             @id @default(uuid())
-  pet             Pet                @relation(fields: [petId], references: [id])
-  petId           String
-  vet             Vet                @relation(fields: [vetId], references: [id])
-  vetId           String
-  appointmentDate DateTime
-  status          AppointmentStatus  @default(SCHEDULED)
-  notes           String?
-  createdAt       DateTime           @default(now())
+model Document {
+  id        String   @id @default(uuid())
+  category  String
+  fileName  String
+  filePath  String
+  fileSize  Int
+  mimeType  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  petId     String
+  pet       Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
 }
 
-model MedicalRecord {
-  id          String     @id @default(uuid())
-  pet         Pet        @relation(fields: [petId], references: [id])
-  petId       String
-  recordType  String
+model BugReport {
+  id          String   @id @default(uuid())
+  petOwnerId  String
+  title       String
+  severity    String
+  category    String
   description String
-  fileUrl     String?
-  createdAt   DateTime   @default(now())
+  deviceInfo  String?
+  appVersion  String?
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  petOwner    PetOwner @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
+
+  @@index([category])
+  @@index([petOwnerId])
+  @@index([severity])
+  @@index([status])
+  @@map("bug_reports")
 }
 
-enum AppointmentStatus {
-  SCHEDULED
-  CONFIRMED
-  COMPLETED
-  CANCELLED
+model ChatMessage {
+  id          String   @id @default(uuid())
+  petOwnerId  String
+  message     String
+  isFromUser  Boolean
+  messageType String   @default("text")
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  petOwner    PetOwner @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([petOwnerId])
+  @@map("chat_messages")
+}
+
+model Settings {
+  id              String   @id @default(uuid())
+  petOwnerId      String   @unique
+  theme           String   @default("light")
+  language        String   @default("en")
+  notifications   Boolean  @default(true)
+  biometricAuth   Boolean  @default(false)
+  profileImageUrl String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  petOwner        PetOwner @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
+
+  @@index([petOwnerId])
+  @@map("settings")
+}
+
+model Clinic {
+  id          String      @id @default(uuid())
+  clerkOrgId  String      @unique
+  name        String
+  slug        String      @unique
+  address     String?
+  phoneNumber String?
+  email       String?
+  imageUrl    String?
+  isActive    Boolean     @default(true)
+  metadata    Json?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  petOwners   PetOwner[]
+  staff       Staff[]
+
+  @@index([clerkOrgId])
+  @@index([slug])
+  @@map("clinics")
+}
+
+model Staff {
+  id          String   @id @default(uuid())
+  clerkUserId String   @unique
+  clinicId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation("UserStaff", fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
+  clinic      Clinic?  @relation(fields: [clinicId], references: [id], onDelete: Restrict)
+
+  @@index([clinicId])
+  @@map("staff")
+}
+
+model Task {
+  id              String    @id @default(uuid())
+  petId           String
+  taskType        String
+  title           String
+  description     String?
+  scheduledDate   DateTime
+  scheduledTime   String
+  completed       Boolean   @default(false)
+  completedAt     DateTime?
+  completedBy     String?
+  completedByName String?
+  notes           String?
+  carePlanId      String?
+  reminderId      String?
+  // Recurring task fields
+  recurring       Boolean   @default(false)
+  recurrencePattern String? // e.g., "weekly", "daily", "monthly"
+  recurrenceDaysOfWeek String? // JSON array of days [0,1,2] for weekly: 0=Sun, 1=Mon, etc.
+  recurrenceEndDate DateTime? // When recurring should stop
+  recurrenceTimes  String? // JSON array of times ["09:00", "18:00"]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  pet             Pet       @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@index([petId])
+  @@index([scheduledDate])
+  @@index([completed])
+  @@index([taskType])
+  @@index([recurring])
+  @@map("tasks")
 }

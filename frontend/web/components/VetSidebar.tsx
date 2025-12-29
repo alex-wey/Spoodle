@@ -61,14 +61,12 @@ export function VetSidebar() {
     <Sidebar collapsible="none" style={{ "--sidebar-width": "11rem" } as React.CSSProperties}>
       <SidebarContent className="bg-primary">
         {/* Clinic Branding */}
-        <div className="p-2 border-b border-white/20">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="p-2 bg-white/20 rounded-lg flex-shrink-0">
+        <div className="p-2 py-[18px] border-b border-white/20">
+          <div className="flex items-center justify-center gap-2">
+            <div className="p-2 bg-white/20 rounded-lg">
               <Dog className="h-6 w-6 text-white" />
             </div>
-            <div className="min-w-0">
-              <h2 className="font-semibold text-white truncate">Spoodle</h2>
-            </div>
+            <h2 className="font-semibold text-white">Spoodle</h2>
           </div>
         </div>
 

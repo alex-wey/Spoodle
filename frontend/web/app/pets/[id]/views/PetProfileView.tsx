@@ -1,51 +1,87 @@
 'use client';
 
 import { useParams, useRouter } from "next/navigation";
-import { User, Phone, Mail, MapPin, Cake, Weight, Heart, Activity } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../../components/ui/card";
+import { useAuth } from "@clerk/nextjs";
+import { AlertCircle, ArrowLeft } from "lucide-react";
 import { Button } from "../../../../components/ui/button";
-import { Badge } from "../../../../components/ui/badge";
-import { Avatar, AvatarImage, AvatarFallback } from "../../../../components/ui/avatar";
-import { Separator } from "../../../../components/ui/separator";
+import { Alert, AlertDescription } from "../../../../components/ui/alert";
 import { useState, useEffect } from "react";
-
-interface PetData {
-  petId: string;
-  name: string;
-  breed: string;
-  dateOfBirth: string;
-  gender: string;
-  weight: number;
-  spayedNeutered: boolean;
-  profilePhoto?: string;
-  owner?: {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    address: string;
-  };
-}
+import { getPetById, getPetDocuments } from "@/lib/api";
+import type { Document } from "@/lib/types";
+import { Hero } from "../components/Hero";
+import { PetRecordsSection } from "../components/PetRecordsSection";
+import type { PetData, MedicalRecord } from "../components/types";
 
 export default function PetProfileView() {
   const { id: petId } = useParams();
   const router = useRouter();
+  const { getToken, isSignedIn } = useAuth();
   const [pet, setPet] = useState<PetData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
+  const [recordsLoading, setRecordsLoading] = useState(true);
+  const [recordsError, setRecordsError] = useState<string | null>(null);
 
-  // Fetch pet details from API
   useEffect(() => {
     const fetchPetDetails = async () => {
+      if (!isSignedIn) {
+        setError('Please sign in to view pet details');
+        setLoading(false);
+        return;
+      }
+
+      if (!petId) {
+        setError('Pet ID is required');
+        setLoading(false);
+        return;
+      }
+
       try {
-        const response = await fetch(`http://localhost:3001/api/pets/${petId}/details`);
-        if (!response.ok) throw new Error('Failed to fetch pet details');
-        
-        const result = await response.json();
-        if (result.success) {
-          setPet(result.data);
+        const token = await getToken();
+        if (!token) {
+          setError('Unable to authenticate. Please try signing in again.');
+          setLoading(false);
+          return;
         }
-      } catch (error) {
-        console.error('Error fetching pet details:', error);
+
+        const result = await getPetById(petId as string, token);
+        
+        if (result.success && result.data) {
+          // Transform backend pet data to match UI format
+          // Backend now provides owner directly, but keep fallback for backwards compatibility
+          const ownerData = result.data.owner || (result.data.petOwner?.user ? {
+            id: result.data.petOwner.user.id,
+            name: `${result.data.petOwner.user.firstName || ''} ${result.data.petOwner.user.lastName || ''}`.trim() || 'Unknown',
+            email: result.data.petOwner.user.email,
+            phone: result.data.petOwner.user.phone,
+            address: result.data.petOwner.user.address
+          } : null);
+          
+          const petData: PetData = {
+            id: result.data.id,
+            name: result.data.name,
+            species: result.data.species,
+            breed: result.data.breed,
+            dateOfBirth: result.data.dateOfBirth,
+            biologicalSex: result.data.biologicalSex,
+            weight: result.data.weight,
+            spayedNeutered: result.data.spayedNeutered || false,
+            imageUrl: result.data.imageUrl,
+            owner: ownerData
+          };
+          
+          console.log('Pet data:', petData);
+          console.log('Owner data:', ownerData);
+          
+          setPet(petData);
+          setError(null);
+        } else {
+          setError(result.message || result.error || 'Failed to fetch pet details');
+        }
+      } catch (err) {
+        console.error('Error fetching pet details:', err);
+        setError('An error occurred while fetching pet details');
       } finally {
         setLoading(false);
       }
@@ -54,20 +90,64 @@ export default function PetProfileView() {
     if (petId) {
       fetchPetDetails();
     }
-  }, [petId]);
+  }, [petId, isSignedIn, getToken]);
 
-  // Calculate age from date of birth
-  const calculateAge = (dateOfBirth: string) => {
-    const birth = new Date(dateOfBirth);
-    const today = new Date();
-    const ageInYears = Math.floor((today.getTime() - birth.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-    const ageInMonths = Math.floor((today.getTime() - birth.getTime()) / (30.44 * 24 * 60 * 60 * 1000));
-    
-    if (ageInYears < 1) {
-      return `${ageInMonths} month${ageInMonths !== 1 ? 's' : ''}`;
+  // Fetch pet records
+  useEffect(() => {
+    const fetchRecords = async () => {
+      if (!isSignedIn) {
+        setRecordsError('Please sign in to view pet records');
+        setRecordsLoading(false);
+        return;
+      }
+
+      if (!petId) {
+        setRecordsError('Pet ID is required');
+        setRecordsLoading(false);
+        return;
+      }
+
+      try {
+        const token = await getToken();
+        if (!token) {
+          setRecordsError('Unable to authenticate. Please try signing in again.');
+          setRecordsLoading(false);
+          return;
+        }
+
+        const result = await getPetDocuments(petId as string, token);
+        
+        if (result.success && result.data) {
+          // Transform backend document data to match UI format
+          const transformedRecords: MedicalRecord[] = result.data.map((doc: Document) => ({
+            id: doc.id,
+            petId: doc.petId,
+            category: doc.category,
+            fileName: doc.fileName,
+            filePath: doc.filePath,
+            fileSize: doc.fileSize,
+            mimeType: doc.mimeType,
+            createdAt: doc.createdAt
+          }));
+          
+          setMedicalRecords(transformedRecords);
+          setRecordsError(null);
+        } else {
+          setRecordsError(result.message || result.error || 'Failed to fetch pet records');
+        }
+      } catch (err) {
+        console.error('Error fetching pet records:', err);
+        setRecordsError('An error occurred while fetching pet records');
+      } finally {
+        setRecordsLoading(false);
+      }
+    };
+
+    if (petId) {
+      fetchRecords();
     }
-    return `${ageInYears} year${ageInYears !== 1 ? 's' : ''}`;
-  };
+  }, [petId, isSignedIn, getToken]);
+
 
   if (loading) {
     return (
@@ -76,6 +156,18 @@ export default function PetProfileView() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading pet profile...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <Alert variant="destructive" className="mb-4 max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <Button onClick={() => router.push('/pets')}>Back to Pets</Button>
       </div>
     );
   }
@@ -90,165 +182,64 @@ export default function PetProfileView() {
   }
 
   return (
-    <div className="w-full">
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Hero Section with Pet Photo and Basic Info */}
-        <Card className="overflow-hidden">
-          <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background p-8">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-              {/* Pet Avatar */}
-              <Avatar className="h-32 w-32 border-4 border-background shadow-xl">
-                <AvatarImage src={pet.profilePhoto} alt={pet.name} className="object-cover" />
-                <AvatarFallback className="text-4xl bg-primary/20">{pet.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              
-              {/* Pet Basic Info */}
-              <div className="flex-1 text-center md:text-left">
-                <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
-                  <h1 className="text-4xl font-bold text-primary">{pet.name}</h1>
-                  <Badge variant="secondary" className="text-sm w-fit mx-auto md:mx-0">
-                    <Activity className="h-3 w-3 mr-1" />
-                    {pet.breed}
-                  </Badge>
-                </div>
-                <p className="text-lg text-muted-foreground mb-4">
-                  {calculateAge(pet.dateOfBirth)} old • {pet.gender.charAt(0).toUpperCase() + pet.gender.slice(1)}
-                </p>
-                
-                {/* Quick Stats */}
-                <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Cake className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Birthday</p>
-                      <p className="font-medium">{new Date(pet.dateOfBirth).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Weight className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Weight</p>
-                      <p className="font-medium">{pet.weight} lbs</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Heart className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Spayed/Neutered</p>
-                      <p className="font-medium">{pet.spayedNeutered ? 'Yes' : 'No'}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+    <div className="flex-1 space-y-6 p-12">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => router.push('/pets')}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Pet Profile</h2>
+            <p className="text-muted-foreground">
+              View and manage pet information and records
+            </p>
           </div>
-        </Card>
-
-        {/* Owner Information and Additional Information Cards - Side by Side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Owner Information Card */}
-          {pet.owner && (
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle>Pet Owner</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col items-start gap-4">
-                  <Avatar className="h-16 w-16">
-                    <AvatarFallback className="bg-primary text-primary-foreground text-lg">
-                      {pet.owner.name.split(' ').map(n => n.charAt(0)).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="w-full space-y-3">
-                    <div>
-                      <h3 className="text-xl font-semibold">{pet.owner.name}</h3>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3 text-sm">
-                        <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs text-muted-foreground">Email</p>
-                          <p className="font-medium truncate">{pet.owner.email}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-3 text-sm">
-                        <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs text-muted-foreground">Phone</p>
-                          <p className="font-medium">{pet.owner.phone}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-3 text-sm">
-                        <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                          <MapPin className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs text-muted-foreground">Address</p>
-                          <p className="font-medium">{pet.owner.address}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Additional Information Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Additional Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Activity className="h-4 w-4" />
-                    <span>Breed</span>
-                  </div>
-                  <p className="text-lg font-semibold">{pet.breed}</p>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <User className="h-4 w-4" />
-                    <span>Gender</span>
-                  </div>
-                  <p className="text-lg font-semibold capitalize">{pet.gender}</p>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Heart className="h-4 w-4" />
-                    <span>Status</span>
-                  </div>
-                  <Badge variant={pet.spayedNeutered ? "default" : "secondary"} className="text-sm">
-                    {pet.spayedNeutered ? 'Spayed/Neutered' : 'Not Spayed/Neutered'}
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
+
+      <Hero pet={pet} />
+
+      <PetRecordsSection 
+        petRecords={medicalRecords}
+        loading={recordsLoading}
+        error={recordsError}
+        onError={setRecordsError}
+        petId={petId as string}
+        onRefresh={() => {
+          // Refetch pet records after upload
+          if (petId) {
+            const fetchRecords = async () => {
+              if (!isSignedIn) return;
+              try {
+                const token = await getToken();
+                if (!token) return;
+                const result = await getPetDocuments(petId as string, token);
+                if (result.success && result.data) {
+                  const transformedRecords: MedicalRecord[] = result.data.map((doc: Document) => ({
+                    id: doc.id,
+                    petId: doc.petId,
+                    category: doc.category,
+                    fileName: doc.fileName,
+                    filePath: doc.filePath,
+                    fileSize: doc.fileSize,
+                    mimeType: doc.mimeType,
+                    createdAt: doc.createdAt
+                  }));
+                  setMedicalRecords(transformedRecords);
+                  setRecordsError(null);
+                }
+              } catch (err) {
+                console.error('Error fetching pet records:', err);
+              }
+            };
+            fetchRecords();
+          }
+        }}
+      />
     </div>
   );
 }

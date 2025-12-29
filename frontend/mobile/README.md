@@ -175,7 +175,7 @@ app/
 
 ### API Configuration
 
-The app connects to the backend-mobile API. Configure the API URL in your `.env` file:
+The app connects to the backend API. Configure the API URL in your `.env` file:
 ```
 EXPO_PUBLIC_API_BASE_URL=http://localhost:3002
 ```
@@ -194,7 +194,7 @@ The app uses Clerk for authentication. You'll need:
 
 ### Key API Endpoints
 
-The mobile app communicates with the backend-mobile API:
+The mobile app communicates with the backend API:
 
 **Authentication**
 - POST `/setup` - Initial user setup with sync
@@ -345,7 +345,7 @@ Key configuration in `app.json`:
 ### Common Issues
 
 **Cannot connect to API**
-- Check that backend-mobile is running on port 3002
+- Check that backend is running on port 3002
 - Verify `.env` file has correct `EXPO_PUBLIC_API_BASE_URL`
 - For Android emulator, use `http://10.0.2.2:3002`
 - For physical devices, use your computer's IP address

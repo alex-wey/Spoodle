@@ -1,89 +1,12 @@
 import { Router, Request, Response } from 'express';
-import { AuthService } from '../services/auth.js';
-import { validateRequest, validationSchemas } from '../middleware/validation.js';
-import { authRateLimit } from '../middleware/rateLimiting.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateClerk } from '../middleware/auth.js';
+import { updateUserProfile, deleteUserData } from '../utils/userSync.js';
+import { prisma } from '../index.js';
 
 const router = Router();
 
-// Apply rate limiting to all auth routes
-router.use(authRateLimit);
-
-// Register endpoint
-router.post('/register', 
-  validateRequest({ body: validationSchemas.register }),
-  async (req: Request, res: Response) => {
-    try {
-      const result = await AuthService.register(req.body);
-      
-      res.status(201).json({
-        success: true,
-        data: result,
-        message: 'User registered successfully'
-      });
-    } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Registration failed',
-        message: 'Unable to create user account'
-      });
-    }
-  }
-);
-
-// Login endpoint
-router.post('/login',
-  validateRequest({ body: validationSchemas.login }),
-  async (req: Request, res: Response) => {
-    try {
-      const result = await AuthService.login(req.body);
-      
-      res.json({
-        success: true,
-        data: result,
-        message: 'Login successful'
-      });
-    } catch (error) {
-      res.status(401).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Login failed',
-        message: 'Invalid credentials'
-      });
-    }
-  }
-);
-
-// Refresh token endpoint
-router.post('/refresh', async (req: Request, res: Response) => {
-  try {
-    const { refreshToken } = req.body;
-    
-    if (!refreshToken) {
-      return res.status(400).json({
-        success: false,
-        error: 'Refresh token required',
-        message: 'Please provide a refresh token'
-      });
-    }
-
-    const result = await AuthService.refreshToken(refreshToken);
-    
-    res.json({
-      success: true,
-      data: result,
-      message: 'Token refreshed successfully'
-    });
-  } catch (error) {
-    res.status(401).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Token refresh failed',
-      message: 'Invalid refresh token'
-    });
-  }
-});
-
 // Get current user profile
-router.get('/me', authenticateToken, async (req: Request, res: Response) => {
+router.get('/me', authenticateClerk, async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -93,26 +16,47 @@ router.get('/me', authenticateToken, async (req: Request, res: Response) => {
       });
     }
 
-    const user = await AuthService.validateUser(req.user.petOwnerId);
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found',
-        message: 'User profile not found'
-      });
-    }
+    // Fetch the User record from the database to get the address
+    const dbUser = await prisma.user.findUnique({
+      where: { clerkUserId: req.user.clerkUserId },
+      select: {
+        id: true,
+        clerkUserId: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        address: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
 
-    // Remove password from response
-    const { password, ...userProfile } = user;
-    
-    res.json({
+    // Merge DB user with Clerk profile fields for display
+    const merged = {
+      id: dbUser?.id ?? req.user.id,
+      clerkUserId: req.user.clerkUserId,
+      createdAt: dbUser?.createdAt ?? (req.user as any).createdAt,
+      updatedAt: dbUser?.updatedAt ?? (req.user as any).updatedAt,
+      // Use DB user fields first, fallback to Clerk profile
+      email: dbUser?.email ?? req.userProfile?.email ?? null,
+      firstName: dbUser?.firstName ?? req.userProfile?.firstName ?? null,
+      lastName: dbUser?.lastName ?? req.userProfile?.lastName ?? null,
+      phone: dbUser?.phone ?? req.userProfile?.phone ?? null,
+      // Address comes from the User table
+      address: dbUser?.address ?? null,
+      // Include clinic data if available (already fetched in middleware)
+      clinic: req.clinic || null,
+    };
+
+    return res.json({
       success: true,
-      data: userProfile,
+      data: merged,
       message: 'Profile retrieved successfully'
     });
   } catch (error) {
-    res.status(500).json({
+    console.error('Get profile error:', error);
+    return res.status(500).json({
       success: false,
       error: 'Server error',
       message: 'Unable to retrieve user profile'
@@ -120,13 +64,74 @@ router.get('/me', authenticateToken, async (req: Request, res: Response) => {
   }
 });
 
-// Logout endpoint (client-side token removal)
-router.post('/logout', authenticateToken, async (req: Request, res: Response) => {
-  // In a more sophisticated setup, you'd maintain a blacklist of tokens
-  // For now, we'll just return success and let the client handle token removal
+// Update user profile
+router.put('/me', authenticateClerk, async (req: Request, res: Response) => {
+  try {
+    if (!req.auth) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required',
+        message: 'Please log in to update your profile'
+      });
+    }
+
+    const { firstName, lastName, phone, address } = req.body;
+    
+    const updatedUser = await updateUserProfile(req.auth.userId, {
+      firstName,
+      lastName,
+      phone,
+      address
+    });
+    
+    return res.json({
+      success: true,
+      data: updatedUser,
+      message: 'Profile updated successfully'
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error',
+      message: 'Unable to update user profile'
+    });
+  }
+});
+
+// Delete account endpoint
+router.delete('/me', authenticateClerk, async (req: Request, res: Response) => {
+  try {
+    if (!req.auth) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required',
+        message: 'Please log in to delete your account'
+      });
+    }
+
+    await deleteUserData(req.auth.userId);
+    
+    return res.json({
+      success: true,
+      message: 'Account and all related data deleted successfully'
+    });
+  } catch (error) {
+    console.error('❌ Delete account error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error',
+      message: 'Unable to delete account. Please try again or contact support.'
+    });
+  }
+});
+
+// Health check endpoint for auth service
+router.get('/health', (req: Request, res: Response) => {
   res.json({
     success: true,
-    message: 'Logged out successfully'
+    message: 'Clerk authentication service is running',
+    timestamp: new Date().toISOString()
   });
 });
 

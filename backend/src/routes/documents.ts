@@ -1,35 +1,70 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import Joi from 'joi';
 import multer from 'multer';
+import multerS3 from 'multer-s3';
+import { S3Client, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import db from '../database/crud/index.js';
-import { User, Pet } from '../database/entities/index.js';
-import { validateRequest, validationSchemas, commonSchemas } from '../middleware/validation.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { z } from 'zod';
+import { prisma } from '../index.js';
+import { validateRequest, commonSchemas } from '../middleware/validation.js';
+import { authenticateClerk } from '../middleware/auth.js';
+import { getClinicScopedDocumentWhere, verifyPetClinicAccess } from '../utils/clinicAuth.js';
 
 const router = Router();
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: async (req, file, cb) => {
-    const uploadDir = process.env.UPLOAD_DIR || './uploads';
-    const documentsDir = path.join(uploadDir, 'documents');
-    
-    try {
-      await fs.mkdir(documentsDir, { recursive: true });
-      cb(null, documentsDir);
-    } catch (error) {
-      cb(error, '');
-    }
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, `doc-${uniqueSuffix}${ext}`);
-  }
-});
+// S3 Configuration
+const useS3 = process.env.USE_S3 === 'true';
+let s3Client: S3Client | null = null;
+let s3BucketName = '';
+
+if (useS3) {
+  s3Client = new S3Client({
+    region: process.env.AWS_REGION || 'us-east-2',
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+    },
+  });
+  s3BucketName = process.env.S3_BUCKET_NAME || 'spoodle-documents';
+  console.log('✅ S3 configured:', s3BucketName);
+} else {
+  console.log('📁 Using local file storage');
+}
+
+// Configure multer for file uploads (S3 or local)
+const storage = useS3 && s3Client
+  ? multerS3({
+      s3: s3Client,
+      bucket: s3BucketName,
+      metadata: (req: any, file: Express.Multer.File, cb: (error: any, metadata: any) => void) => {
+        cb(null, { fieldName: file.fieldname });
+      },
+      key: (req: any, file: Express.Multer.File, cb: (error: any, key: string) => void) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        cb(null, `documents/doc-${uniqueSuffix}${ext}`);
+      },
+    })
+  : multer.diskStorage({
+      destination: async (req: any, file: Express.Multer.File, cb: (error: any, destination: string) => void) => {
+        const uploadDir = process.env.UPLOAD_DIR || './uploads';
+        const documentsDir = path.join(uploadDir, 'documents');
+        
+        try {
+          await fs.mkdir(documentsDir, { recursive: true });
+          cb(null, documentsDir);
+        } catch (error) {
+          cb(error as Error, '');
+        }
+      },
+      filename: (req: any, file: Express.Multer.File, cb: (error: any, filename: string) => void) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        cb(null, `doc-${uniqueSuffix}${ext}`);
+      }
+    });
 
 const upload = multer({
   storage,
@@ -38,7 +73,18 @@ const upload = multer({
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = (process.env.ALLOWED_FILE_TYPES || 'pdf,jpg,jpeg,png,doc,docx').split(',');
-    const ext = path.extname(file.originalname).toLowerCase().substring(1);
+    const ext = path.extname(file.originalname).toLowerCase().replace('.', '');
+    
+    console.log('📋 File filter check:', {
+      originalname: file.originalname,
+      extractedExt: ext,
+      allowedTypes
+    });
+    
+    if (!ext) {
+      cb(new Error(`File has no extension. Allowed types: ${allowedTypes.join(', ')}`));
+      return;
+    }
     
     if (allowedTypes.includes(ext)) {
       cb(null, true);
@@ -49,12 +95,12 @@ const upload = multer({
 });
 
 // Apply authentication to all document routes
-router.use(authenticateToken);
+router.use(authenticateClerk);
 
-// Get all documents for the authenticated user
+// Get all documents for the authenticated user (petOwner or staff)
 router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
+    if (!req.petOwner && !req.staff) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -62,27 +108,28 @@ router.get('/', async (req: Request, res: Response) => {
       });
     }
 
-    // Get all pets for the user first
-    const userPets = await db.getPetsByOwner(req.user.petOwnerId);
-    const petIds = userPets.map(pet => pet.petId);
+    const documents = await prisma.document.findMany({
+      where: getClinicScopedDocumentWhere(req),
+      include: {
+        pet: {
+          select: {
+            id: true,
+            name: true,
+            breed: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
     
-    // Get all documents for these pets
-    const allDocuments = [];
-    for (const petId of petIds) {
-      const petDocuments = await db.getDocumentsByPet(petId);
-      allDocuments.push(...petDocuments);
-    }
-    
-    // Sort by creation date (most recent first)
-    allDocuments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    
-    res.json({
+    return res.json({
       success: true,
-      data: allDocuments,
+      data: documents,
       message: 'Documents retrieved successfully'
     });
   } catch (error) {
-    res.status(500).json({
+    console.error('Get documents error:', error);
+    return res.status(500).json({
       success: false,
       error: 'Server error',
       message: 'Unable to retrieve documents'
@@ -92,13 +139,21 @@ router.get('/', async (req: Request, res: Response) => {
 
 // Get documents by category
 router.get('/category/:category',
-  validateRequest({ params: Joi.object({ category: Joi.string().valid(
-    'past_appointments', 'x_ray_documents', 'diagnostic_reports', 
-    'blood_test_reports', 'vaccination_history'
-  )})}),
+  validateRequest({ 
+    params: z.object({ 
+      category: z.enum(['veterinary_notes', 'diagnostic_reports', 'lab_results', 'vaccination_records'], {
+        errorMap: () => ({ message: 'Invalid category. Must be one of: veterinary_notes, diagnostic_reports, lab_results, vaccination_records' })
+      })
+    })
+  }),
   async (req: Request, res: Response) => {
     try {
-      if (!req.user) {
+      console.log('📂 [Documents] GET /category/:category - Route matched');
+      console.log('📂 [Documents] Received params:', JSON.stringify(req.params, null, 2));
+      console.log('📂 [Documents] Received query:', JSON.stringify(req.query, null, 2));
+      console.log('📂 [Documents] User authenticated:', !!req.user);
+      
+      if (!req.petOwner && !req.staff) {
         return res.status(401).json({
           success: false,
           error: 'Authentication required',
@@ -107,28 +162,152 @@ router.get('/category/:category',
       }
 
       const { category } = req.params;
+      console.log('📂 [Documents] Fetching documents for category:', category);
       
-      // Get all pets for the user first
-      const userPets = await db.getPetsByOwner(req.user.petOwnerId);
-      const petIds = userPets.map(pet => pet.petId);
+      const documents = await prisma.document.findMany({
+        where: {
+          ...getClinicScopedDocumentWhere(req),
+          category: category as string
+        },
+        include: {
+          pet: {
+            select: {
+              id: true,
+              name: true,
+              breed: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
       
-      // Get all documents for these pets in the specified category
-      const allDocuments = [];
-      for (const petId of petIds) {
-        const petDocuments = await db.getDocumentsByPet(petId, category);
-        allDocuments.push(...petDocuments);
-      }
-      
-      // Sort by creation date (most recent first)
-      allDocuments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      
-      res.json({
+      return res.json({
         success: true,
-        data: allDocuments,
+        data: documents,
         message: 'Documents retrieved successfully'
       });
     } catch (error) {
-      res.status(500).json({
+      console.error('Get documents by category error:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Server error',
+        message: 'Unable to retrieve documents'
+      });
+    }
+  }
+);
+
+// Get documents by pet and category
+router.get('/pet/:petId/category/:category',
+  validateRequest({ 
+    params: z.object({ 
+      petId: commonSchemas.id,
+      category: z.enum(['veterinary_notes', 'diagnostic_reports', 'lab_results', 'vaccination_records'])
+    })
+  }),
+  async (req: Request, res: Response) => {
+    try {
+      if (!req.petOwner && !req.staff) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          message: 'Please log in to view documents'
+        });
+      }
+
+      const { petId, category } = req.params;
+      
+      // Verify pet belongs to user's clinic
+      const hasAccess = await verifyPetClinicAccess(req, petId as string);
+      
+      if (!hasAccess) {
+        return res.status(404).json({
+          success: false,
+          error: 'Pet not found',
+          message: 'The requested pet does not exist or you do not have permission to view its documents'
+        });
+      }
+      
+      const documents = await prisma.document.findMany({
+        where: { 
+          petId: petId as string,
+          category: category as string,
+          ...getClinicScopedDocumentWhere(req)
+        },
+        include: {
+          pet: {
+            select: {
+              id: true,
+              name: true,
+              breed: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      
+      return res.json({
+        success: true,
+        data: documents,
+        message: 'Documents retrieved successfully'
+      });
+    } catch (error) {
+      console.error('Get documents by pet and category error:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Server error',
+        message: 'Unable to retrieve documents'
+      });
+    }
+  }
+);
+
+// Get documents for a specific pet (clinic staff view)
+// This endpoint allows clinic staff to view documents for pets in their clinic
+// Note: This is now redundant with the main /pet/:petId endpoint which handles both petOwner and staff
+// Keeping for backward compatibility
+router.get('/clinic/pet/:petId',
+  validateRequest({ params: z.object({ petId: commonSchemas.id }) }),
+  async (req: Request, res: Response) => {
+    try {
+      if (!req.staff && !req.petOwner) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          message: 'Please log in to view documents'
+        });
+      }
+
+      const { petId } = req.params;
+
+      // Verify pet belongs to user's clinic
+      const hasAccess = await verifyPetClinicAccess(req, petId as string);
+      
+      if (!hasAccess) {
+        return res.status(404).json({
+          success: false,
+          error: 'Pet not found',
+          message: 'The requested pet does not exist or does not belong to your clinic'
+        });
+      }
+
+      // Get all documents for this pet (already filtered by clinic access)
+      const documents = await prisma.document.findMany({
+        where: { 
+          petId: petId as string,
+          ...getClinicScopedDocumentWhere(req)
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      
+      return res.json({
+        success: true,
+        data: documents,
+        message: 'Documents retrieved successfully'
+      });
+    } catch (error) {
+      console.error('Get clinic pet documents error:', error);
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to retrieve documents'
@@ -139,42 +318,46 @@ router.get('/category/:category',
 
 // Get documents for a specific pet
 router.get('/pet/:petId',
-  validateRequest({ params: Joi.object({ petId: commonSchemas.id }) }),
+  validateRequest({ params: z.object({ petId: commonSchemas.id }) }),
   async (req: Request, res: Response) => {
     try {
+      if (!req.petOwner && !req.staff) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          message: 'Please log in to view documents'
+        });
+      }
+
       const { petId } = req.params;
       
-      // Verify pet belongs to the authenticated user
-      const pet = await db.findById<Pet>('pets', petId);
+      // Verify pet belongs to user's clinic
+      const hasAccess = await verifyPetClinicAccess(req, petId as string);
       
-      if (!pet) {
+      if (!hasAccess) {
         return res.status(404).json({
           success: false,
           error: 'Pet not found',
-          message: 'The requested pet does not exist'
+          message: 'The requested pet does not exist or you do not have permission to view its documents'
         });
       }
 
-      if (pet.ownerId !== req.user?.petOwnerId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied',
-          message: 'You do not have permission to view this pet\'s documents'
-        });
-      }
-
-      const documents = await db.getDocumentsByPet(petId);
+      const documents = await prisma.document.findMany({
+        where: { 
+          petId: petId as string,
+          ...getClinicScopedDocumentWhere(req)
+        },
+        orderBy: { createdAt: 'desc' }
+      });
       
-      // Sort by creation date (most recent first)
-      documents.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      
-      res.json({
+      return res.json({
         success: true,
         data: documents,
         message: 'Documents retrieved successfully'
       });
     } catch (error) {
-      res.status(500).json({
+      console.error('Get pet documents error:', error);
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to retrieve documents'
@@ -185,38 +368,51 @@ router.get('/pet/:petId',
 
 // Get a specific document by ID
 router.get('/:id',
-  validateRequest({ params: Joi.object({ id: commonSchemas.id }) }),
+  validateRequest({ params: z.object({ id: commonSchemas.id }) }),
   async (req: Request, res: Response) => {
     try {
+      if (!req.petOwner && !req.staff) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          message: 'Please log in to view documents'
+        });
+      }
+
       const { id } = req.params;
       
-      const document = await db.findById('documents', id);
+      const document = await prisma.document.findFirst({
+        where: { 
+          id: id as string,
+          ...getClinicScopedDocumentWhere(req)
+        },
+        include: {
+          pet: {
+            select: {
+              id: true,
+              name: true,
+              breed: true
+            }
+          }
+        }
+      });
       
       if (!document) {
         return res.status(404).json({
           success: false,
           error: 'Document not found',
-          message: 'The requested document does not exist'
-        });
-      }
-
-      // Verify document belongs to the authenticated user through pet ownership
-      const pet = await db.findById<Pet>('pets', document.petId);
-      if (!pet || pet.ownerId !== req.user?.petOwnerId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied',
-          message: 'You do not have permission to view this document'
+          message: 'The requested document does not exist or you do not have permission to view it'
         });
       }
       
-      res.json({
+      return res.json({
         success: true,
         data: document,
         message: 'Document retrieved successfully'
       });
     } catch (error) {
-      res.status(500).json({
+      console.error('Get document error:', error);
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to retrieve document'
@@ -226,24 +422,28 @@ router.get('/:id',
 );
 
 // Upload a new document
-router.post('/',
-  upload.single('file'),
-  validateRequest({ 
-    body: Joi.object({
-      category: Joi.string().valid(
-        'past_appointments', 'x_ray_documents', 'diagnostic_reports', 
-        'blood_test_reports', 'vaccination_history'
-      ).required(),
-      petId: commonSchemas.id.optional(),
-      hospitalName: Joi.string().min(1).required(),
-      fileName: Joi.string().min(1).required(),
-      date: Joi.date().iso().optional(),
-      notes: Joi.string().max(1000).optional()
-    })
-  }),
+router.post('/upload',
+  // Accept both 'document' and legacy 'file' field names
+  upload.fields([{ name: 'document', maxCount: 1 }, { name: 'file', maxCount: 1 }]),
   async (req: Request, res: Response) => {
     try {
-      if (!req.user) {
+      console.log('📤 Upload request received');
+      console.log('  User:', req.user?.id);
+      // Normalize uploaded file regardless of field name
+      const files: any = (req as any).files;
+      const normalizedFile: Express.Multer.File | undefined = (req as any).file
+        || (files?.document?.[0])
+        || (files?.file?.[0]);
+      if (normalizedFile && !(req as any).file) {
+        (req as any).file = normalizedFile;
+      }
+      console.log('  File:', (req as any).file ? (req as any).file.originalname : 'NO FILE');
+      console.log('  File details:', (req as any).file);
+      console.log('  Body:', req.body);
+      console.log('  Headers:', req.headers);
+      
+      if (!req.petOwner && !req.staff) {
+        console.log('❌ No user authenticated');
         return res.status(401).json({
           success: false,
           error: 'Authentication required',
@@ -251,7 +451,17 @@ router.post('/',
         });
       }
 
-      if (!req.file) {
+      // Only pet owners can upload documents (staff view but don't upload)
+      if (!req.petOwner) {
+        return res.status(403).json({
+          success: false,
+          error: 'Permission denied',
+          message: 'Only pet owners can upload documents'
+        });
+      }
+
+      // Check if file was uploaded
+      if (!(req as any).file) {
         return res.status(400).json({
           success: false,
           error: 'No file uploaded',
@@ -259,61 +469,141 @@ router.post('/',
         });
       }
 
-      const { category, petId, hospitalName, fileName, date, notes } = req.body;
+      const { category, petId, hospitalName, fileName: userFileName, date, notes } = req.body;
+      console.log('  Category:', category);
+      console.log('  PetId:', petId);
+      console.log('  Hospital:', hospitalName);
+      console.log('  FileName:', userFileName);
+      console.log('  File details:', req.file);
       
-      // If petId is provided, verify pet belongs to the user
+      // If petId is provided, verify pet belongs to the user's clinic
       let selectedPetId = petId;
       if (petId) {
-        const pet = await db.findById<Pet>('pets', petId);
-        if (!pet || pet.ownerId !== req.user.petOwnerId) {
+        const petOwnerId = req.petOwner!.id;
+        console.log('🔍 Pet lookup:', {
+          petId,
+          petOwnerId,
+          clerkUserId: req.petOwner!.clerkUserId,
+          clinicId: req.petOwner!.clinicId
+        });
+        
+        // Verify pet belongs to petOwner and their clinic
+        const hasAccess = await verifyPetClinicAccess(req, petId as string);
+        
+        if (!hasAccess) {
+          console.error('❌ Pet not found or does not belong to user/clinic:', {
+            requestedPetId: petId,
+            petOwnerId,
+            clinicId: req.petOwner!.clinicId
+          });
           return res.status(400).json({
             success: false,
             error: 'Invalid pet',
-            message: 'Pet not found or does not belong to you'
+            message: 'Pet not found or does not belong to your clinic'
           });
         }
+        
+        console.log('✅ Pet verified for clinic access');
       } else {
-        // If no petId provided, get the user's first pet or create a general document
-        const userPets = await db.getPetsByOwner(req.user.petOwnerId);
+        // If no petId provided, get the user's first pet from their clinic
+        const petOwnerId = req.petOwner!.id;
+        const clinicWhere = req.petOwner!.clinicId 
+          ? { ownerId: petOwnerId, petOwner: { clinicId: req.petOwner!.clinicId } }
+          : { ownerId: petOwnerId };
+        
+        const userPets = await prisma.pet.findMany({
+          where: clinicWhere,
+          take: 1
+        });
+        
         if (userPets.length > 0) {
-          selectedPetId = userPets[0].petId;
+          selectedPetId = userPets[0]!.id;
+        } else {
+          return res.status(400).json({
+            success: false,
+            error: 'No pets found',
+            message: 'Please add a pet first before uploading documents'
+          });
         }
       }
       
+      // Get file path or S3 location
+      let filePath: string;
+      // The stored display name should prioritize the user's custom name (userFileName)
+      let storedFileName: string;
+      // Keep original name for logging only (not stored in DB to match schema)
+      let originalFileName: string;
+      
+      const file = (req as any).file as any; // Type assertion for multer-s3
+      
+      if (useS3 && file.location) {
+        // S3 upload
+        filePath = file.location;
+        originalFileName = file.originalname;
+        storedFileName = (userFileName && String(userFileName).trim().length > 0)
+          ? String(userFileName).trim()
+          : (file.key.split('/').pop() || file.originalname);
+      } else if (file.path) {
+        // Local upload
+        filePath = file.path;
+        originalFileName = file.originalname;
+        storedFileName = (userFileName && String(userFileName).trim().length > 0)
+          ? String(userFileName).trim()
+          : file.filename;
+      } else {
+        filePath = '';
+        originalFileName = file.originalname;
+        storedFileName = (userFileName && String(userFileName).trim().length > 0)
+          ? String(userFileName).trim()
+          : file.originalname;
+      }
+
+      // Persist only columns that exist in Prisma schema
       const documentData = {
-        documentId: uuidv4(),
-        petId: selectedPetId,
-        ownerId: req.user.petOwnerId,
-        category,
-        hospitalName,
-        fileName,
-        originalFileName: req.file.originalname,
-        filePath: req.file.path,
-        fileSize: req.file.size,
-        mimeType: req.file.mimetype,
-        date: date || new Date().toISOString(),
-        notes: notes || '',
-        createdAt: new Date().toISOString()
-      };
+        id: uuidv4(),
+        petId: selectedPetId as string,
+        category: String(category),
+        fileName: storedFileName,
+        filePath,
+        fileSize: Number(file.size),
+        mimeType: String(file.mimetype)
+      } as const;
       
-      const newDocument = await db.createDocument(documentData);
+      console.log('📝 Creating document with data:', documentData);
       
-      res.status(201).json({
+      const newDocument = await prisma.document.create({
+        data: documentData,
+        include: {
+          pet: {
+            select: {
+              id: true,
+              name: true,
+              breed: true
+            }
+          }
+        }
+      });
+      
+      console.log('✅ Document created successfully:', newDocument.id);
+      console.log('✅ Document data:', newDocument);
+      
+      return res.status(201).json({
         success: true,
         data: newDocument,
         message: 'Document uploaded successfully'
       });
     } catch (error) {
-      // Clean up uploaded file if document creation fails
-      if (req.file) {
+      // Clean up uploaded file if document creation fails (only for local storage)
+      if (req.file && !useS3 && 'path' in req.file) {
         try {
-          await fs.unlink(req.file.path);
+          await fs.unlink(req.file.path as string);
         } catch (unlinkError) {
           console.error('Error cleaning up uploaded file:', unlinkError);
         }
       }
       
-      res.status(500).json({
+      console.error('Upload document error:', error);
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to upload document'
@@ -325,16 +615,13 @@ router.post('/',
 // Update a document
 router.put('/:id',
   validateRequest({ 
-    params: Joi.object({ id: commonSchemas.id }),
-    body: Joi.object({
-      category: Joi.string().valid(
-        'past_appointments', 'x_ray_documents', 'diagnostic_reports', 
-        'blood_test_reports', 'vaccination_history'
-      ).optional(),
-      hospitalName: Joi.string().min(1).optional(),
-      fileName: Joi.string().min(1).optional(),
-      date: Joi.date().iso().optional(),
-      notes: Joi.string().max(1000).optional()
+    params: z.object({ id: commonSchemas.id }),
+    body: z.object({
+      category: z.enum(['veterinary_notes', 'diagnostic_reports', 'lab_results', 'vaccination_records']).optional(),
+      hospitalName: z.string().min(1).optional(),
+      fileName: z.string().min(1).optional(),
+      date: z.string().datetime().optional(),
+      notes: z.string().max(1000).optional()
     })
   }),
   async (req: Request, res: Response) => {
@@ -342,43 +629,50 @@ router.put('/:id',
       const { id } = req.params;
       
       // Check if document exists and belongs to user
-      const existingDocument = await db.findById('documents', id);
+      const existingDocument = await prisma.document.findFirst({
+        where: { 
+          id: id as string,
+          pet: {
+            ownerId: req.user!.id
+          }
+        }
+      });
       
       if (!existingDocument) {
         return res.status(404).json({
           success: false,
           error: 'Document not found',
-          message: 'The requested document does not exist'
+          message: 'The requested document does not exist or you do not have permission to update it'
         });
       }
 
-      // Verify document belongs to the authenticated user through pet ownership
-      const pet = await db.findById<Pet>('pets', existingDocument.petId);
-      if (!pet || pet.ownerId !== req.user?.petOwnerId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied',
-          message: 'You do not have permission to update this document'
-        });
+      const updateData = { ...req.body };
+      if (updateData.date) {
+        updateData.date = new Date(updateData.date);
       }
 
-      const updatedDocument = await db.update('documents', id, req.body);
+      const updatedDocument = await prisma.document.update({
+        where: { id: id as string },
+        data: updateData,
+        include: {
+          pet: {
+            select: {
+              id: true,
+              name: true,
+              breed: true
+            }
+          }
+        }
+      });
       
-      if (!updatedDocument) {
-        return res.status(500).json({
-          success: false,
-          error: 'Update failed',
-          message: 'Unable to update document'
-        });
-      }
-      
-      res.json({
+      return res.json({
         success: true,
         data: updatedDocument,
         message: 'Document updated successfully'
       });
     } catch (error) {
-      res.status(500).json({
+      console.error('Update document error:', error);
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to update document'
@@ -387,58 +681,204 @@ router.put('/:id',
   }
 );
 
+// Download a document
+router.get('/download/:id',
+  validateRequest({ params: z.object({ id: commonSchemas.id }) }),
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const wantJson = req.query.json === '1' || (req.headers.accept || '').includes('application/json');
+      
+      if (!req.petOwner && !req.staff) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          message: 'Please log in to download documents'
+        });
+      }
+
+      // Check if document exists and belongs to user's clinic
+      const document = await prisma.document.findFirst({
+        where: { 
+          id: id as string,
+          ...getClinicScopedDocumentWhere(req)
+        }
+      });
+      
+      if (!document) {
+        return res.status(404).json({
+          success: false,
+          error: 'Document not found',
+          message: 'The requested document does not exist or you do not have permission to access it'
+        });
+      }
+
+      // Helper to presign using best-effort bucket/key detection
+      const presignFromPath = async (rawPath: string) => {
+        const lazyClient = s3Client || new S3Client({
+          region: process.env.AWS_REGION || 'us-east-2',
+          credentials: {
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
+          }
+        });
+        let key = rawPath.replace(/^\//, '');
+        let bucket: string = s3BucketName || '';
+        try {
+          if (/^https?:\/\//.test(rawPath)) {
+            const u = new URL(rawPath);
+            key = u.pathname.replace(/^\//, '');
+            // Try to derive bucket from host if env differs
+            // e.g. spoodle-medical-records.s3.us-east-2.amazonaws.com
+            const hostParts = u.hostname.split('.');
+            if (hostParts.length >= 4 && hostParts[1] === 's3') {
+              bucket = hostParts[0] || bucket;
+            }
+          }
+        } catch {}
+        const signed = await getSignedUrl(lazyClient, new GetObjectCommand({ Bucket: bucket, Key: key }), { expiresIn: 300 });
+        return signed;
+      };
+
+      // If filePath is a full URL or S3 key/local path, handle both with presign for JSON
+      if (wantJson) {
+        try {
+          const signed = await presignFromPath(document.filePath);
+          return res.json({ success: true, data: { url: signed, fileName: document.fileName, fileSize: document.fileSize, mimeType: document.mimeType } });
+        } catch (e) {
+          console.error('Presign JSON failed:', e);
+        }
+      } else if ((useS3 && s3Client) || /^documents\//.test(document.filePath) || /^https?:\/\//.test(document.filePath)) {
+        try {
+          // For non-JSON, redirect to a presigned URL for S3 objects (key or full URL)
+          const signed = await presignFromPath(document.filePath);
+          res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
+          res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
+          return res.redirect(signed);
+        } catch (s3Err) {
+          console.error('S3 redirect presign failed:', s3Err);
+        }
+      }
+
+      // Local filesystem fallback (legacy)
+      if (!/^https?:\/\//.test(document.filePath)) {
+        try {
+          await fs.access(document.filePath);
+          // Stream local file
+          const getRes: any = await fs.readFile(document.filePath);
+          // Forward headers and stream body
+          res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
+          res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
+          return res.send(getRes);
+        } catch (fsErr) {
+          console.error('Local file send failed:', fsErr);
+        }
+      }
+
+      // Local file storage: check if file exists
+      try {
+        await fs.access(document.filePath);
+        
+        // Set appropriate headers for file download
+        res.setHeader('Content-Type', document.mimeType);
+        res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
+        res.setHeader('Content-Length', document.fileSize.toString());
+        
+        // Stream the file
+        const fileStream = await fs.readFile(document.filePath);
+        return res.send(fileStream);
+        
+      } catch (error) {
+        console.error('File not found:', document.filePath);
+        return res.status(404).json({
+          success: false,
+          error: 'File not found',
+          message: 'The document file could not be found on the server'
+        });
+      }
+    } catch (error) {
+      console.error('Download document error:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Server error',
+        message: 'Unable to retrieve document download info'
+      });
+    }
+  }
+);
+
 // Delete a document
 router.delete('/:id',
-  validateRequest({ params: Joi.object({ id: commonSchemas.id }) }),
+  validateRequest({ params: z.object({ id: commonSchemas.id }) }),
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       
-      // Check if document exists and belongs to user
-      const existingDocument = await db.findById('documents', id);
+      if (!req.petOwner && !req.staff) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          message: 'Please log in to delete documents'
+        });
+      }
+
+      // Only pet owners can delete documents
+      if (!req.petOwner) {
+        return res.status(403).json({
+          success: false,
+          error: 'Permission denied',
+          message: 'Only pet owners can delete documents'
+        });
+      }
+
+      // Check if document exists and belongs to user's clinic
+      const existingDocument = await prisma.document.findFirst({
+        where: { 
+          id: id as string,
+          ...getClinicScopedDocumentWhere(req)
+        }
+      });
       
       if (!existingDocument) {
         return res.status(404).json({
           success: false,
           error: 'Document not found',
-          message: 'The requested document does not exist'
+          message: 'The requested document does not exist or you do not have permission to delete it'
         });
       }
 
-      // Verify document belongs to the authenticated user through pet ownership
-      const pet = await db.findById<Pet>('pets', existingDocument.petId);
-      if (!pet || pet.ownerId !== req.user?.petOwnerId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied',
-          message: 'You do not have permission to delete this document'
-        });
-      }
-
-      // Delete the file from filesystem
+      // Delete the file from S3 or filesystem
       try {
-        await fs.unlink(existingDocument.filePath);
+        if (useS3 && s3Client) {
+          // S3 deletion - extract key from URL
+          const url = new URL(existingDocument.filePath);
+          const key = url.pathname.substring(1); // Remove leading /
+          await s3Client.send(new DeleteObjectCommand({
+            Bucket: s3BucketName,
+            Key: key,
+          }));
+          console.log('✅ Deleted file from S3:', key);
+        } else {
+          // Local file deletion
+          await fs.unlink(existingDocument.filePath);
+          console.log('✅ Deleted file from local storage:', existingDocument.filePath);
+        }
       } catch (fileError) {
         console.error('Error deleting file:', fileError);
         // Continue with database deletion even if file deletion fails
       }
 
-      const deleted = await db.delete('documents', id);
+      await prisma.document.delete({
+        where: { id: id as string }
+      });
       
-      if (!deleted) {
-        return res.status(500).json({
-          success: false,
-          error: 'Delete failed',
-          message: 'Unable to delete document'
-        });
-      }
-      
-      res.json({
+      return res.json({
         success: true,
         message: 'Document deleted successfully'
       });
     } catch (error) {
-      res.status(500).json({
+      console.error('Delete document error:', error);
+      return res.status(500).json({
         success: false,
         error: 'Server error',
         message: 'Unable to delete document'

@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { 
@@ -14,76 +16,95 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { FileText, Search } from "lucide-react";
+import { FileText, Search, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { getClinicPets } from "@/lib/api";
+import type { Pet as ApiPet } from "@/lib/types";
 
 interface Pet {
-  petId: string;
-  petName: string;
-  petImage: string;
-  ownerName: string;
-  breed: string;
-  dateOfBirth: string;
-  weight: string;
+  id: string;
+  name: string;
+  imageUrl?: string | null;
+  species?: string | null;
+  breed?: string | null;
+  dateOfBirth?: string | null;
+  weight?: number | null;
+  owner?: {
+    name: string;
+    email?: string;
+    phone?: string | null;
+    address?: string | null;
+  } | null;
 }
 
 export default function Records() {
   const router = useRouter();
+  const { getToken, isSignedIn } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [allPets, setAllPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch pets from the API
   useEffect(() => {
     const fetchPets = async () => {
+      if (!isSignedIn) {
+        setError('Please sign in to view pets');
+        setLoading(false);
+        return;
+      }
+
       try {
-        const response = await fetch('http://localhost:3001/api/pets/all');
-        if (!response.ok) throw new Error('Failed to fetch');
+        const token = await getToken();
+        if (!token) {
+          setError('Unable to authenticate. Please try signing in again.');
+          setLoading(false);
+          return;
+        }
+
+        const result = await getClinicPets(token);
         
-        const result = await response.json();
-        
-        if (result.success) {
-          // Transform API data to match the table format
-          const transformedPets: Pet[] = result.data.map((pet: {
-            petId: string;
-            name: string;
-            profilePhoto?: string;
-            owner?: { name: string };
-            breed?: string;
-            dateOfBirth?: string;
-            weight?: number;
-          }) => ({
-            petId: pet.petId,
-            petName: pet.name,
-            petImage: pet.profilePhoto || '',
-            ownerName: pet.owner?.name || 'Unknown Owner',
-            breed: pet.breed || 'Mixed',
-            dateOfBirth: pet.dateOfBirth ? new Date(pet.dateOfBirth).toLocaleDateString() : 'N/A',
-            weight: pet.weight ? `${pet.weight} lbs` : 'N/A'
+        if (result.success && result.data) {
+          // Transform backend pet data to match UI format
+          // Backend now returns pets with owner information included
+          const transformedPets: Pet[] = result.data.map((pet: ApiPet) => ({
+            id: pet.id,
+            name: pet.name,
+            imageUrl: pet.imageUrl,
+            species: pet.species,
+            breed: pet.breed || 'Unknown',
+            dateOfBirth: pet.dateOfBirth,
+            weight: pet.weight,
+            // Backend now includes owner data directly
+            owner: pet.owner || null
           }));
           
           setAllPets(transformedPets);
+          setError(null);
+        } else {
+          setError(result.message || result.error || 'Failed to fetch pets');
         }
-      } catch (error) {
-        console.error('Error fetching pets:', error);
-        setAllPets([]);
+      } catch (err) {
+        console.error('Error fetching pets:', err);
+        setError('An error occurred while fetching pets');
       } finally {
         setLoading(false);
       }
     };
 
     fetchPets();
-  }, []);
+  }, [isSignedIn, getToken]);
 
   const filteredPets = allPets.filter(pet => {
-    const matchesSearch = pet.petName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         pet.ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         pet.breed.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = pet.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         pet.owner?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (pet.species || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (pet.breed || '').toLowerCase().includes(searchQuery.toLowerCase());
     
     return matchesSearch;
   });
 
   return (
-    <div className="flex-1 space-y-6 p-6">
+    <div className="flex-1 space-y-6 p-12">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Pets</h2>
@@ -93,27 +114,35 @@ export default function Records() {
         </div>
       </div>
 
-      {/* Search */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by pet name, owner, or breed..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Pets Table */}
       <Card>
         <CardHeader>
-          <CardTitle>All Pets ({loading ? '...' : filteredPets.length})</CardTitle>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2">
+              <CardTitle>All Pets</CardTitle>
+              <Badge variant="default">{loading ? '...' : filteredPets.length}</Badge>
+            </div>
+            {/* Search */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by pet name, owner, species, or breed..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
@@ -121,13 +150,14 @@ export default function Records() {
                 <p className="text-muted-foreground">Loading pets...</p>
               </div>
             </div>
-          ) : (
+          ) : !error ? (
             <>
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="hover:bg-transparent">
                     <TableHead>Pet Name</TableHead>
                     <TableHead>Owner</TableHead>
+                    <TableHead>Species</TableHead>
                     <TableHead>Breed</TableHead>
                     <TableHead>Date of Birth</TableHead>
                     <TableHead>Weight</TableHead>
@@ -137,28 +167,35 @@ export default function Records() {
                 <TableBody>
                   {filteredPets.map((pet) => (
                     <TableRow 
-                      key={pet.petId}
+                      key={pet.id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => router.push(`/pets/${pet.petId}`)}
+                      onClick={() => router.push(`/pets/${pet.id}`)}
                     >
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={pet.petImage} alt={pet.petName} />
-                            <AvatarFallback>{pet.petName.charAt(0)}</AvatarFallback>
+                            <AvatarImage src={pet.imageUrl || ''} alt={pet.name} />
+                            <AvatarFallback>{pet.name.charAt(0)}</AvatarFallback>
                           </Avatar>
-                          <span className="font-medium">{pet.petName}</span>
+                          <span className="font-medium">{pet.name}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{pet.ownerName}</TableCell>
-                      <TableCell>{pet.breed}</TableCell>
-                      <TableCell>{pet.dateOfBirth}</TableCell>
-                      <TableCell>{pet.weight}</TableCell>
+                      <TableCell>{pet.owner?.name || 'Unknown Owner'}</TableCell>
+                      <TableCell>{pet.species || 'N/A'}</TableCell>
+                      <TableCell>{pet.breed || 'Unknown'}</TableCell>
+                      <TableCell>
+                        {pet.dateOfBirth 
+                          ? new Date(pet.dateOfBirth).toLocaleDateString()
+                          : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        {pet.weight ? `${pet.weight} lbs` : 'N/A'}
+                      </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => router.push(`/pets/${pet.petId}?tab=records`)}
+                          onClick={() => router.push(`/pets/${pet.id}?tab=records`)}
                         >
                           <FileText className="h-4 w-4 mr-2" />
                           View Records
@@ -169,7 +206,7 @@ export default function Records() {
                 </TableBody>
               </Table>
               
-              {filteredPets.length === 0 && (
+              {filteredPets.length === 0 && !loading && (
                 <div className="text-center py-8">
                   <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-lg font-medium">No pets found</p>
@@ -182,7 +219,7 @@ export default function Records() {
                 </div>
               )}
             </>
-          )}
+          ) : null}
         </CardContent>
       </Card>
     </div>

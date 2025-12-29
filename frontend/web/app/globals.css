@@ -21,10 +21,10 @@
     --secondary-foreground: 210 20% 98%;
     --secondary-light: 145 51% 60%;
 
-    /* Custom orange accent #E75325 */
-    --accent: 13 81% 53%;
+    /* Neutral accent */
+    --accent: 0 0% 75%;
     --accent-foreground: 210 20% 98%;
-    --accent-light: 13 81% 65%;
+    --accent-light: 0 0% 85%;
 
     /* Pink accent for special highlights */
     --pink: 330 81% 60%;
@@ -97,7 +97,7 @@
     --secondary-foreground: 222 47% 8%;
     --muted: 222 47% 12%;
     --muted-foreground: 215 16% 65%;
-    --accent: 32 95% 60%;
+    --accent: 0 0% 80%;
     --accent-foreground: 222 47% 8%;
     --border: 222 47% 15%;
     --input: 222 47% 15%;

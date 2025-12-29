@@ -258,15 +258,19 @@ export default function SettingsView() {
   };
 
   return (
-    <div className="container mx-auto py-6 px-4 max-w-6xl">
-      <div className="flex items-center gap-2 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+    <div className="flex-1 space-y-6 p-12">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
+          <p className="text-muted-foreground">
+            Manage your account settings and preferences
+          </p>
+        </div>
       </div>
 
       <Tabs defaultValue="personal" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className={cn("grid w-full", isCurrentUserAdmin ? "grid-cols-3" : "grid-cols-1")}>
           <TabsTrigger value="personal">Personal Info</TabsTrigger>
-          <TabsTrigger value="professional">Professional</TabsTrigger>
           {isCurrentUserAdmin && <TabsTrigger value="calendar">Clinic Hours</TabsTrigger>}
           {isCurrentUserAdmin && <TabsTrigger value="users">User Management</TabsTrigger>}
         </TabsList>
@@ -373,162 +377,6 @@ export default function SettingsView() {
                   />
                   
                   <Button type="submit">Save Personal Information</Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Professional Details Tab */}
-        <TabsContent value="professional" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Professional Details
-              </CardTitle>
-              <CardDescription>
-                Manage your veterinary credentials and professional information.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...vetDetailsForm}>
-                <form onSubmit={vetDetailsForm.handleSubmit(onVetDetailsSubmit)} className="space-y-4">
-                  <FormField
-                    control={vetDetailsForm.control}
-                    name="vetName"
-                    rules={{
-                      validate: (value) => validateRequired(value, 'Vet name')
-                    }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Professional Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Dr. Your Name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={vetDetailsForm.control}
-                    name="clinicName"
-                    rules={{
-                      validate: (value) => validateRequired(value, 'Clinic name')
-                    }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Clinic Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Your Veterinary Clinic" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={vetDetailsForm.control}
-                      name="tenureYears"
-                      rules={{
-                        validate: validateTenureYears
-                      }}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Years at Clinic</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder="0" 
-                              {...field} 
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={vetDetailsForm.control}
-                      name="tenureMonths"
-                      rules={{
-                        validate: validateTenureMonths
-                      }}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Additional Months</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder="0" 
-                              {...field} 
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <FormField
-                    control={vetDetailsForm.control}
-                    name="specialty"
-                    rules={{
-                      validate: (value) => validateRequired(value, 'Specialty')
-                    }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Specialty</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select your specialty" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Small Animal Medicine">Small Animal Medicine</SelectItem>
-                            <SelectItem value="Large Animal Medicine">Large Animal Medicine</SelectItem>
-                            <SelectItem value="Ophthalmology">Ophthalmology</SelectItem>
-                            <SelectItem value="Surgery">Surgery</SelectItem>
-                            <SelectItem value="Dermatology">Dermatology</SelectItem>
-                            <SelectItem value="Cardiology">Cardiology</SelectItem>
-                            <SelectItem value="Emergency Medicine">Emergency Medicine</SelectItem>
-                            <SelectItem value="Exotic Animals">Exotic Animals</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={vetDetailsForm.control}
-                    name="biography"
-                    rules={{
-                      validate: validateBiography
-                    }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Professional Biography</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Tell us about your experience and background..." 
-                            className="min-h-[100px]"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          {field.value.length}/500 characters
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <Button type="submit">Save Professional Details</Button>
                 </form>
               </Form>
             </CardContent>

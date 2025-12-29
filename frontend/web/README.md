@@ -225,13 +225,14 @@ npm run type-check
 
 ## 🌐 API Integration
 
-The application connects to a backend API (expected at `http://localhost:3001`) for:
-- Pet data retrieval and management
-- Appointment scheduling
-- Medical records
-- User authentication (via Clerk)
+**Note**: The web app currently uses mock data for pet management features. API integration with `backend` is planned for future implementation.
 
-Ensure the backend server is running for full functionality.
+Current mock data includes:
+- Pet listings and details
+- Medical records
+- Owner information
+
+User authentication is handled via Clerk (no backend API required).
 
 ## 🎨 Theming
 

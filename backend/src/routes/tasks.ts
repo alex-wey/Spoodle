@@ -1,20 +1,17 @@
 import { Router, Request, Response } from 'express';
-import { v4 as uuidv4 } from 'uuid';
-import Joi from 'joi';
-import db from '../database/crud/index.js';
-import { Task, CreateTaskRequest, Pet } from '../database/entities/index.js';
-import { validateRequest, validationSchemas, commonSchemas } from '../middleware/validation.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { prisma } from '../index.js';
+import { authenticateClerk } from '../middleware/auth.js';
+import { getClinicScopedTaskWhere, verifyPetClinicAccess } from '../utils/clinicAuth.js';
 
 const router = Router();
 
 // Apply authentication to all task routes
-router.use(authenticateToken);
+router.use(authenticateClerk);
 
-// Get all tasks for the authenticated user
+// Get all tasks for the authenticated user (petOwner or staff)
 router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
+    if (!req.petOwner && !req.staff) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -22,27 +19,74 @@ router.get('/', async (req: Request, res: Response) => {
       });
     }
 
-    // Get all pets for the user first
-    const userPets = await db.getPetsByOwner(req.user.petOwnerId);
-    const petIds = userPets.map(pet => pet.petId);
-    
-    // Get all tasks for these pets
-    const allTasks: Task[] = [];
-    for (const petId of petIds) {
-      const petTasks = await db.getTasksByPet(petId);
-      allTasks.push(...petTasks);
+    const { petId, startDate, endDate } = req.query;
+
+    // Build where clause with clinic filtering
+    const baseWhere = getClinicScopedTaskWhere(req);
+    const where: any = {
+      ...baseWhere
+    };
+
+    // Filter by pet if specified
+    if (petId && petId !== 'all') {
+      where.petId = petId;
     }
-    
-    // Sort by scheduled time (most recent first)
-    allTasks.sort((a, b) => new Date(b.scheduledTime).getTime() - new Date(a.scheduledTime).getTime());
-    
-    res.json({
+
+    // Filter by date range if specified
+    if (startDate || endDate) {
+      const start = startDate ? new Date(startDate as string) : null;
+      const end = endDate ? new Date(endDate as string) : null;
+      if (end) {
+        end.setHours(23, 59, 59, 999);
+      }
+
+      // For recurring tasks, include ALL of them (frontend will expand and filter)
+      // For non-recurring tasks, filter by scheduledDate
+      where.OR = [
+        // Non-recurring tasks: scheduledDate must be in range
+        {
+          AND: [
+            { recurring: false },
+            {
+              scheduledDate: {
+                ...(start ? { gte: start } : {}),
+                ...(end ? { lte: end } : {}),
+              }
+            }
+          ]
+        },
+        // Recurring tasks: include all (frontend handles expansion)
+        {
+          recurring: true
+        }
+      ];
+    }
+
+    const tasks = await prisma.task.findMany({
+      where,
+      include: {
+        pet: {
+          select: {
+            id: true,
+            name: true,
+            species: true
+          }
+        }
+      },
+      orderBy: {
+        scheduledDate: 'asc'
+      }
+    });
+
+    return res.json({
       success: true,
-      data: allTasks,
+      data: tasks,
+      count: tasks.length,
       message: 'Tasks retrieved successfully'
     });
-  } catch (error) {
-    res.status(500).json({
+  } catch (error: any) {
+    console.error('Get tasks error:', error);
+    return res.status(500).json({
       success: false,
       error: 'Server error',
       message: 'Unable to retrieve tasks'
@@ -50,377 +94,428 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// Get tasks for a specific pet
-router.get('/pet/:petId',
-  validateRequest({ params: Joi.object({ petId: commonSchemas.id }) }),
-  async (req: Request, res: Response) => {
-    try {
-      const { petId } = req.params;
-      
-      // Verify pet belongs to the authenticated user
-      const pet = await db.findById<Pet>('pets', petId);
-      
-      if (!pet) {
-        return res.status(404).json({
-          success: false,
-          error: 'Pet not found',
-          message: 'The requested pet does not exist'
-        });
-      }
-
-      if (pet.ownerId !== req.user?.petOwnerId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied',
-          message: 'You do not have permission to view this pet\'s tasks'
-        });
-      }
-
-      const tasks = await db.getTasksByPet(petId);
-      
-      // Sort by scheduled time (most recent first)
-      tasks.sort((a, b) => new Date(b.scheduledTime).getTime() - new Date(a.scheduledTime).getTime());
-      
-      res.json({
-        success: true,
-        data: tasks,
-        message: 'Tasks retrieved successfully'
-      });
-    } catch (error) {
-      res.status(500).json({
+// Get a specific task
+router.get('/:id', async (req: Request, res: Response) => {
+  try {
+    if (!req.petOwner && !req.staff) {
+      return res.status(401).json({
         success: false,
-        error: 'Server error',
-        message: 'Unable to retrieve tasks'
+        error: 'Authentication required',
+        message: 'Please log in to view task'
       });
     }
-  }
-);
 
-// Get a specific task by ID
-router.get('/:id',
-  validateRequest({ params: Joi.object({ id: commonSchemas.id }) }),
-  async (req: Request, res: Response) => {
-    try {
-      const { id } = req.params;
-      
-      const task = await db.findById<Task>('tasks', id);
-      
-      if (!task) {
-        return res.status(404).json({
-          success: false,
-          error: 'Task not found',
-          message: 'The requested task does not exist'
-        });
-      }
-
-      // Verify task belongs to the authenticated user through pet ownership
-      const pet = await db.findById<Pet>('pets', task.petId);
-      if (!pet || pet.ownerId !== req.user?.petOwnerId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied',
-          message: 'You do not have permission to view this task'
-        });
-      }
-      
-      res.json({
-        success: true,
-        data: task,
-        message: 'Task retrieved successfully'
-      });
-    } catch (error) {
-      res.status(500).json({
+    const taskId = req.params.id;
+    if (!taskId) {
+      return res.status(400).json({
         success: false,
-        error: 'Server error',
-        message: 'Unable to retrieve task'
+        error: 'Invalid task ID',
+        message: 'Task ID is required'
       });
     }
+
+    const task = await prisma.task.findFirst({
+      where: {
+        id: taskId,
+        ...getClinicScopedTaskWhere(req)
+      },
+      include: {
+        pet: {
+          select: {
+            id: true,
+            name: true,
+            species: true
+          }
+        }
+      }
+    });
+
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        error: 'Task not found',
+        message: 'Task does not exist or does not belong to you'
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: task,
+      message: 'Task retrieved successfully'
+    });
+  } catch (error: any) {
+    console.error('Get task error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error',
+      message: 'Unable to retrieve task'
+    });
   }
-);
+});
 
 // Create a new task
-router.post('/',
-  validateRequest({ body: validationSchemas.createTask }),
-  async (req: Request, res: Response) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          error: 'Authentication required',
-          message: 'Please log in to create tasks'
-        });
-      }
-
-      const taskData: CreateTaskRequest = req.body;
-      
-      // Verify pet belongs to the user
-      const pet = await db.findById<Pet>('pets', taskData.petId);
-      if (!pet || pet.ownerId !== req.user.petOwnerId) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid pet',
-          message: 'Pet not found or does not belong to you'
-        });
-      }
-      
-      const newTask = await db.createTask({
-        taskId: uuidv4(),
-        petId: taskData.petId,
-        ownerId: req.user.petOwnerId,
-        type: taskData.type,
-        title: taskData.title,
-        description: taskData.description,
-        scheduledTime: taskData.scheduledTime,
-        completionStatus: false,
-        recurring: taskData.recurring || false,
-        recurrencePattern: taskData.recurrencePattern
-      });
-      
-      res.status(201).json({
-        success: true,
-        data: newTask,
-        message: 'Task created successfully'
-      });
-    } catch (error) {
-      res.status(500).json({
+router.post('/', async (req: Request, res: Response) => {
+  try {
+    if (!req.petOwner && !req.staff) {
+      return res.status(401).json({
         success: false,
-        error: 'Server error',
-        message: 'Unable to create task'
+        error: 'Authentication required',
+        message: 'Please log in to create tasks'
       });
     }
-  }
-);
 
-// Update a task
-router.put('/:id',
-  validateRequest({ 
-    params: Joi.object({ id: commonSchemas.id }),
-    body: Joi.object({
-      type: Joi.string().valid(
-        'walk', 'feed', 'medicate', 'groom', 'training', 'checkup', 'other'
-      ).optional(),
-      title: Joi.string().min(1).max(100).optional(),
-      description: Joi.string().max(500).optional(),
-      scheduledTime: Joi.date().iso().optional(),
-      recurring: Joi.boolean().optional(),
-      recurrencePattern: Joi.string().valid('daily', 'weekly', 'monthly').optional(),
-      notes: Joi.string().max(1000).optional()
-    })
-  }),
-  async (req: Request, res: Response) => {
-    try {
-      const { id } = req.params;
-      
-      // Check if task exists and belongs to user
-      const existingTask = await db.findById<Task>('tasks', id);
-      
-      if (!existingTask) {
-        return res.status(404).json({
-          success: false,
-          error: 'Task not found',
-          message: 'The requested task does not exist'
-        });
-      }
+    const {
+      petId,
+      taskType,
+      title,
+      description,
+      scheduledDate,
+      scheduledTime,
+      recurring,
+      recurrencePattern,
+      recurrenceDaysOfWeek,
+      recurrenceEndDate,
+      recurrenceTimes
+    } = req.body;
 
-      // Verify task belongs to the authenticated user through pet ownership
-      const pet = await db.findById<Pet>('pets', existingTask.petId);
-      if (!pet || pet.ownerId !== req.user?.petOwnerId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied',
-          message: 'You do not have permission to update this task'
-        });
-      }
-
-      const updatedTask = await db.update<Task>('tasks', id, req.body);
-      
-      if (!updatedTask) {
-        return res.status(500).json({
-          success: false,
-          error: 'Update failed',
-          message: 'Unable to update task'
-        });
-      }
-      
-      res.json({
-        success: true,
-        data: updatedTask,
-        message: 'Task updated successfully'
-      });
-    } catch (error) {
-      res.status(500).json({
+    // Validate required fields
+    if (!petId || !taskType || !title || !scheduledDate) {
+      return res.status(400).json({
         success: false,
-        error: 'Server error',
-        message: 'Unable to update task'
+        error: 'Missing required fields',
+        message: 'petId, taskType, title, and scheduledDate are required'
       });
     }
+
+    // Verify pet belongs to user's clinic
+    const hasAccess = await verifyPetClinicAccess(req, petId);
+
+    if (!hasAccess) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid pet',
+        message: 'Pet not found or does not belong to your clinic'
+      });
+    }
+
+    // Normalize scheduledDate to midnight UTC
+    const normalizedDate = new Date(scheduledDate);
+    normalizedDate.setUTCHours(0, 0, 0, 0);
+
+    // Helper function to ensure JSON string format
+    const ensureJsonString = (value: any): string | null => {
+      if (!value) return null;
+      if (typeof value === 'string') {
+        // Already a string, check if it's valid JSON
+        try {
+          JSON.parse(value);
+          return value;
+        } catch {
+          // Not valid JSON, stringify it
+          return JSON.stringify(value);
+        }
+      }
+      // Array or object, stringify it
+      return JSON.stringify(value);
+    };
+
+    // Create task
+    const task = await prisma.task.create({
+      data: {
+        petId,
+        taskType,
+        title,
+        description: description || null,
+        scheduledDate: normalizedDate,
+        scheduledTime: scheduledTime || '00:00',
+        recurring: recurring || false,
+        recurrencePattern: recurrencePattern || null,
+        recurrenceDaysOfWeek: ensureJsonString(recurrenceDaysOfWeek),
+        recurrenceEndDate: recurrenceEndDate ? new Date(recurrenceEndDate) : null,
+        recurrenceTimes: ensureJsonString(recurrenceTimes),
+        completed: false
+      },
+      include: {
+        pet: {
+          select: {
+            id: true,
+            name: true,
+            species: true
+          }
+        }
+      }
+    });
+
+    return res.status(201).json({
+      success: true,
+      data: task,
+      message: 'Task created successfully'
+    });
+  } catch (error: any) {
+    console.error('Create task error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error',
+      message: 'Unable to create task'
+    });
   }
-);
+});
+
+// Update a task (PUT)
+router.put('/:id', async (req: Request, res: Response) => {
+  return handleUpdateTask(req, res);
+});
+
+// Update a task (PATCH) - same handler as PUT
+router.patch('/:id', async (req: Request, res: Response) => {
+  return handleUpdateTask(req, res);
+});
+
+// Shared update handler
+async function handleUpdateTask(req: Request, res: Response) {
+  try {
+    if (!req.petOwner && !req.staff) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required'
+      });
+    }
+
+    const taskId = req.params.id;
+    if (!taskId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid task ID',
+        message: 'Task ID is required'
+      });
+    }
+
+    // Verify task belongs to user's clinic
+    const existingTask = await prisma.task.findFirst({
+      where: {
+        id: taskId,
+        ...getClinicScopedTaskWhere(req)
+      }
+    });
+
+    if (!existingTask) {
+      return res.status(404).json({
+        success: false,
+        error: 'Task not found',
+        message: 'Task does not exist or does not belong to you'
+      });
+    }
+
+    const {
+      title,
+      description,
+      scheduledDate,
+      scheduledTime,
+      taskType,
+      completed,
+      completedAt,
+      completedBy,
+      completedByName,
+      notes,
+      recurrencePattern,
+      recurrenceDaysOfWeek,
+      recurrenceEndDate,
+      recurrenceTimes
+    } = req.body;
+
+    // Build update data
+    const updateData: any = {};
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (scheduledTime !== undefined) updateData.scheduledTime = scheduledTime;
+    if (taskType !== undefined) updateData.taskType = taskType;
+    if (completed !== undefined) updateData.completed = completed;
+    if (completedAt !== undefined) updateData.completedAt = completedAt ? new Date(completedAt) : null;
+    if (completedBy !== undefined) updateData.completedBy = completedBy;
+    if (completedByName !== undefined) updateData.completedByName = completedByName;
+    if (notes !== undefined) updateData.notes = notes;
+    // Helper function to ensure JSON string format
+    const ensureJsonString = (value: any): string | null => {
+      if (!value) return null;
+      if (typeof value === 'string') {
+        // Already a string, check if it's valid JSON
+        try {
+          JSON.parse(value);
+          return value;
+        } catch {
+          // Not valid JSON, stringify it
+          return JSON.stringify(value);
+        }
+      }
+      // Array or object, stringify it
+      return JSON.stringify(value);
+    };
+
+    if (recurrencePattern !== undefined) updateData.recurrencePattern = recurrencePattern;
+    if (recurrenceDaysOfWeek !== undefined) updateData.recurrenceDaysOfWeek = ensureJsonString(recurrenceDaysOfWeek);
+    if (recurrenceEndDate !== undefined) updateData.recurrenceEndDate = recurrenceEndDate ? new Date(recurrenceEndDate) : null;
+    if (recurrenceTimes !== undefined) updateData.recurrenceTimes = ensureJsonString(recurrenceTimes);
+
+    // Normalize scheduledDate to midnight UTC if provided
+    if (scheduledDate !== undefined) {
+      const normalizedDate = new Date(scheduledDate);
+      normalizedDate.setUTCHours(0, 0, 0, 0);
+      updateData.scheduledDate = normalizedDate;
+    }
+
+    const task = await prisma.task.update({
+      where: { id: taskId },
+      data: updateData,
+      include: {
+        pet: {
+          select: {
+            id: true,
+            name: true,
+            species: true
+          }
+        }
+      }
+    });
+
+    return res.json({
+      success: true,
+      data: task,
+      message: 'Task updated successfully'
+    });
+  } catch (error: any) {
+    console.error('Update task error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error',
+      message: 'Unable to update task'
+    });
+  }
+}
 
 // Mark task as completed
-router.patch('/:id/complete',
-  validateRequest({ 
-    params: Joi.object({ id: commonSchemas.id }),
-    body: Joi.object({
-      notes: Joi.string().max(1000).optional(),
-      completedBy: Joi.string().max(100).optional()
-    })
-  }),
-  async (req: Request, res: Response) => {
-    try {
-      const { id } = req.params;
-      const { notes, completedBy } = req.body;
-      
-      // Check if task exists and belongs to user
-      const existingTask = await db.findById<Task>('tasks', id);
-      
-      if (!existingTask) {
-        return res.status(404).json({
-          success: false,
-          error: 'Task not found',
-          message: 'The requested task does not exist'
-        });
-      }
+router.patch('/:id/complete', async (req: Request, res: Response) => {
+  try {
+    if (!req.petOwner && !req.staff) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required'
+      });
+    }
 
-      // Verify task belongs to the authenticated user through pet ownership
-      const pet = await db.findById<Pet>('pets', existingTask.petId);
-      if (!pet || pet.ownerId !== req.user?.petOwnerId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied',
-          message: 'You do not have permission to complete this task'
-        });
-      }
+    const taskId = req.params.id;
+    if (!taskId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid task ID',
+        message: 'Task ID is required'
+      });
+    }
 
-      if (existingTask.completionStatus) {
-        return res.status(400).json({
-          success: false,
-          error: 'Task already completed',
-          message: 'This task has already been marked as completed'
-        });
+    // Verify task belongs to user's clinic
+    const existingTask = await prisma.task.findFirst({
+      where: {
+        id: taskId,
+        ...getClinicScopedTaskWhere(req)
       }
+    });
 
-      const updatedTask = await db.update<Task>('tasks', id, {
-        completionStatus: true,
-        completedAt: new Date().toISOString(),
-        completedBy: completedBy || req.user?.username,
+    if (!existingTask) {
+      return res.status(404).json({
+        success: false,
+        error: 'Task not found',
+        message: 'Task does not exist or does not belong to you'
+      });
+    }
+
+    const { completedAt, completedBy, completedByName, notes } = req.body;
+
+    const task = await prisma.task.update({
+      where: { id: taskId },
+      data: {
+        completed: true,
+        completedAt: completedAt ? new Date(completedAt) : new Date(),
+        completedBy: completedBy || null,
+        completedByName: completedByName || null,
         notes: notes || existingTask.notes
-      });
-      
-      res.json({
-        success: true,
-        data: updatedTask,
-        message: 'Task marked as completed successfully'
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'Server error',
-        message: 'Unable to complete task'
-      });
-    }
-  }
-);
-
-// Mark task as incomplete
-router.patch('/:id/uncomplete',
-  validateRequest({ params: Joi.object({ id: commonSchemas.id }) }),
-  async (req: Request, res: Response) => {
-    try {
-      const { id } = req.params;
-      
-      // Check if task exists and belongs to user
-      const existingTask = await db.findById<Task>('tasks', id);
-      
-      if (!existingTask) {
-        return res.status(404).json({
-          success: false,
-          error: 'Task not found',
-          message: 'The requested task does not exist'
-        });
+      },
+      include: {
+        pet: {
+          select: {
+            id: true,
+            name: true,
+            species: true
+          }
+        }
       }
+    });
 
-      // Verify task belongs to the authenticated user through pet ownership
-      const pet = await db.findById<Pet>('pets', existingTask.petId);
-      if (!pet || pet.ownerId !== req.user?.petOwnerId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied',
-          message: 'You do not have permission to modify this task'
-        });
-      }
-
-      const updatedTask = await db.update<Task>('tasks', id, {
-        completionStatus: false,
-        completedAt: undefined,
-        completedBy: undefined
-      });
-      
-      res.json({
-        success: true,
-        data: updatedTask,
-        message: 'Task marked as incomplete successfully'
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'Server error',
-        message: 'Unable to update task'
-      });
-    }
+    return res.json({
+      success: true,
+      data: task,
+      message: 'Task marked as completed'
+    });
+  } catch (error: any) {
+    console.error('Complete task error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error',
+      message: 'Unable to complete task'
+    });
   }
-);
+});
 
 // Delete a task
-router.delete('/:id',
-  validateRequest({ params: Joi.object({ id: commonSchemas.id }) }),
-  async (req: Request, res: Response) => {
-    try {
-      const { id } = req.params;
-      
-      // Check if task exists and belongs to user
-      const existingTask = await db.findById<Task>('tasks', id);
-      
-      if (!existingTask) {
-        return res.status(404).json({
-          success: false,
-          error: 'Task not found',
-          message: 'The requested task does not exist'
-        });
-      }
-
-      // Verify task belongs to the authenticated user through pet ownership
-      const pet = await db.findById<Pet>('pets', existingTask.petId);
-      if (!pet || pet.ownerId !== req.user?.petOwnerId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied',
-          message: 'You do not have permission to delete this task'
-        });
-      }
-
-      const deleted = await db.delete('tasks', id);
-      
-      if (!deleted) {
-        return res.status(500).json({
-          success: false,
-          error: 'Delete failed',
-          message: 'Unable to delete task'
-        });
-      }
-      
-      res.json({
-        success: true,
-        message: 'Task deleted successfully'
-      });
-    } catch (error) {
-      res.status(500).json({
+router.delete('/:id', async (req: Request, res: Response) => {
+  try {
+    if (!req.petOwner && !req.staff) {
+      return res.status(401).json({
         success: false,
-        error: 'Server error',
-        message: 'Unable to delete task'
+        error: 'Authentication required'
       });
     }
+
+    const taskId = req.params.id;
+    if (!taskId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid task ID',
+        message: 'Task ID is required'
+      });
+    }
+
+    // Verify task belongs to user's clinic
+    const existingTask = await prisma.task.findFirst({
+      where: {
+        id: taskId,
+        ...getClinicScopedTaskWhere(req)
+      }
+    });
+
+    if (!existingTask) {
+      return res.status(404).json({
+        success: false,
+        error: 'Task not found',
+        message: 'Task does not exist or does not belong to you'
+      });
+    }
+
+    await prisma.task.delete({
+      where: { id: taskId }
+    });
+
+    return res.json({
+      success: true,
+      message: 'Task deleted successfully'
+    });
+  } catch (error: any) {
+    console.error('Delete task error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error',
+      message: 'Unable to delete task'
+    });
   }
-);
+});
 
 export default router;
+

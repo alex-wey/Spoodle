@@ -41,13 +41,14 @@ npm run dev
 ```
 - View at: `http://localhost:3000`
 
-**API Server**
+**Backend API**
 ```bash
-cd packages/api
+cd backend
 npm run dev
 ```
-- API at: `http://localhost:3001`
-- Health check: `http://localhost:3001/health`
+- API at: `http://localhost:3002`
+- Health check: `http://localhost:3002/health`
+- Note: Web app currently uses mock data
 
 ## 🛠 Tech Stack
 
@@ -65,7 +66,8 @@ npm run dev
 
 ### Backend & Shared
 - **API Server:** Express.js with TypeScript
-- **Database:** JSON-based local storage (development)
+- **Database:** Prisma ORM with PostgreSQL
+- **Authentication:** Clerk-based authentication
 - **Shared Types:** Comprehensive TypeScript definitions
 - **Monorepo:** Turborepo
 - **Package Manager:** npm/pnpm workspaces
@@ -75,13 +77,10 @@ npm run dev
 
 ```
 spoodle/
-├── apps/
+├── frontend/
 │   ├── mobile/          # Pet Owner Mobile App (Expo)
 │   └── web/             # Clinic Web App (Next.js)
-├── packages/            # Shared packages (planned)
-│   ├── shared/          # Shared types & utilities
-│   ├── api/             # Backend API (planned)
-│   └── database/        # Database schemas (planned)
+├── backend/             # Backend API (Express + Prisma + Clerk)
 └── context/             # Project documentation
 ```
 
@@ -108,12 +107,12 @@ spoodle/
 
 ## 🔄 Next Steps
 
-- [x] Set up local database and API server
-- [ ] Implement authentication systems  
-- [ ] Build core pet profile management
+- [x] Set up backend API
+- [x] Implement authentication systems (Clerk)
+- [x] Build core pet profile management (mobile)
+- [ ] Connect web app to backend API
 - [ ] Create appointment booking system
 - [ ] Add medical records functionality
-- [ ] Connect frontend apps to API endpoints
 
 ## 🧑‍💻 Development
 
