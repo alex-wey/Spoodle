@@ -70,7 +70,7 @@ export function Hero({ pet }: HeroProps) {
       <div className="p-8">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Pet Section */}
-          <div className="flex-1">
+          <div className="flex-1 lg:flex-[2]">
             <div className="flex flex-col lg:flex-row items-center lg:items-start gap-6">
               {/* Avatar */}
               <Avatar className="h-32 w-32 border-4 border-background shadow-xl flex-shrink-0">
@@ -90,48 +90,48 @@ export function Hero({ pet }: HeroProps) {
                 </p>
                 
                 {/* Quick Stats */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {pet.species && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <SpeciesIcon className="h-4 w-4 text-primary" />
+                    <div className="flex items-center gap-3 text-base">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <SpeciesIcon className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Species</p>
-                        <p className="font-medium">{getSpeciesLabel(pet.species)}</p>
+                        <p className="text-sm text-muted-foreground">Species</p>
+                        <p className="font-medium text-base">{getSpeciesLabel(pet.species)}</p>
                       </div>
                     </div>
                   )}
                   
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Dna className="h-4 w-4 text-primary" />
+                  <div className="flex items-center gap-3 text-base">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Dna className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Breed</p>
-                      <p className="font-medium">{pet.breed || 'Unknown'}</p>
+                      <p className="text-sm text-muted-foreground">Breed</p>
+                      <p className="font-medium text-base">{pet.breed || 'Unknown'}</p>
                     </div>
                   </div>
                   
                   {pet.biologicalSex && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <SexIcon className="h-4 w-4 text-primary" />
+                    <div className="flex items-center gap-3 text-base">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <SexIcon className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Sex</p>
-                        <p className="font-medium">{getSexLabel(pet.biologicalSex)}</p>
+                        <p className="text-sm text-muted-foreground">Sex</p>
+                        <p className="font-medium text-base">{getSexLabel(pet.biologicalSex)}</p>
                       </div>
                     </div>
                   )}
                   
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Calendar className="h-4 w-4 text-primary" />
+                  <div className="flex items-center gap-3 text-base">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Calendar className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Date of Birth</p>
-                      <p className="font-medium">
+                      <p className="text-sm text-muted-foreground">Date of Birth</p>
+                      <p className="font-medium text-base">
                         {pet.dateOfBirth 
                           ? new Date(pet.dateOfBirth).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                           : 'Unknown'}
@@ -140,24 +140,24 @@ export function Hero({ pet }: HeroProps) {
                   </div>
                   
                   {pet.weight && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Weight className="h-4 w-4 text-primary" />
+                    <div className="flex items-center gap-3 text-base">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Weight className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Weight</p>
-                        <p className="font-medium">{pet.weight} lbs</p>
+                        <p className="text-sm text-muted-foreground">Weight</p>
+                        <p className="font-medium text-base">{pet.weight} lbs</p>
                       </div>
                     </div>
                   )}
                   
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Heart className="h-4 w-4 text-primary" />
+                  <div className="flex items-center gap-3 text-base">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Heart className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Spayed/Neutered</p>
-                      <p className="font-medium">{pet.spayedNeutered ? 'Yes' : 'No'}</p>
+                      <p className="text-sm text-muted-foreground">Spayed/Neutered</p>
+                      <p className="font-medium text-base">{pet.spayedNeutered ? 'Yes' : 'No'}</p>
                     </div>
                   </div>
                 </div>
@@ -172,7 +172,7 @@ export function Hero({ pet }: HeroProps) {
           
           {/* Owner Section */}
           {pet.owner && (
-            <div className="w-full lg:w-auto lg:min-w-[320px]">
+            <div className="w-full lg:flex-1 lg:max-w-md">
               <div className="space-y-3">
                 <div className="flex items-center gap-3 mb-3">
                   <Avatar className="h-12 w-12">

@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ArrowLeft } from "lucide-react";
 import { Button } from "../../../../components/ui/button";
 import { Alert, AlertDescription } from "../../../../components/ui/alert";
 import { useState, useEffect } from "react";
@@ -182,48 +182,64 @@ export default function PetProfileView() {
   }
 
   return (
-    <div className="w-full">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <Hero pet={pet} />
-
-        <PetRecordsSection 
-          petRecords={medicalRecords}
-          loading={recordsLoading}
-          error={recordsError}
-          onError={setRecordsError}
-          petId={petId as string}
-          onRefresh={() => {
-            // Refetch pet records after upload
-            if (petId) {
-              const fetchRecords = async () => {
-                if (!isSignedIn) return;
-                try {
-                  const token = await getToken();
-                  if (!token) return;
-                  const result = await getPetDocuments(petId as string, token);
-                  if (result.success && result.data) {
-                    const transformedRecords: MedicalRecord[] = result.data.map((doc: Document) => ({
-                      id: doc.id,
-                      petId: doc.petId,
-                      category: doc.category,
-                      fileName: doc.fileName,
-                      filePath: doc.filePath,
-                      fileSize: doc.fileSize,
-                      mimeType: doc.mimeType,
-                      createdAt: doc.createdAt
-                    }));
-                    setMedicalRecords(transformedRecords);
-                    setRecordsError(null);
-                  }
-                } catch (err) {
-                  console.error('Error fetching pet records:', err);
-                }
-              };
-              fetchRecords();
-            }
-          }}
-        />
+    <div className="flex-1 space-y-6 p-12">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => router.push('/pets')}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Pet Profile</h2>
+            <p className="text-muted-foreground">
+              View and manage pet information and records
+            </p>
+          </div>
+        </div>
       </div>
+
+      <Hero pet={pet} />
+
+      <PetRecordsSection 
+        petRecords={medicalRecords}
+        loading={recordsLoading}
+        error={recordsError}
+        onError={setRecordsError}
+        petId={petId as string}
+        onRefresh={() => {
+          // Refetch pet records after upload
+          if (petId) {
+            const fetchRecords = async () => {
+              if (!isSignedIn) return;
+              try {
+                const token = await getToken();
+                if (!token) return;
+                const result = await getPetDocuments(petId as string, token);
+                if (result.success && result.data) {
+                  const transformedRecords: MedicalRecord[] = result.data.map((doc: Document) => ({
+                    id: doc.id,
+                    petId: doc.petId,
+                    category: doc.category,
+                    fileName: doc.fileName,
+                    filePath: doc.filePath,
+                    fileSize: doc.fileSize,
+                    mimeType: doc.mimeType,
+                    createdAt: doc.createdAt
+                  }));
+                  setMedicalRecords(transformedRecords);
+                  setRecordsError(null);
+                }
+              } catch (err) {
+                console.error('Error fetching pet records:', err);
+              }
+            };
+            fetchRecords();
+          }
+        }}
+      />
     </div>
   );
 }

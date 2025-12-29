@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSessionContext } from "../../../components/SessionContext";
-import UserButton from "../../../components/clerk/UserButton";
-import { DashboardHeader } from "../../../components/DashboardHeader";
 import { AppointmentColumn } from "../../../components/AppointmentColumn";
 import { Appointment } from "../../../components/AppointmentCard";
 import { Card, CardContent } from "../../../components/ui/card";
@@ -108,13 +106,6 @@ export default function HomeView() {
   const bookedAppointments = filteredAppointments.filter(apt => apt.status === "booked");
   const pendingAppointments = filteredAppointments.filter(apt => apt.status === "pending");
   const dischargedAppointments = filteredAppointments.filter(apt => apt.status === "discharged");
-  
-  const currentDate = new Intl.DateTimeFormat('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long', 
-    day: 'numeric'
-  }).format(new Date());
 
   const handleAppointmentClick = (appointment: Appointment) => {
     router.push(`/appointments/${appointment.id}`);
@@ -130,15 +121,6 @@ export default function HomeView() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      <DashboardHeader
-        currentDate={currentDate}
-        appointmentCount={filteredAppointments.length}
-        unreadMessages={2}
-        userButton={<UserButton showName={false} />}
-        userFirstName={user?.firstName}
-        organizationName={organization?.name}
-      />
-      
       {/* Filters Section */}
       <div className="px-6 py-3 border-b bg-card">
         <Card>
