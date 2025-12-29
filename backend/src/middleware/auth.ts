@@ -49,8 +49,8 @@ declare global {
         email?: string | null;
         imageUrl?: string | null;
       } | null;
-      // User type: 'petOwner' | 'staff' | 'both'
-      userType?: 'petOwner' | 'staff' | 'both';
+      // User type: 'petOwner' | 'staff' (mutually exclusive)
+      userType?: 'petOwner' | 'staff';
       // Minimal profile snapshot from Clerk used for email/display
       userProfile?: {
         // With exactOptionalPropertyTypes enabled, allow possibly-undefined
@@ -139,24 +139,47 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
 
     // Sync user to database
     try {
+      // Validate required fields before creating user
+      const email = primaryEmailAddress?.emailAddress;
+      if (!email) {
+        console.error('❌ User sync failed: Email is required but not found in Clerk profile', { userId: id });
+        throw new Error('User email is required but not found in Clerk profile');
+      }
+
+      // Provide defaults for firstName/lastName if not set (some sign-up flows may not require them initially)
+      const firstNameValue = firstName || 'User';
+      const lastNameValue = lastName || '';
+
       const clerkUserData = {
         clerkUserId: id,
-        email: primaryEmailAddress?.emailAddress!,
-        firstName: firstName!,
-        lastName: lastName!,
+        email: email,
+        firstName: firstNameValue,
+        lastName: lastNameValue,
         phone: primaryPhoneNumber?.phoneNumber ?? null,
       };
 
       // Determine user type and create/get appropriate records
+      // Users are mutually exclusive: either staff OR petOwner, not both
       let petOwner: Awaited<ReturnType<typeof getOrCreateUser>> | undefined = undefined;
       let staff: Awaited<ReturnType<typeof getOrCreateStaff>> | undefined = undefined;
       let clinic = null;
-      let userType: 'petOwner' | 'staff' | 'both' = 'petOwner';
+      let userType: 'petOwner' | 'staff' = 'petOwner';
 
-      // If user is in an organization, check if they're staff
+      console.log(`🔄 Syncing user ${id} to database:`, {
+        email: clerkUserData.email,
+        firstName: clerkUserData.firstName,
+        lastName: clerkUserData.lastName,
+        organizationId,
+        isStaff,
+        userRole
+      });
+
+      // If user is in an organization and is staff, create staff record
       if (organizationId && isStaff) {
+        console.log(`👨‍⚕️ User ${id} is staff member in organization ${organizationId}`);
         // Get or create Staff record
         staff = await getOrCreateStaff(clerkUserData);
+        console.log(`✅ Staff record created/found: ${staff.id}`);
         
         // Sync clinic from organization
         const clinicFromOrg = await prisma.clinic.findUnique({
@@ -185,49 +208,49 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
         }
 
         userType = 'staff';
-      }
+      } else {
+        // User is NOT staff, so they're a pet owner
+        // Only create PetOwner if user is not staff
+        console.log(`🐾 User ${id} is a pet owner (not staff)`);
+        try {
+          petOwner = await getOrCreateUser(clerkUserData);
+          console.log(`✅ PetOwner record created/found: ${petOwner.id}`);
+          
+          // If user is in an organization but not staff, sync clinic to petOwner
+          if (organizationId && !isStaff && petOwner && !petOwner.clinicId) {
+            const clinicFromOrg = await prisma.clinic.findUnique({
+              where: { clerkOrgId: organizationId }
+            });
 
-      // Also check/create PetOwner (user can be both)
-      try {
-        petOwner = await getOrCreateUser(clerkUserData);
-        
-        // If user is in an organization but not staff, sync clinic to petOwner
-        if (organizationId && !isStaff && petOwner && !petOwner.clinicId) {
-          const clinicFromOrg = await prisma.clinic.findUnique({
-            where: { clerkOrgId: organizationId }
-          });
-
-          if (clinicFromOrg) {
-            petOwner = await assignClinicToPetOwner(petOwner.id, clinicFromOrg.id);
-          }
-        }
-
-        // Fetch clinic information if petOwner has one
-        if (petOwner?.clinicId && !clinic) {
-          clinic = await prisma.clinic.findUnique({
-            where: { id: petOwner.clinicId },
-            select: {
-              id: true,
-              clerkOrgId: true,
-              name: true,
-              slug: true,
-              address: true,
-              phoneNumber: true,
-              email: true,
-              imageUrl: true
+            if (clinicFromOrg) {
+              petOwner = await assignClinicToPetOwner(petOwner.id, clinicFromOrg.id);
             }
-          });
-        }
+          }
 
-        // Update userType if both exist
-        if (staff && petOwner) {
-          userType = 'both';
-        } else if (!staff && petOwner) {
+          // Fetch clinic information if petOwner has one
+          if (petOwner?.clinicId && !clinic) {
+            clinic = await prisma.clinic.findUnique({
+              where: { id: petOwner.clinicId },
+              select: {
+                id: true,
+                clerkOrgId: true,
+                name: true,
+                slug: true,
+                address: true,
+                phoneNumber: true,
+                email: true,
+                imageUrl: true
+              }
+            });
+          }
+
           userType = 'petOwner';
+        } catch (petOwnerError) {
+          console.error('❌ Could not create/get PetOwner:', petOwnerError);
+          console.error('PetOwner error details:', JSON.stringify(petOwnerError, null, 2));
+          // Re-throw to surface the error instead of silently continuing
+          throw petOwnerError;
         }
-      } catch (petOwnerError) {
-        console.warn('Could not create/get PetOwner:', petOwnerError);
-        // Continue - user might be staff only
       }
 
       // Attach objects to request
@@ -260,12 +283,20 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
       }
 
       req.userProfile = userProfile;
+      
+      console.log(`✅ User sync completed for ${id}:`, {
+        userType,
+        hasPetOwner: !!petOwner,
+        hasStaff: !!staff,
+        hasClinic: !!clinic
+      });
     } catch (syncError) {
-      console.error('User sync error:', syncError);
+      console.error('❌ User sync error:', syncError);
       console.error('User sync error details:', JSON.stringify(syncError, null, 2));
-      // If sync fails, we still have valid auth but no petOwner
-      // This will cause routes that require petOwner to fail with 401
-      // This is intentional - user needs to complete setup first
+      console.error('User sync error stack:', syncError instanceof Error ? syncError.stack : 'No stack trace');
+      // If sync fails, we still have valid auth but no petOwner/staff
+      // This will cause routes that require petOwner/staff to fail with 401
+      // This is intentional - user needs to complete setup first or fix their Clerk profile
     }
 
     return next();

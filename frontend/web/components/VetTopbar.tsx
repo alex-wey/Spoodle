@@ -23,6 +23,8 @@ export function VetTopbar() {
         appearance={{
           elements: {
             organizationSwitcherTrigger: "px-3 py-2 bg-white hover:bg-white",
+            createOrganizationButton: "hidden",
+            organizationSwitcherPopoverActionButton__createOrganization: "hidden",
           },
         }}
       />
