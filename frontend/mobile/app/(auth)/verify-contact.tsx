@@ -138,8 +138,8 @@ export default function VerifyContactScreen() {
         // Phone verified successfully, complete signup
         try {
           await setActive({ session: signUpAttempt.createdSessionId })
-          // Redirect to clinic selection
-          router.push('/(auth)/select-clinic')
+          // Redirect to terms acceptance instead of clinic selection
+          router.push('/(auth)/accept-terms')
         } catch (setActiveError: any) {
           console.error('Failed to set session active:', setActiveError)
           showErrorToast('Failed to complete signup. Please try again.')
@@ -154,7 +154,7 @@ export default function VerifyContactScreen() {
         // If already verified, try to complete the signup
         try {
           await setActive({ session: signUp.createdSessionId })
-          router.push('/(auth)/select-clinic')
+          router.push('/(auth)/accept-terms')
         } catch (setActiveError: any) {
           console.error('Failed to set session active:', setActiveError)
           showErrorToast('Your phone number is already verified.')

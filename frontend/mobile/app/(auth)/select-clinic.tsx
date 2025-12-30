@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Building, AlertCircle, ChevronRight } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useUser } from '@clerk/clerk-expo';
 import { clerkApiClient } from '../lib/api';
 
 interface Clinic {
@@ -31,6 +32,7 @@ interface Clinic {
 
 export default function SelectClinicScreen() {
   const router = useRouter();
+  const { user, isLoaded } = useUser();
   const [clinics, setClinics] = React.useState<Clinic[]>([]);
   const [spoodleClinic, setSpoodleClinic] = React.useState<Clinic | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -39,9 +41,37 @@ export default function SelectClinicScreen() {
   const [showToast, setShowToast] = React.useState(false);
   const toastOpacity = React.useRef(new Animated.Value(0)).current;
 
+  // Check if user has accepted terms and conditions
+  React.useEffect(() => {
+    if (isLoaded && user) {
+      const metadata = user.unsafeMetadata as {
+        termsAccepted?: boolean
+        privacyPolicyAccepted?: boolean
+      }
+      
+      if (!metadata?.termsAccepted || !metadata?.privacyPolicyAccepted) {
+        // Terms not accepted, redirect to accept-terms
+        router.replace('/(auth)/accept-terms')
+        return
+      }
+    }
+  }, [isLoaded, user, router])
+
   // Check if user already has a clinic and redirect if they do
   React.useEffect(() => {
     const checkExistingClinic = async () => {
+      // Only check clinic if terms are accepted
+      if (!isLoaded || !user) return
+      
+      const metadata = user.unsafeMetadata as {
+        termsAccepted?: boolean
+        privacyPolicyAccepted?: boolean
+      }
+      
+      if (!metadata?.termsAccepted || !metadata?.privacyPolicyAccepted) {
+        return
+      }
+      
       try {
         const response = await clerkApiClient.getMyClinic();
         if (response.success && response.data) {
@@ -58,7 +88,7 @@ export default function SelectClinicScreen() {
     };
     
     checkExistingClinic();
-  }, []);
+  }, [isLoaded, user, router]);
 
   const fetchClinics = async () => {
     try {
