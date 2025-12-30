@@ -63,6 +63,7 @@ class ClerkApiClient {
   ): Promise<T> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      "X-Client-Type": "mobile",
       ...(options.headers as Record<string, string>),
     };
 

@@ -12,7 +12,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import {
-  Sidebar,
+  Sidebar as SidebarComponent,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
@@ -54,11 +54,11 @@ const navigationItems = [
   }
 ];
 
-export function VetSidebar() {
+export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar collapsible="none" style={{ "--sidebar-width": "11rem" } as React.CSSProperties}>
+    <SidebarComponent collapsible="none" style={{ "--sidebar-width": "11rem" } as React.CSSProperties}>
       <SidebarContent className="bg-primary">
         {/* Clinic Branding */}
         <div className="p-2 py-[18px] border-b border-white/20">
@@ -92,6 +92,7 @@ export function VetSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-    </Sidebar>
+    </SidebarComponent>
   );
 }
+

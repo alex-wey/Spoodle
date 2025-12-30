@@ -125,7 +125,7 @@ frontend/web/
 │   ├── ui/                      # shadcn/ui components (48 components)
 │   ├── clerk/                   # Clerk-specific components
 │   ├── AppLayout.tsx            # Main app layout with sidebar
-│   ├── VetSidebar.tsx           # Navigation sidebar
+│   ├── Sidebar.tsx               # Navigation sidebar
 │   ├── DashboardHeader.tsx      # Dashboard header component
 │   ├── AppointmentCard.tsx      # Appointment card component
 │   ├── AppointmentColumn.tsx    # Kanban column component

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { validateRequest } from '../middleware/validation.js';
 import { authenticateClerk } from '../middleware/auth.js';
 import { prisma } from '../index.js';
-import { verifyPetClinicAccess } from '../utils/clinicAuth.js';
+import { verifyPetClinicAccess, getClinicId } from '../utils/clinicAuth.js';
 import OpenAI from 'openai';
 
 const router = Router();
@@ -101,12 +101,17 @@ router.post('/chat',
       }
 
       // Get pet for chatbot context
+      // Use getClinicId helper which handles both petOwner and staff cases
+      const clinicId = getClinicId(req);
+      
       const pet = await prisma.pet.findFirst({
         where: {
           id: petId as string,
-          petOwner: {
-            clinicId: req.petOwner?.clinicId || req.staff?.clinicId || null
-          }
+          ...(clinicId ? {
+            petOwner: {
+              clinicId: clinicId
+            }
+          } : {})
         }
       });
 

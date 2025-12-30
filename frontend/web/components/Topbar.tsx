@@ -6,7 +6,7 @@ import { Button } from "./ui/button";
 import { Bell } from "lucide-react";
 import { useSessionContext } from "./SessionContext";
 
-export function VetTopbar() {
+export function Topbar() {
   const { user } = useSessionContext();
   
   const currentDate = new Intl.DateTimeFormat('en-US', {

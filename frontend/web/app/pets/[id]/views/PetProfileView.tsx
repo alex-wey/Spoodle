@@ -11,11 +11,13 @@ import type { Document } from "@/lib/types";
 import { Hero } from "../components/Hero";
 import { PetRecordsSection } from "../components/PetRecordsSection";
 import type { PetData, MedicalRecord } from "../components/types";
+import { useSessionContext } from "@/components/SessionContext";
 
 export default function PetProfileView() {
   const { id: petId } = useParams();
   const router = useRouter();
   const { getToken, isSignedIn } = useAuth();
+  const { clinicId } = useSessionContext();
   const [pet, setPet] = useState<PetData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +47,7 @@ export default function PetProfileView() {
           return;
         }
 
-        const result = await getPetById(petId as string, token);
+        const result = await getPetById(petId as string, token, clinicId);
         
         if (result.success && result.data) {
           // Transform backend pet data to match UI format
@@ -90,7 +92,7 @@ export default function PetProfileView() {
     if (petId) {
       fetchPetDetails();
     }
-  }, [petId, isSignedIn, getToken]);
+  }, [petId, isSignedIn, getToken, clinicId]);
 
   // Fetch pet records
   useEffect(() => {
@@ -115,7 +117,7 @@ export default function PetProfileView() {
           return;
         }
 
-        const result = await getPetDocuments(petId as string, token);
+        const result = await getPetDocuments(petId as string, token, clinicId);
         
         if (result.success && result.data) {
           // Transform backend document data to match UI format
@@ -146,7 +148,7 @@ export default function PetProfileView() {
     if (petId) {
       fetchRecords();
     }
-  }, [petId, isSignedIn, getToken]);
+  }, [petId, isSignedIn, getToken, clinicId]);
 
 
   if (loading) {
@@ -217,7 +219,7 @@ export default function PetProfileView() {
               try {
                 const token = await getToken();
                 if (!token) return;
-                const result = await getPetDocuments(petId as string, token);
+                const result = await getPetDocuments(petId as string, token, clinicId);
                 if (result.success && result.data) {
                   const transformedRecords: MedicalRecord[] = result.data.map((doc: Document) => ({
                     id: doc.id,

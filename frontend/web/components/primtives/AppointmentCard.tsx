@@ -1,8 +1,8 @@
-import { Badge } from "./ui/badge";
-import { Card, CardContent } from "./ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Badge } from "../ui/badge";
+import { Card, CardContent } from "../ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Clock, User } from "lucide-react";
-import { cn } from "../lib/utils";
+import { cn } from "../../lib/utils";
 
 export type AppointmentStatus = "booked" | "pending" | "discharged";
 

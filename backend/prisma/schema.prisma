@@ -144,7 +144,6 @@ model Clinic {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   petOwners   PetOwner[]
-  staff       Staff[]
 
   @@index([clerkOrgId])
   @@index([slug])
@@ -154,13 +153,10 @@ model Clinic {
 model Staff {
   id          String   @id @default(uuid())
   clerkUserId String   @unique
-  clinicId    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   user        User     @relation("UserStaff", fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
-  clinic      Clinic?  @relation(fields: [clinicId], references: [id], onDelete: Restrict)
 
-  @@index([clinicId])
   @@map("staff")
 }
 

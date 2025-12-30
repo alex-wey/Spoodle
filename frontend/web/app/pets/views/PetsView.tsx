@@ -19,6 +19,7 @@ import {
 import { FileText, Search, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getClinicPets } from "@/lib/api";
+import { useSessionContext } from "@/components/SessionContext";
 import type { Pet as ApiPet } from "@/lib/types";
 
 interface Pet {
@@ -40,6 +41,7 @@ interface Pet {
 export default function Records() {
   const router = useRouter();
   const { getToken, isSignedIn } = useAuth();
+  const { clinicId } = useSessionContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [allPets, setAllPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +55,12 @@ export default function Records() {
         return;
       }
 
+      if (!clinicId) {
+        setError('No clinic selected. Please select a clinic to view pets.');
+        setLoading(false);
+        return;
+      }
+
       try {
         const token = await getToken();
         if (!token) {
@@ -61,7 +69,7 @@ export default function Records() {
           return;
         }
 
-        const result = await getClinicPets(token);
+        const result = await getClinicPets(token, clinicId);
         
         if (result.success && result.data) {
           // Transform backend pet data to match UI format
@@ -92,7 +100,7 @@ export default function Records() {
     };
 
     fetchPets();
-  }, [isSignedIn, getToken]);
+  }, [isSignedIn, getToken, clinicId]);
 
   const filteredPets = allPets.filter(pet => {
     const matchesSearch = pet.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
