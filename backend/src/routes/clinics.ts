@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { authenticateClerk } from '../middleware/auth.js';
+import { createClerkClient } from '@clerk/backend';
 import { 
   getAllAvailableClinics, 
   getClinicById, 
@@ -7,6 +8,7 @@ import {
   removeUserFromClerkOrganization
 } from '../utils/clinicSync.js';
 import { assignClinicToPetOwner } from '../utils/userSync.js';
+import { requireStaffClinic } from '../utils/clinicAuth.js';
 
 const router = Router();
 
@@ -275,6 +277,22 @@ router.post('/switch', authenticateClerk, async (req: Request, res: Response) =>
       message: 'Unable to switch clinics'
     });
   }
+});
+
+/**
+ * POST /api/clinics/staff/verify
+ * Verify staff access to a clinic
+ * Staff must pass clinicId as query param or in body
+ * Uses requireStaffClinic middleware to verify access
+ */
+router.post('/staff/verify', authenticateClerk, requireStaffClinic, async (req: Request, res: Response) => {
+  return res.json({
+    success: true,
+    data: {
+      clinic: req.clinic
+    },
+    message: `Successfully verified access to ${req.clinic!.name}`
+  });
 });
 
 export default router;

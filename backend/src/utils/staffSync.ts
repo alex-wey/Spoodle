@@ -93,44 +93,12 @@ export async function getOrCreateStaff(clerkUserData: ClerkUserData) {
 }
 
 /**
- * Assign a clinic to a staff member
- * Used when staff joins a clinic organization
- */
-export async function assignClinicToStaff(staffId: string, clinicId: string) {
-  try {
-    const staff = await prisma.staff.update({
-      where: { id: staffId },
-      data: { clinicId },
-      include: {
-        clinic: true,
-        user: {
-          select: {
-            id: true,
-            clerkUserId: true,
-            firstName: true,
-            lastName: true,
-            email: true
-          }
-        }
-      }
-    });
-
-    console.log(`✅ Assigned clinic ${clinicId} to staff ${staffId}`);
-    return staff;
-  } catch (error) {
-    console.error('Error assigning clinic to staff:', error);
-    throw error;
-  }
-}
-
-/**
  * Get staff by Clerk user ID
  */
 export async function getStaffByClerkUserId(clerkUserId: string) {
   return await prisma.staff.findUnique({
     where: { clerkUserId },
     include: {
-      clinic: true,
       user: true
     }
   });

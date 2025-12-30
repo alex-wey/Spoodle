@@ -1,7 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { createClerkClient, verifyToken } from '@clerk/backend';
 import { getOrCreateUser, assignClinicToPetOwner } from '../utils/userSync.js';
+<<<<<<< Updated upstream
 import { getOrCreateStaff, assignClinicToStaff } from '../utils/staffSync.js';
+=======
+import { getOrCreateStaff } from '../utils/staffSync.js';
+>>>>>>> Stashed changes
 import { prisma } from '../index.js';
 
 // Initialize Clerk client once
@@ -34,7 +38,10 @@ declare global {
       staff?: {
         id: string;
         clerkUserId: string;
+<<<<<<< Updated upstream
         clinicId: string | null;
+=======
+>>>>>>> Stashed changes
         createdAt: Date;
         updatedAt: Date;
       } | undefined;
@@ -76,11 +83,15 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
       });
     }
 
-    // Verify Clerk session token
-    const { sub: userId } = await verifyToken(sessionToken, {
+    // Verify Clerk session token and get active organization
+    const tokenPayload = await verifyToken(sessionToken, {
       secretKey: process.env.CLERK_SECRET_KEY!
     });
  
+    const userId = tokenPayload.sub;
+    // Get active organization from token (set by Clerk's OrganizationSwitcher)
+    const activeOrgId = (tokenPayload as any).org_id || null;
+
     // Get the user ID from the token
     if (!userId) {
       return res.status(401).json({
@@ -99,42 +110,28 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
     const { id, firstName, lastName, primaryEmailAddress, primaryPhoneNumber } = await clerk.users.getUser(userId);
 
     // Get user's organization memberships to determine if they're staff or pet owner
-    let organizationId: string | null = null;
+    let organizationId: string | null = activeOrgId;
     let isStaff = false;
-    let userRole: string | null = null;
 
-    try {
-      // Get all organizations
-      const { data: organizations } = await clerk.organizations.getOrganizationList({
-        limit: 100
-      });
-
-      // Check user's membership in each organization
-      for (const org of organizations) {
-        try {
-          const { data: memberships } = await clerk.organizations.getOrganizationMembershipList({
-            organizationId: org.id,
-            userId: [userId],
-            limit: 1
-          });
-          
-          if (memberships && memberships.length > 0 && memberships[0]) {
-            organizationId = org.id;
-            userRole = memberships[0].role || null;
-            // Check if user has staff role (org:admin, org:member with staff metadata, etc.)
-            // For now, we'll consider any org member as potential staff
-            // You can refine this based on your Clerk role setup
-            isStaff = userRole?.includes('admin') || userRole?.includes('staff') || false;
-            break;
-          }
-        } catch (error) {
-          // Continue to next organization
-          continue;
+    // If we have an active org from the token, check membership and role
+    if (activeOrgId) {
+      try {
+        const { data: memberships } = await clerk.organizations.getOrganizationMembershipList({
+          organizationId: activeOrgId,
+          userId: [userId],
+          limit: 1
+        });
+        
+        if (memberships && memberships.length > 0 && memberships[0]) {
+          const userRole = memberships[0].role || null;
+          // Check if user has staff role (org:admin, org:member with staff metadata, etc.)
+          isStaff = userRole?.includes('admin') || userRole?.includes('staff') || false;
         }
+      } catch (error) {
+        console.warn('Could not verify active organization membership:', error);
+        // If we can't verify, assume not staff
+        organizationId = null;
       }
-    } catch (orgError) {
-      console.warn('Could not fetch organization memberships:', orgError);
-      // Continue - user might not be in any org yet
     }
 
     // Sync user to database
@@ -169,33 +166,6 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
       if (organizationId && isStaff) {
         // Get or create Staff record
         staff = await getOrCreateStaff(clerkUserData);
-        
-        // Sync clinic from organization
-        const clinicFromOrg = await prisma.clinic.findUnique({
-          where: { clerkOrgId: organizationId }
-        });
-
-        if (clinicFromOrg && !staff.clinicId) {
-          // Assign clinic to staff if not already assigned
-          staff = await assignClinicToStaff(staff.id, clinicFromOrg.id);
-        }
-
-        if (staff.clinicId) {
-          clinic = await prisma.clinic.findUnique({
-            where: { id: staff.clinicId },
-            select: {
-              id: true,
-              clerkOrgId: true,
-              name: true,
-              slug: true,
-              address: true,
-              phoneNumber: true,
-              email: true,
-              imageUrl: true
-            }
-          });
-        }
-
         userType = 'staff';
       } else {
         // User is NOT staff, so they're a pet owner
