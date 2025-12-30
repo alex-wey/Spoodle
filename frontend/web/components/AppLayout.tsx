@@ -1,8 +1,8 @@
 'use client';
 
 import { SidebarProvider } from "./ui/sidebar";
-import { VetSidebar } from "./VetSidebar";
-import { VetTopbar } from "./VetTopbar";
+import { Sidebar } from "./Sidebar";
+import { Topbar } from "./Topbar";
 
 export default function AppLayout({
   children,
@@ -12,9 +12,9 @@ export default function AppLayout({
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex h-screen w-full">
-        <VetSidebar />
+        <Sidebar />
         <main className="flex-1 overflow-auto bg-background flex flex-col">
-          <VetTopbar />
+          <Topbar />
           <div className="flex-1 overflow-auto">
             {children}
           </div>

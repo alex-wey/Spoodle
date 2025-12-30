@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Badge } from "./ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Badge } from "../ui/badge";
 import { AppointmentCard, Appointment, AppointmentStatus } from "./AppointmentCard";
 import { Clock, CheckCircle, User } from "lucide-react";
 

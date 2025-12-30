@@ -1,20 +1,20 @@
 import { useState } from "react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { ScrollArea } from "./ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Badge } from "./ui/badge";
-import { Separator } from "./ui/separator";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { ScrollArea } from "../ui/scroll-area";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Badge } from "../ui/badge";
+import { Separator } from "../ui/separator";
 import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
   DialogTrigger 
-} from "./ui/dialog";
+} from "../ui/dialog";
 import { MessageSquare, Send, Phone, Video } from "lucide-react";
-import { Switch } from "./ui/switch";
-import { Label } from "./ui/label";
+import { Switch } from "../ui/switch";
+import { Label } from "../ui/label";
 
 interface Message {
   id: string;
