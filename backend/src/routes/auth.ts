@@ -45,6 +45,8 @@ router.get('/me', authenticateClerk, async (req: Request, res: Response) => {
       phone: dbUser?.phone ?? req.userProfile?.phone ?? null,
       // Address comes from the User table
       address: dbUser?.address ?? null,
+      // Include user type (petOwner or staff)
+      userType: req.userType || null,
       // Include clinic data if available (already fetched in middleware)
       clinic: req.clinic || null,
     };
@@ -58,32 +60,32 @@ router.get('/me', authenticateClerk, async (req: Request, res: Response) => {
     console.error('Get profile error:', error);
     return res.status(500).json({
       success: false,
-      error: 'Server error',
-      message: 'Unable to retrieve user profile'
+      error: 'Failed to retrieve profile',
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
 
 // Update user profile
-router.put('/me', authenticateClerk, async (req: Request, res: Response) => {
+router.put('/profile', authenticateClerk, async (req: Request, res: Response) => {
   try {
-    if (!req.auth) {
+    if (!req.petOwner && !req.staff) {
       return res.status(401).json({
         success: false,
-        error: 'Authentication required',
-        message: 'Please log in to update your profile'
+        error: 'User record not found',
+        message: 'Please complete signup first'
       });
     }
 
     const { firstName, lastName, phone, address } = req.body;
-    
-    const updatedUser = await updateUserProfile(req.auth.userId, {
+
+    const updatedUser = await updateUserProfile(req.user!.clerkUserId, {
       firstName,
       lastName,
       phone,
       address
     });
-    
+
     return res.json({
       success: true,
       data: updatedUser,
@@ -93,16 +95,16 @@ router.put('/me', authenticateClerk, async (req: Request, res: Response) => {
     console.error('Update profile error:', error);
     return res.status(500).json({
       success: false,
-      error: 'Server error',
-      message: 'Unable to update user profile'
+      error: 'Failed to update profile',
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
 
-// Delete account endpoint
-router.delete('/me', authenticateClerk, async (req: Request, res: Response) => {
+// Delete user account and all associated data
+router.delete('/account', authenticateClerk, async (req: Request, res: Response) => {
   try {
-    if (!req.auth) {
+    if (!req.user) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -110,29 +112,20 @@ router.delete('/me', authenticateClerk, async (req: Request, res: Response) => {
       });
     }
 
-    await deleteUserData(req.auth.userId);
-    
+    await deleteUserData(req.user.clerkUserId);
+
     return res.json({
       success: true,
-      message: 'Account and all related data deleted successfully'
+      message: 'Account deleted successfully'
     });
   } catch (error) {
-    console.error('❌ Delete account error:', error);
+    console.error('Delete account error:', error);
     return res.status(500).json({
       success: false,
-      error: 'Server error',
-      message: 'Unable to delete account. Please try again or contact support.'
+      error: 'Failed to delete account',
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
-});
-
-// Health check endpoint for auth service
-router.get('/health', (req: Request, res: Response) => {
-  res.json({
-    success: true,
-    message: 'Clerk authentication service is running',
-    timestamp: new Date().toISOString()
-  });
 });
 
 export default router;

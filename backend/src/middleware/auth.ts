@@ -1,11 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { createClerkClient, verifyToken } from '@clerk/backend';
 import { getOrCreateUser, assignClinicToPetOwner } from '../utils/userSync.js';
-<<<<<<< Updated upstream
-import { getOrCreateStaff, assignClinicToStaff } from '../utils/staffSync.js';
-=======
 import { getOrCreateStaff } from '../utils/staffSync.js';
->>>>>>> Stashed changes
 import { prisma } from '../index.js';
 
 // Initialize Clerk client once
@@ -38,10 +34,6 @@ declare global {
       staff?: {
         id: string;
         clerkUserId: string;
-<<<<<<< Updated upstream
-        clinicId: string | null;
-=======
->>>>>>> Stashed changes
         createdAt: Date;
         updatedAt: Date;
       } | undefined;
@@ -109,31 +101,6 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
     // Fetch full user data from Clerk
     const { id, firstName, lastName, primaryEmailAddress, primaryPhoneNumber } = await clerk.users.getUser(userId);
 
-    // Get user's organization memberships to determine if they're staff or pet owner
-    let organizationId: string | null = activeOrgId;
-    let isStaff = false;
-
-    // If we have an active org from the token, check membership and role
-    if (activeOrgId) {
-      try {
-        const { data: memberships } = await clerk.organizations.getOrganizationMembershipList({
-          organizationId: activeOrgId,
-          userId: [userId],
-          limit: 1
-        });
-        
-        if (memberships && memberships.length > 0 && memberships[0]) {
-          const userRole = memberships[0].role || null;
-          // Check if user has staff role (org:admin, org:member with staff metadata, etc.)
-          isStaff = userRole?.includes('admin') || userRole?.includes('staff') || false;
-        }
-      } catch (error) {
-        console.warn('Could not verify active organization membership:', error);
-        // If we can't verify, assume not staff
-        organizationId = null;
-      }
-    }
-
     // Sync user to database
     try {
       // Validate required fields before creating user
@@ -155,28 +122,52 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
         phone: primaryPhoneNumber?.phoneNumber ?? null,
       };
 
-      // Determine user type and create/get appropriate records
+      // Determine user type by checking existing database records first
       // Users are mutually exclusive: either staff OR petOwner, not both
       let petOwner: Awaited<ReturnType<typeof getOrCreateUser>> | undefined = undefined;
       let staff: Awaited<ReturnType<typeof getOrCreateStaff>> | undefined = undefined;
       let clinic = null;
       let userType: 'petOwner' | 'staff' = 'petOwner';
 
-      // If user is in an organization and is staff, create staff record
-      if (organizationId && isStaff) {
-        // Get or create Staff record
-        staff = await getOrCreateStaff(clerkUserData);
-        userType = 'staff';
-      } else {
-        // User is NOT staff, so they're a pet owner
-        // Only create PetOwner if user is not staff
-        try {
+      // Check if user already has a Staff or PetOwner record in the database
+      const existingUser = await prisma.user.findUnique({
+        where: { clerkUserId: id },
+        include: {
+          staff: true,
+          petOwner: true
+        }
+      });
+
+      // If user already exists, use their existing record type
+      if (existingUser) {
+        if (existingUser.staff) {
+          staff = existingUser.staff;
+          userType = 'staff';
+        } else if (existingUser.petOwner) {
+          petOwner = existingUser.petOwner;
+          userType = 'petOwner';
+        }
+      }
+
+      // If no existing record, determine user type from request source
+      // Web requests = staff, Mobile requests = petOwner
+      if (!existingUser || (!staff && !petOwner)) {
+        const clientType = req.headers['x-client-type'] as string;
+        const detectedUserType = clientType === 'mobile' ? 'petOwner' : 'staff';
+
+        if (detectedUserType === 'staff') {
+          // Web signup - create staff record
+          staff = await getOrCreateStaff(clerkUserData);
+          userType = 'staff';
+        } else {
+          // Mobile signup - create petOwner record
           petOwner = await getOrCreateUser(clerkUserData);
+          userType = 'petOwner';
           
-          // If user is in an organization but not staff, sync clinic to petOwner
-          if (organizationId && !isStaff && petOwner && !petOwner.clinicId) {
+          // If user is in an organization, sync clinic to petOwner
+          if (activeOrgId && petOwner && !petOwner.clinicId) {
             const clinicFromOrg = await prisma.clinic.findUnique({
-              where: { clerkOrgId: organizationId }
+              where: { clerkOrgId: activeOrgId }
             });
 
             if (clinicFromOrg) {
@@ -200,13 +191,34 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
               }
             });
           }
+        }
+      } else {
+        // User already exists - sync clinic if petOwner
+        if (petOwner && activeOrgId && !petOwner.clinicId) {
+          const clinicFromOrg = await prisma.clinic.findUnique({
+            where: { clerkOrgId: activeOrgId }
+          });
 
-          userType = 'petOwner';
-        } catch (petOwnerError) {
-          console.error('❌ Could not create/get PetOwner:', petOwnerError);
-          console.error('PetOwner error details:', JSON.stringify(petOwnerError, null, 2));
-          // Re-throw to surface the error instead of silently continuing
-          throw petOwnerError;
+          if (clinicFromOrg) {
+            petOwner = await assignClinicToPetOwner(petOwner.id, clinicFromOrg.id);
+          }
+        }
+
+        // Fetch clinic information if petOwner has one
+        if (petOwner?.clinicId && !clinic) {
+          clinic = await prisma.clinic.findUnique({
+            where: { id: petOwner.clinicId },
+            select: {
+              id: true,
+              clerkOrgId: true,
+              name: true,
+              slug: true,
+              address: true,
+              phoneNumber: true,
+              email: true,
+              imageUrl: true
+            }
+          });
         }
       }
 

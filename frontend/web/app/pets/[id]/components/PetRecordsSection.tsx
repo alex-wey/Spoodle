@@ -19,6 +19,7 @@ import {
 import { downloadDocument } from "@/lib/api";
 import type { MedicalRecord } from "./types";
 import { PetRecordUploadDialog } from "./PetRecordUploadDialog";
+import { useSessionContext } from "@/components/SessionContext";
 
 interface PetRecordsSectionProps {
   petRecords: MedicalRecord[];
@@ -53,6 +54,7 @@ const formatCategoryName = (category: string) => {
 
 export function PetRecordsSection({ petRecords, loading, error, onError, petId, onRefresh }: PetRecordsSectionProps) {
   const { getToken } = useAuth();
+  const { clinicId } = useSessionContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -76,7 +78,7 @@ export function PetRecordsSection({ petRecords, loading, error, onError, petId, 
         return;
       }
       
-      const result = await downloadDocument(petRecordId, token);
+      const result = await downloadDocument(petRecordId, token, clinicId);
       
       if (result.success && result.data?.url) {
         // Open the presigned URL in a new tab

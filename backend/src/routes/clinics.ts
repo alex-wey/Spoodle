@@ -38,6 +38,70 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/clinics/by-organization/:organizationId
+ * Get clinic information by Clerk organization ID
+ * Requires authentication
+ */
+router.get('/by-organization/:organizationId', authenticateClerk, async (req: Request, res: Response) => {
+  try {
+    const { organizationId } = req.params;
+
+    if (!organizationId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing organization ID',
+        message: 'Please provide an organization ID'
+      });
+    }
+
+    const { prisma } = await import('../index.js');
+    const clinic = await prisma.clinic.findUnique({
+      where: { clerkOrgId: organizationId },
+      select: {
+        id: true,
+        clerkOrgId: true,
+        name: true,
+        slug: true,
+        address: true,
+        phoneNumber: true,
+        email: true,
+        imageUrl: true,
+        isActive: true
+      }
+    });
+
+    if (!clinic) {
+      return res.status(404).json({
+        success: false,
+        error: 'Clinic not found',
+        message: 'No clinic found for this organization'
+      });
+    }
+
+    if (!clinic.isActive) {
+      return res.status(400).json({
+        success: false,
+        error: 'Clinic inactive',
+        message: 'This clinic is not currently active'
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: clinic,
+      message: 'Clinic retrieved successfully'
+    });
+  } catch (error) {
+    console.error('Get clinic by organization error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error',
+      message: 'Unable to retrieve clinic'
+    });
+  }
+});
+
+/**
  * GET /api/clinics/my-clinic
  * Get the current user's clinic information
  * Requires authentication

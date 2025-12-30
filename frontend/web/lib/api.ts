@@ -18,6 +18,7 @@ export async function apiRequest<T>(
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'X-Client-Type': 'web',
     ...(options.headers as Record<string, string>),
   };
 
@@ -59,10 +60,12 @@ export async function apiRequest<T>(
 
 /**
  * Get all pets for the authenticated user (petOwner sees their pets, staff sees all clinic pets)
- * The backend automatically filters by clinic ID
+ * @param sessionToken - Clerk session token
+ * @param clinicId - Clinic ID to filter pets (required for staff)
  */
-export async function getClinicPets(sessionToken: string) {
-  return apiRequest<Pet[]>('/api/pets', {
+export async function getClinicPets(sessionToken: string, clinicId?: string | null) {
+  const url = clinicId ? `/api/pets?clinicId=${clinicId}` : '/api/pets';
+  return apiRequest<Pet[]>(url, {
     method: 'GET',
   }, sessionToken);
 }
@@ -70,9 +73,13 @@ export async function getClinicPets(sessionToken: string) {
 /**
  * Get a specific pet by ID
  * The backend automatically verifies clinic access
+ * @param petId - Pet ID to fetch
+ * @param sessionToken - Clerk session token
+ * @param clinicId - Clinic ID to filter pets (required for staff)
  */
-export async function getPetById(petId: string, sessionToken: string) {
-  return apiRequest<Pet>(`/api/pets/${petId}`, {
+export async function getPetById(petId: string, sessionToken: string, clinicId?: string | null) {
+  const url = clinicId ? `/api/pets/${petId}?clinicId=${clinicId}` : `/api/pets/${petId}`;
+  return apiRequest<Pet>(url, {
     method: 'GET',
   }, sessionToken);
 }
@@ -80,37 +87,53 @@ export async function getPetById(petId: string, sessionToken: string) {
 /**
  * Get pet documents/records by pet ID
  * The backend automatically filters by clinic and verifies access
+ * @param petId - Pet ID to fetch documents for
+ * @param sessionToken - Clerk session token
+ * @param clinicId - Clinic ID to filter documents (required for staff)
  */
-export async function getPetDocuments(petId: string, sessionToken: string) {
-  return apiRequest<Document[]>(`/api/documents/pet/${petId}`, {
+export async function getPetDocuments(petId: string, sessionToken: string, clinicId?: string | null) {
+  const url = clinicId ? `/api/documents/pet/${petId}?clinicId=${clinicId}` : `/api/documents/pet/${petId}`;
+  return apiRequest<Document[]>(url, {
     method: 'GET',
   }, sessionToken);
 }
 
 /**
  * Get all documents for a pet owner or clinic staff
+ * @param sessionToken - Clerk session token
+ * @param clinicId - Clinic ID to filter documents (required for staff)
  */
-export async function getAllDocuments(sessionToken: string) {
-  return apiRequest<Document[]>('/api/documents', {
+export async function getAllDocuments(sessionToken: string, clinicId?: string | null) {
+  const url = clinicId ? `/api/documents?clinicId=${clinicId}` : '/api/documents';
+  return apiRequest<Document[]>(url, {
     method: 'GET',
   }, sessionToken);
 }
 
 /**
  * Get documents by category
+ * @param category - Document category
+ * @param sessionToken - Clerk session token
+ * @param clinicId - Clinic ID to filter documents (required for staff)
  */
-export async function getDocumentsByCategory(category: string, sessionToken: string) {
-  return apiRequest<Document[]>(`/api/documents/category/${category}`, {
+export async function getDocumentsByCategory(category: string, sessionToken: string, clinicId?: string | null) {
+  const url = clinicId ? `/api/documents/category/${category}?clinicId=${clinicId}` : `/api/documents/category/${category}`;
+  return apiRequest<Document[]>(url, {
     method: 'GET',
   }, sessionToken);
 }
 
 /**
  * Download a document
+ * @param documentId - Document ID to download
+ * @param sessionToken - Clerk session token
+ * @param clinicId - Clinic ID (required for staff)
  */
-export async function downloadDocument(documentId: string, sessionToken: string) {
+export async function downloadDocument(documentId: string, sessionToken: string, clinicId?: string | null) {
+  const baseUrl = `/api/documents/download/${documentId}?json=1`;
+  const url = clinicId ? `${baseUrl}&clinicId=${clinicId}` : baseUrl;
   return apiRequest<DownloadDocumentResponse>(
-    `/api/documents/download/${documentId}?json=1`,
+    url,
     {
       method: 'GET',
     },
@@ -129,6 +152,7 @@ export async function uploadDocument(formData: FormData, sessionToken: string) {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${sessionToken}`,
+        'X-Client-Type': 'web',
         // Don't set Content-Type - let browser set it with boundary for FormData
       },
       body: formData,

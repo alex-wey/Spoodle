@@ -138,7 +138,7 @@ export default function VerifyContactScreen() {
         // Phone verified successfully, complete signup
         try {
           await setActive({ session: signUpAttempt.createdSessionId })
-          // Redirect to clinic selection instead of main app
+          // Redirect to clinic selection
           router.push('/(auth)/select-clinic')
         } catch (setActiveError: any) {
           console.error('Failed to set session active:', setActiveError)

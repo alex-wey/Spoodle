@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSessionContext } from "../../../components/SessionContext";
-import { AppointmentColumn } from "../../../components/AppointmentColumn";
-import { Appointment } from "../../../components/AppointmentCard";
+import { AppointmentColumn } from "../../../components/primtives/AppointmentColumn";
+import { Appointment } from "../../../components/primtives/AppointmentCard";
 import { Card, CardContent } from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select";

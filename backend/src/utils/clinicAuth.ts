@@ -85,21 +85,12 @@ export function getClinicScopedPetWhere(req: Request) {
     if (req.petOwner) {
       return { ownerId: req.petOwner.id };
     }
-<<<<<<< Updated upstream
-    // Staff without clinic can't see any pets - return impossible condition
-    return { id: { in: [] } };
-  }
-
-  // If user is staff, show all pets in their clinic
-  if (req.staff && !req.petOwner) {
-=======
     // Staff without clinic can't see any pets
     return { id: { in: [] } };
   }
 
   // If user is staff, show all pets in the specified clinic
   if (req.staff) {
->>>>>>> Stashed changes
     return {
       petOwner: {
         clinicId: clinicId
@@ -107,11 +98,7 @@ export function getClinicScopedPetWhere(req: Request) {
     };
   }
 
-<<<<<<< Updated upstream
-  // If user is petOwner (or both), show their own pets that belong to their clinic
-=======
   // If user is petOwner, show their own pets that belong to their clinic
->>>>>>> Stashed changes
   if (req.petOwner) {
     return {
       ownerId: req.petOwner.id,
@@ -143,13 +130,8 @@ export function getClinicScopedDocumentWhere(req: Request) {
     return { id: { in: [] } };
   }
 
-<<<<<<< Updated upstream
-  // If user is staff, show all documents for pets in their clinic
-  if (req.staff && !req.petOwner) {
-=======
   // If user is staff, show all documents for pets in the specified clinic
   if (req.staff) {
->>>>>>> Stashed changes
     return {
       pet: {
         petOwner: {
@@ -159,11 +141,7 @@ export function getClinicScopedDocumentWhere(req: Request) {
     };
   }
 
-<<<<<<< Updated upstream
-  // If user is petOwner (or both), show documents for their pets in their clinic
-=======
   // If user is petOwner, show documents for their pets in their clinic
->>>>>>> Stashed changes
   if (req.petOwner) {
     return {
       pet: {
@@ -197,13 +175,8 @@ export function getClinicScopedTaskWhere(req: Request) {
     return { id: { in: [] } };
   }
 
-<<<<<<< Updated upstream
-  // If user is staff, show all tasks for pets in their clinic
-  if (req.staff && !req.petOwner) {
-=======
   // If user is staff, show all tasks for pets in the specified clinic
   if (req.staff) {
->>>>>>> Stashed changes
     return {
       pet: {
         petOwner: {
@@ -213,11 +186,7 @@ export function getClinicScopedTaskWhere(req: Request) {
     };
   }
 
-<<<<<<< Updated upstream
-  // If user is petOwner (or both), show tasks for their pets in their clinic
-=======
   // If user is petOwner, show tasks for their pets in their clinic
->>>>>>> Stashed changes
   if (req.petOwner) {
     return {
       pet: {
@@ -233,8 +202,6 @@ export function getClinicScopedTaskWhere(req: Request) {
 }
 
 /**
-<<<<<<< Updated upstream
-=======
  * Middleware to verify and set clinic for staff requests
  * Requires clinicId to be passed as query param or in body
  * Sets req.clinic if staff has access to the clinic
@@ -275,30 +242,23 @@ export async function requireStaffClinic(req: Request, res: Response, next: Next
 }
 
 /**
->>>>>>> Stashed changes
  * Verify that a pet belongs to the user's clinic
  */
 export async function verifyPetClinicAccess(req: Request, petId: string): Promise<boolean> {
   const clinicId = getClinicId(req);
+  
   if (!clinicId) {
     return false;
   }
 
-<<<<<<< Updated upstream
-  const { prisma } = await import('../index.js');
-  
-  const pet = await prisma.pet.findFirst({
-    where: {
-      id: petId,
-      petOwner: {
-        clinicId: clinicId
-      },
-      // If user is petOwner, also verify ownership
-      ...(req.petOwner ? { ownerId: req.petOwner.id } : {})
+  // If user is staff, verify they have access to the clinic
+  if (req.staff) {
+    const clinicAccess = await verifyStaffClinicAccess(req, clinicId);
+    if (!clinicAccess) {
+      return false;
     }
-  });
+  }
 
-=======
   const where: any = {
     id: petId,
     petOwner: {
@@ -312,7 +272,6 @@ export async function verifyPetClinicAccess(req: Request, petId: string): Promis
   }
 
   const pet = await prisma.pet.findFirst({ where });
->>>>>>> Stashed changes
   return pet !== null;
 }
 
