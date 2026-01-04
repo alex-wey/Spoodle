@@ -163,41 +163,42 @@ Builds are manual using Expo EAS. Production config (API URL, Clerk keys) is in 
 
 ### Prerequisites
 
+Bump `app.json` version (minor or patch version). This would get pushed to Github later on.
+
 ```bash
 npm install -g eas-cli
 eas login
 ```
 
-**Android (one-time setup):**
-1. Create Google Play Console account ($25 fee)
-2. Create service account in Google Cloud Console
-3. Enable Google Play Android Developer API
-4. Download service account JSON key → `google-service-account.json`
-5. Grant service account access in Play Console (Release manager role)
-6. Add to `eas.json` submit config with `serviceAccountKeyPath`
-
 ### Build & Submit
 
 ```bash
-# iOS
-eas build --platform ios --profile production
-eas submit --platform ios --latest
-
-# Android (first submission requires manual upload in Play Console)
-eas build --platform android --profile production
-eas submit --platform android --latest
-
-# Both platforms
+# Build both platforms
 eas build --platform all --profile production
-eas submit --platform all --latest
+
+# Submit to IOS
+eas submit --platform ios --latest
 
 # Check build status
 eas build:list --platform ios --limit 3
 ```
 
+### For IOS
+1. After build and submission succeed, go to App store
+2. Go to distribution
+3. Create new version
+4. Follow instructions for submittingn new build for review
+
+### For Android
+1. After the build succeeds, download the `.aab` file
+2. Go to play.google.com
+3. Go to "Test and release" and then "Production"
+4. Click "Create new release"
+5. Follow the instructions and upload .aab file in "App bundles"
+6. Submit for review
+
 ### Important Notes
 
-- **Build numbers**: Auto-managed by EAS. Don't set `buildNumber` in `app.json` unless fixing conflicts.
 - **Version conflicts**: If build fails with "bundle version must be higher", check App Store Connect for highest build number, then set in `eas.json` production profile: `"ios": { "buildNumber": "X" }` (one higher).
 - **Android version codes**: Auto-increment with `"autoIncrement": true` in `eas.json`. Update `versionCode` in `app.json` if conflicts occur.
 - **No native folders**: EAS handles iOS/Android native code remotely.
