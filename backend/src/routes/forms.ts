@@ -206,15 +206,24 @@ router.post('/',
         finalClinicId = req.petOwner.clinicId;
       }
 
+      // Build data object conditionally to avoid TypeScript errors with optional fields
+      const formData: any = {
+        tallyFormId: tallyFormId as string,
+        title: title as string,
+        isActive: true,
+        metadata: metadata || {}
+      };
+
+      // Only include optional fields if they have values
+      if (description) {
+        formData.description = description;
+      }
+      if (finalClinicId) {
+        formData.clinicId = finalClinicId;
+      }
+
       const form = await prisma.form.create({
-        data: {
-          tallyFormId: tallyFormId as string,
-          title: title as string,
-          description: description as string | undefined,
-          clinicId: finalClinicId as string | undefined,
-          metadata: metadata || {},
-          isActive: true
-        },
+        data: formData,
         include: {
           clinic: {
             select: {
