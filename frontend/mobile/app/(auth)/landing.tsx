@@ -1,9 +1,11 @@
-import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, ScrollView, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LinearGradient } from 'expo-linear-gradient';
 import { X, FileText, ShieldCheck } from 'lucide-react-native';
 import * as React from 'react';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // Terms & Conditions Content
 const TERMS_AND_CONDITIONS = `Thank you for your interest in the Spoodle application, we are incredibly excited for you to get a taste of our platform! Attached below is a set of important information to consider when using the Spoodle Platform.
@@ -565,7 +567,12 @@ export default function LandingScreen() {
                 <X size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>
-            <ScrollView style={styles.modalScrollView} contentContainerStyle={styles.modalScrollContent}>
+            <ScrollView 
+              style={styles.modalScrollView} 
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator={true}
+              nestedScrollEnabled={true}
+            >
               <Text style={styles.modalText}>{TERMS_AND_CONDITIONS}</Text>
             </ScrollView>
           </View>
@@ -593,7 +600,12 @@ export default function LandingScreen() {
                 <X size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>
-            <ScrollView style={styles.modalScrollView} contentContainerStyle={styles.modalScrollContent}>
+            <ScrollView 
+              style={styles.modalScrollView} 
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator={true}
+              nestedScrollEnabled={true}
+            >
               <Text style={styles.modalText}>{PRIVACY_POLICY}</Text>
             </ScrollView>
           </View>
@@ -699,18 +711,22 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
+    padding: 20,
   },
   modalContent: {
     backgroundColor: "white",
     borderRadius: 20,
-    width: "90%",
+    width: "100%",
     maxWidth: 600,
-    maxHeight: "85%",
+    height: SCREEN_HEIGHT * 0.85,
+    maxHeight: SCREEN_HEIGHT * 0.85,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 10,
+    flexDirection: "column",
+    overflow: "hidden",
   },
   modalHeader: {
     flexDirection: "row",
@@ -738,6 +754,7 @@ const styles = StyleSheet.create({
   },
   modalScrollContent: {
     padding: 20,
+    paddingBottom: 40,
   },
   modalText: {
     fontSize: 14,
