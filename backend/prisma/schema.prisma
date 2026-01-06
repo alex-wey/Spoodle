@@ -144,6 +144,7 @@ model Clinic {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   petOwners   PetOwner[]
+  forms       Form[]
 
   @@index([clerkOrgId])
   @@index([slug])
@@ -191,4 +192,40 @@ model Task {
   @@index([taskType])
   @@index([recurring])
   @@map("tasks")
+}
+
+model Form {
+  id          String   @id @default(uuid())
+  tallyFormId String   @unique // Tally form ID
+  title       String
+  description String?
+  clinicId    String?  // Optional: link form to a clinic
+  isActive    Boolean  @default(true)
+  metadata    Json?    // Store additional form metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  clinic      Clinic?  @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  submissions FormSubmission[]
+
+  @@index([clinicId])
+  @@index([tallyFormId])
+  @@index([isActive])
+  @@map("forms")
+}
+
+model FormSubmission {
+  id              String   @id @default(uuid())
+  formId          String
+  tallyResponseId String   @unique // Tally response ID
+  respondentEmail String?
+  respondentName  String?
+  submissionData  Json     // Store full submission data as JSON
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  form            Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@index([tallyResponseId])
+  @@index([createdAt])
+  @@map("form_submissions")
 }
