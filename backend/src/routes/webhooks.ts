@@ -12,12 +12,23 @@ router.post('/tally', async (req: Request, res: Response) => {
     const { eventType, data } = req.body;
     
     // Tally sends different event types
-    // We're interested in 'response.created' when a form is submitted
-    if (eventType === 'response.created' || eventType === 'response.updated') {
-      const { formId, responseId, answers, respondent } = data || {};
+    // FORM_RESPONSE is the event type when a form is submitted
+    // Also handle response.created/response.updated for compatibility
+    if (eventType === 'FORM_RESPONSE' || eventType === 'response.created' || eventType === 'response.updated') {
+      // Tally webhook structure can vary:
+      // Option 1: { eventType: 'FORM_RESPONSE', data: { formId, responseId, ... } }
+      // Option 2: { eventType: 'FORM_RESPONSE', data: { form: { id }, response: { id }, ... } }
+      // Option 3: Flattened structure with formId/responseId at top level
+      const formId = data?.formId || data?.form?.id || req.body.formId;
+      const responseId = data?.responseId || data?.response?.id || req.body.responseId || req.body.response?.id;
+      const answers = data?.answers || data?.response?.answers || data?.data?.answers || {};
+      const respondent = data?.respondent || data?.response?.respondent || data?.data?.respondent;
+      
+      console.log('🔍 Extracted data:', { formId, responseId, hasAnswers: !!answers, hasRespondent: !!respondent });
       
       if (!formId || !responseId) {
         console.error('❌ Missing formId or responseId in webhook payload');
+        console.error('📋 Full payload structure:', JSON.stringify(req.body, null, 2));
         return res.status(400).json({
           success: false,
           error: 'Missing required fields',
@@ -26,19 +37,27 @@ router.post('/tally', async (req: Request, res: Response) => {
       }
 
       // Find the form in our database by Tally form ID
+      console.log(`🔍 Looking up form with tallyFormId: "${formId}"`);
       const form = await prisma.form.findUnique({
         where: { tallyFormId: formId },
         include: { clinic: true }
       });
 
       if (!form) {
-        console.warn(`⚠️ Form not found in database for Tally formId: ${formId}`);
+        // Try to find all forms to see what we have
+        const allForms = await prisma.form.findMany({
+          select: { id: true, tallyFormId: true, title: true }
+        });
+        console.warn(`⚠️ Form not found in database for Tally formId: "${formId}"`);
+        console.warn(`📋 Available forms in database:`, JSON.stringify(allForms, null, 2));
         // Still return 200 to Tally so they don't retry
         return res.status(200).json({
           success: true,
           message: 'Webhook received but form not found in database'
         });
       }
+
+      console.log(`✅ Found form in database: ${form.id} (${form.title})`);
 
       // Extract respondent information
       const respondentEmail = respondent?.email || null;
