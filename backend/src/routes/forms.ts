@@ -298,7 +298,35 @@ router.get('/:id/submissions',
           form: {
             select: {
               id: true,
-              title: true
+              title: true,
+              clinicId: true
+            }
+          },
+          petOwner: {
+            select: {
+              id: true,
+              clerkUserId: true,
+              clinicId: true
+            },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                  phone: true
+                }
+              }
+            }
+          },
+          pet: {
+            select: {
+              id: true,
+              name: true,
+              species: true,
+              breed: true,
+              imageUrl: true
             }
           }
         }

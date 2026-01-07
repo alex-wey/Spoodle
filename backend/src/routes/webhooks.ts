@@ -63,12 +63,83 @@ router.post('/tally', async (req: Request, res: Response) => {
       const respondentEmail = respondent?.email || null;
       const respondentName = respondent?.name || null;
       
+      // Try to find PetOwner by email
+      let petOwnerId: string | null = null;
+      let petId: string | null = null;
+      
+      if (respondentEmail) {
+        try {
+          // Find User by email, then get PetOwner
+          const user = await prisma.user.findUnique({
+            where: { email: respondentEmail },
+            include: { petOwner: true }
+          });
+          
+          if (user?.petOwner) {
+            petOwnerId = user.petOwner.id;
+            console.log(`✅ Found PetOwner: ${petOwnerId} for email: ${respondentEmail}`);
+            
+            // Try to find Pet from form answers
+            // Common field names: petId, pet, petName, selectedPet, etc.
+            const petFields = ['petId', 'pet', 'petName', 'selectedPet', 'pet_id', 'pet_name'];
+            let foundPetId: string | null = null;
+            
+            // Check answers for pet identifier
+            for (const field of petFields) {
+              const petValue = answers[field]?.value || answers[field];
+              if (petValue) {
+                // Try to find pet by ID (UUID format)
+                if (typeof petValue === 'string' && petValue.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+                  const pet = await prisma.pet.findFirst({
+                    where: {
+                      id: petValue,
+                      ownerId: petOwnerId
+                    }
+                  });
+                  if (pet) {
+                    foundPetId = pet.id;
+                    break;
+                  }
+                }
+                // Try to find pet by name
+                else if (typeof petValue === 'string') {
+                  const pet = await prisma.pet.findFirst({
+                    where: {
+                      name: { contains: petValue, mode: 'insensitive' },
+                      ownerId: petOwnerId
+                    }
+                  });
+                  if (pet) {
+                    foundPetId = pet.id;
+                    break;
+                  }
+                }
+              }
+            }
+            
+            if (foundPetId) {
+              petId = foundPetId;
+              console.log(`✅ Found Pet: ${petId} for PetOwner: ${petOwnerId}`);
+            } else {
+              console.log(`ℹ️ No pet found in form answers for PetOwner: ${petOwnerId}`);
+            }
+          } else {
+            console.log(`ℹ️ No PetOwner found for email: ${respondentEmail}`);
+          }
+        } catch (error) {
+          console.error('❌ Error finding PetOwner/Pet:', error);
+          // Continue without linking - submission will still be saved
+        }
+      }
+      
       // Convert Tally answers to a structured format
       const submissionData = {
         formId: form.id,
         tallyResponseId: responseId,
         respondentEmail,
         respondentName,
+        petOwnerId,
+        petId,
         answers: answers || {},
         submittedAt: new Date(),
         rawData: req.body // Store full webhook payload for reference
@@ -81,6 +152,8 @@ router.post('/tally', async (req: Request, res: Response) => {
           tallyResponseId: responseId,
           respondentEmail,
           respondentName,
+          petOwnerId: petOwnerId || undefined,
+          petId: petId || undefined,
           submissionData: submissionData as any, // Store as JSON
         },
         include: {
@@ -90,16 +163,30 @@ router.post('/tally', async (req: Request, res: Response) => {
               title: true,
               clinicId: true
             }
+          },
+          petOwner: {
+            select: {
+              id: true,
+              clerkUserId: true
+            }
+          },
+          pet: {
+            select: {
+              id: true,
+              name: true,
+              species: true
+            }
           }
         }
       });
 
       console.log('✅ Form submission saved:', submission.id);
-
-      // TODO: You can add additional logic here:
-      // - Send notifications to clinic staff
-      // - Link submission to a pet if form includes pet selection
-      // - Trigger workflows based on form answers
+      if (submission.petOwner) {
+        console.log(`   Linked to PetOwner: ${submission.petOwner.id}`);
+      }
+      if (submission.pet) {
+        console.log(`   Linked to Pet: ${submission.pet.name} (${submission.pet.species})`);
+      }
 
       return res.status(200).json({
         success: true,

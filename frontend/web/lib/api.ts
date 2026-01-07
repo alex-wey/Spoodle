@@ -213,10 +213,14 @@ export interface FormSubmission {
   tallyResponseId: string;
   respondentEmail?: string | null;
   respondentName?: string | null;
+  petOwnerId?: string | null;
+  petId?: string | null;
   submissionData: {
     answers: Record<string, any>;
     respondentEmail?: string;
     respondentName?: string;
+    petOwnerId?: string | null;
+    petId?: string | null;
     submittedAt: string;
     [key: string]: any;
   };
@@ -225,7 +229,27 @@ export interface FormSubmission {
   form?: {
     id: string;
     title: string;
+    clinicId?: string | null;
   };
+  petOwner?: {
+    id: string;
+    clerkUserId: string;
+    clinicId?: string | null;
+    user?: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email?: string | null;
+      phone?: string | null;
+    };
+  } | null;
+  pet?: {
+    id: string;
+    name: string;
+    species: string;
+    breed?: string | null;
+    imageUrl?: string | null;
+  } | null;
 }
 
 /**

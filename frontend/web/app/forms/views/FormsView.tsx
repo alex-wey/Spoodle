@@ -18,7 +18,8 @@ import {
   User,
   Mail,
   ArrowLeft,
-  ChevronRight
+  ChevronRight,
+  Dog
 } from "lucide-react";
 import { Alert, AlertDescription } from "../../../components/ui/alert";
 import { getForms, getFormSubmissions, type Form, type FormSubmission } from "@/lib/api";
@@ -306,28 +307,41 @@ export default function FormsView() {
                       <Card key={submission.id} className="border-l-4 border-l-primary">
                         <CardHeader className="pb-3">
                           <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 flex-1">
                               <Avatar className="h-10 w-10">
                                 <AvatarFallback className="bg-primary text-primary-foreground">
-                                  {submission.respondentName 
+                                  {submission.petOwner?.user?.firstName && submission.petOwner?.user?.lastName
+                                    ? `${submission.petOwner.user.firstName.charAt(0)}${submission.petOwner.user.lastName.charAt(0)}`.toUpperCase()
+                                    : submission.respondentName 
                                     ? submission.respondentName.split(' ').map(n => n.charAt(0)).join('').toUpperCase()
                                     : submission.respondentEmail?.charAt(0).toUpperCase() || 'U'
                                   }
                                 </AvatarFallback>
                               </Avatar>
-                              <div>
+                              <div className="flex-1 min-w-0">
                                 <h3 className="font-semibold">
-                                  {submission.respondentName || submission.respondentEmail || 'Anonymous'}
+                                  {submission.petOwner?.user 
+                                    ? `${submission.petOwner.user.firstName} ${submission.petOwner.user.lastName}`.trim()
+                                    : submission.respondentName || submission.respondentEmail || 'Anonymous'
+                                  }
                                 </h3>
-                                {submission.respondentEmail && (
-                                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                    <Mail className="h-3 w-3" />
-                                    {submission.respondentEmail}
-                                  </div>
-                                )}
+                                <div className="flex flex-col gap-1 mt-1">
+                                  {submission.petOwner?.user?.email && (
+                                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                      <Mail className="h-3 w-3" />
+                                      {submission.petOwner.user.email}
+                                    </div>
+                                  )}
+                                  {submission.pet && (
+                                    <div className="flex items-center gap-1 text-sm text-primary font-medium">
+                                      <Dog className="h-3 w-3" />
+                                      {submission.pet.name} {submission.pet.species && `(${submission.pet.species})`}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right ml-4">
                               <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
                                 <Calendar className="h-3 w-3" />
                                 {formatRelativeTime(submission.createdAt)}

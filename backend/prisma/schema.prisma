@@ -24,40 +24,42 @@ model User {
 }
 
 model PetOwner {
-  id           String       @id @default(uuid())
-  clerkUserId  String       @unique
-  clinicId     String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  bugReports   BugReport[]
-  chatMessages ChatMessage[]
-  user         User         @relation("UserPetOwner", fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
-  clinic       Clinic?      @relation(fields: [clinicId], references: [id], onDelete: Restrict)
-  pets         Pet[]
-  settings     Settings?
+  id             String          @id @default(uuid())
+  clerkUserId    String          @unique
+  clinicId       String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  bugReports     BugReport[]
+  chatMessages   ChatMessage[]
+  user           User            @relation("UserPetOwner", fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
+  clinic         Clinic?         @relation(fields: [clinicId], references: [id], onDelete: Restrict)
+  pets           Pet[]
+  settings       Settings?
+  formSubmissions FormSubmission[]
 
   @@index([clinicId])
   @@map("pet_owners")
 }
 
 model Pet {
-  id                  String     @id @default(uuid())
+  id                  String          @id @default(uuid())
   name                String
   species             String
   biologicalSex       String?
   breed               String?
   dateOfBirth         DateTime?
   weight              Float?
-  spayedNeutered      Boolean    @default(false)
+  spayedNeutered      Boolean        @default(false)
   allergies           String[]
   dietaryRestrictions String[]
   imageUrl            String?
   ownerId             String
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
   documents           Document[]
   tasks               Task[]
-  petOwner            PetOwner   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  petOwner            PetOwner        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  formSubmissions     FormSubmission[]
 
   @@index([ownerId])
   @@map("pets")
@@ -214,18 +216,24 @@ model Form {
 }
 
 model FormSubmission {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   formId          String
-  tallyResponseId String   @unique // Tally response ID
+  tallyResponseId String    @unique // Tally response ID
   respondentEmail String?
   respondentName  String?
-  submissionData  Json     // Store full submission data as JSON
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  form            Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  petOwnerId      String?   // Link to PetOwner who submitted the form
+  petId           String?   // Link to Pet the form is for
+  submissionData  Json      // Store full submission data as JSON
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  form            Form      @relation(fields: [formId], references: [id], onDelete: Cascade)
+  petOwner        PetOwner? @relation(fields: [petOwnerId], references: [id], onDelete: SetNull)
+  pet             Pet?      @relation(fields: [petId], references: [id], onDelete: SetNull)
 
   @@index([formId])
   @@index([tallyResponseId])
+  @@index([petOwnerId])
+  @@index([petId])
   @@index([createdAt])
   @@map("form_submissions")
 }
