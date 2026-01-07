@@ -707,6 +707,55 @@ class ClerkApiClient {
       notes: data?.notes,
     });
   }
+
+  // Forms endpoints
+  async createForm(data: {
+    tallyFormId: string;
+    title: string;
+    description?: string;
+    clinicId?: string;
+  }) {
+    return this.request<{
+      success: boolean;
+      data: any;
+      message?: string;
+    }>('/forms', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getForms() {
+    return this.request<{
+      success: boolean;
+      data: any[];
+      count?: number;
+      message?: string;
+    }>('/forms', {
+      method: 'GET',
+    });
+  }
+
+  async getForm(formId: string) {
+    return this.request<{
+      success: boolean;
+      data: any;
+      message?: string;
+    }>(`/forms/${formId}`, {
+      method: 'GET',
+    });
+  }
+
+  async getFormSubmissions(formId: string) {
+    return this.request<{
+      success: boolean;
+      data: any[];
+      count?: number;
+      message?: string;
+    }>(`/forms/${formId}/submissions`, {
+      method: 'GET',
+    });
+  }
 }
 
 export const clerkApiClient = new ClerkApiClient(`${API_BASE_URL}/api`);

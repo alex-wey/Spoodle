@@ -183,3 +183,75 @@ export async function uploadDocument(formData: FormData, sessionToken: string) {
   }
 }
 
+/**
+ * Forms API endpoints
+ */
+
+export interface Form {
+  id: string;
+  tallyFormId: string;
+  title: string;
+  description?: string | null;
+  clinicId?: string | null;
+  isActive: boolean;
+  metadata?: any;
+  createdAt: string;
+  updatedAt: string;
+  clinic?: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
+  _count?: {
+    submissions: number;
+  };
+}
+
+export interface FormSubmission {
+  id: string;
+  formId: string;
+  tallyResponseId: string;
+  respondentEmail?: string | null;
+  respondentName?: string | null;
+  submissionData: {
+    answers: Record<string, any>;
+    respondentEmail?: string;
+    respondentName?: string;
+    submittedAt: string;
+    [key: string]: any;
+  };
+  createdAt: string;
+  updatedAt: string;
+  form?: {
+    id: string;
+    title: string;
+  };
+}
+
+/**
+ * Get all forms for the clinic
+ */
+export async function getForms(sessionToken: string) {
+  return apiRequest<Form[]>('/api/forms', {
+    method: 'GET',
+  }, sessionToken);
+}
+
+/**
+ * Get a specific form by ID
+ */
+export async function getFormById(formId: string, sessionToken: string) {
+  return apiRequest<Form>(`/api/forms/${formId}`, {
+    method: 'GET',
+  }, sessionToken);
+}
+
+/**
+ * Get all submissions for a specific form
+ */
+export async function getFormSubmissions(formId: string, sessionToken: string) {
+  return apiRequest<FormSubmission[]>(`/api/forms/${formId}/submissions`, {
+    method: 'GET',
+  }, sessionToken);
+}
+

@@ -10,6 +10,7 @@ import {
   Calendar,
   MessageSquare,
   BarChart3,
+  FileText,
 } from "lucide-react";
 import {
   Sidebar as SidebarComponent,
@@ -41,6 +42,11 @@ const navigationItems = [
     title: "Messages",
     url: "/messages",
     icon: MessageSquare,
+  },
+  {
+    title: "Forms",
+    url: "/forms",
+    icon: FileText,
   },
   {
     title: "Analytics",
