@@ -146,16 +146,25 @@ router.post('/tally', async (req: Request, res: Response) => {
       };
 
       // Create form submission record
+      // Build data object conditionally to handle null vs undefined for Prisma
+      const submissionData_obj: any = {
+        formId: form.id,
+        tallyResponseId: responseId,
+        respondentEmail: respondentEmail || null,
+        respondentName: respondentName || null,
+        submissionData: submissionData as any, // Store as JSON
+      };
+      
+      // Only include petOwnerId and petId if they have values (not null)
+      if (petOwnerId) {
+        submissionData_obj.petOwnerId = petOwnerId;
+      }
+      if (petId) {
+        submissionData_obj.petId = petId;
+      }
+
       const submission = await prisma.formSubmission.create({
-        data: {
-          formId: form.id,
-          tallyResponseId: responseId,
-          respondentEmail,
-          respondentName,
-          petOwnerId: petOwnerId || undefined,
-          petId: petId || undefined,
-          submissionData: submissionData as any, // Store as JSON
-        },
+        data: submissionData_obj,
         include: {
           form: {
             select: {
