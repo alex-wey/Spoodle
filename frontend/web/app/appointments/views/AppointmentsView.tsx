@@ -1,18 +1,19 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { Card, CardContent } from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar";
 import { Badge } from "../../../components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select";
-import { ChevronLeft, ChevronRight, Plus, Filter, Calendar as CalendarIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, AlertCircle } from "lucide-react";
 import { cn } from "../../../lib/utils";
-import goldenRetriever from "@/assets/pets/golden-retriever.jpg";
-import tabbycat from "@/assets/pets/tabby-cat.jpg";
-import germanShepherd from "@/assets/pets/german-shepherd.jpg";
-import borderCollie from "@/assets/pets/border-collie.jpg";
+import { getAppointments } from "../../../lib/api";
+import { useSessionContext } from "../../../components/SessionContext";
+import { Alert, AlertDescription } from "../../../components/ui/alert";
+import { CreateAppointmentDialog } from "../components/CreateAppointmentDialog";
+import type { Appointment } from "../../../lib/types";
 
 interface CalendarAppointment {
   id: string;
@@ -27,100 +28,13 @@ interface CalendarAppointment {
   veterinarian: string;
   status: "booked" | "pending" | "discharged";
   isNewClient: boolean;
+  appointmentDate: Date; // Date of the appointment
 }
 
-// Mock appointments data for calendar view
-const mockCalendarAppointments: CalendarAppointment[] = [
-  {
-    id: "1",
-    petName: "Max",
-    petImage: goldenRetriever.src,
-    petBreed: "Golden Retriever",
-    ownerName: "Sarah Johnson",
-    appointmentType: "Annual Checkup",
-    startTime: "09:00",
-    endTime: "09:30",
-    duration: 30,
-    veterinarian: "Dr. Chen",
-    status: "booked",
-    isNewClient: false
-  },
-  {
-    id: "2",
-    petName: "Luna",
-    petImage: tabbycat.src,
-    petBreed: "Tabby Cat",
-    ownerName: "Michael Davis",
-    appointmentType: "Emergency Visit",
-    startTime: "09:30",
-    endTime: "10:15",
-    duration: 45,
-    veterinarian: "Dr. Chen",
-    status: "booked",
-    isNewClient: true
-  },
-  {
-    id: "3",
-    petName: "Rocky",
-    petImage: germanShepherd.src,
-    petBreed: "German Shepherd",
-    ownerName: "Jennifer Wilson",
-    appointmentType: "Surgery Follow-up",
-    startTime: "10:15",
-    endTime: "10:45",
-    duration: 30,
-    veterinarian: "Dr. Martinez",
-    status: "pending",
-    isNewClient: false
-  },
-  {
-    id: "4",
-    petName: "Bella",
-    petImage: borderCollie.src,
-    petBreed: "Border Collie",
-    ownerName: "Robert Garcia",
-    appointmentType: "Dental Cleaning",
-    startTime: "11:00",
-    endTime: "12:00",
-    duration: 60,
-    veterinarian: "Dr. Chen",
-    status: "discharged",
-    isNewClient: false
-  },
-  {
-    id: "5",
-    petName: "Charlie",
-    petImage: goldenRetriever.src,
-    petBreed: "Labrador Mix",
-    ownerName: "Amanda Smith",
-    appointmentType: "Vaccination",
-    startTime: "14:00",
-    endTime: "14:30",
-    duration: 30,
-    veterinarian: "Dr. Martinez",
-    status: "booked",
-    isNewClient: false
-  },
-  {
-    id: "6",
-    petName: "Milo",
-    petImage: tabbycat.src,
-    petBreed: "Persian Cat",
-    ownerName: "David Brown",
-    appointmentType: "Grooming Consult",
-    startTime: "15:30",
-    endTime: "16:00",
-    duration: 30,
-    veterinarian: "Dr. Chen",
-    status: "booked",
-    isNewClient: true
-  }
-];
-
-// Generate time slots from 8 AM to 6 PM
+// Generate time slots from 6 AM to 6 PM
 const generateTimeSlots = () => {
   const slots = [];
-  for (let hour = 8; hour <= 18; hour++) {
+  for (let hour = 6; hour <= 18; hour++) {
     slots.push(`${hour.toString().padStart(2, '0')}:00`);
     if (hour < 18) {
       slots.push(`${hour.toString().padStart(2, '0')}:30`);
@@ -129,7 +43,7 @@ const generateTimeSlots = () => {
   return slots;
 };
 
-const statusColors = {
+const statusColors: Record<string, string> = {
   booked: "bg-primary/10 text-primary border-primary/20",
   pending: "bg-warning/10 text-warning border-warning/20", 
   discharged: "bg-success/10 text-success border-success/20"
@@ -137,16 +51,128 @@ const statusColors = {
 
 export default function AppointmentsView() {
   const router = useRouter();
+  const { getToken, isSignedIn } = useAuth();
+  const { clinicId } = useSessionContext();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedVet, setSelectedVet] = useState<string>("all");
-  const [appointments] = useState<CalendarAppointment[]>(mockCalendarAppointments);
+  const [appointments, setAppointments] = useState<CalendarAppointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   
   const timeSlots = generateTimeSlots();
   
-  // Filter appointments based on selected vet
-  const filteredAppointments = appointments.filter(apt => 
-    selectedVet === "all" || apt.veterinarian === selectedVet
-  );
+  // Fetch appointments from API
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      if (!isSignedIn) {
+        setError('Please sign in to view appointments');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const token = await getToken();
+        if (!token) {
+          setError('Unable to authenticate. Please try signing in again.');
+          setLoading(false);
+          return;
+        }
+
+        const result = await getAppointments(token, clinicId ? { clinicId } : undefined);
+        
+        if (result.success && result.data) {
+          // Transform backend appointments to calendar format
+          const transformedAppointments: CalendarAppointment[] = result.data
+            .map((apt: Appointment) => {
+              // Extract appointment time from Calendly data
+              const calendlyData = apt.calendlyData;
+              let startTime = '09:00'; // Default fallback
+              let endTime = '09:30'; // Default fallback
+              let appointmentDate = new Date(apt.createdAt); // Fallback to creation date
+              
+              if (calendlyData?.resource?.start_time) {
+                const start = new Date(calendlyData.resource.start_time);
+                appointmentDate = start;
+                const startHours = start.getHours().toString().padStart(2, '0');
+                const startMins = start.getMinutes().toString().padStart(2, '0');
+                startTime = `${startHours}:${startMins}`;
+                
+                if (calendlyData.resource.end_time) {
+                  const end = new Date(calendlyData.resource.end_time);
+                  const endHours = end.getHours().toString().padStart(2, '0');
+                  const endMins = end.getMinutes().toString().padStart(2, '0');
+                  endTime = `${endHours}:${endMins}`;
+                } else {
+                  // Default 30-minute duration if end time not available
+                  const end = new Date(start.getTime() + 30 * 60000);
+                  const endHours = end.getHours().toString().padStart(2, '0');
+                  const endMins = end.getMinutes().toString().padStart(2, '0');
+                  endTime = `${endHours}:${endMins}`;
+                }
+              } else if (calendlyData?.start_time) {
+                // Fallback: check if start_time is at root level
+                const start = new Date(calendlyData.start_time);
+                appointmentDate = start;
+                const startHours = start.getHours().toString().padStart(2, '0');
+                const startMins = start.getMinutes().toString().padStart(2, '0');
+                startTime = `${startHours}:${startMins}`;
+                
+                if (calendlyData.end_time) {
+                  const end = new Date(calendlyData.end_time);
+                  const endHours = end.getHours().toString().padStart(2, '0');
+                  const endMins = end.getMinutes().toString().padStart(2, '0');
+                  endTime = `${endHours}:${endMins}`;
+                }
+              }
+
+              const startMinutes = parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1]);
+              const endMinutes = parseInt(endTime.split(':')[0]) * 60 + parseInt(endTime.split(':')[1]);
+              const duration = endMinutes - startMinutes;
+
+              return {
+                id: apt.id,
+                petName: apt.pet?.name || 'Unknown Pet',
+                petImage: apt.pet?.imageUrl || undefined,
+                petBreed: apt.pet?.breed || 'Unknown',
+                ownerName: apt.petOwner?.user 
+                  ? `${apt.petOwner.user.firstName} ${apt.petOwner.user.lastName}`
+                  : 'Unknown Owner',
+                appointmentType: calendlyData?.event_type?.name || 'Appointment',
+                startTime,
+                endTime,
+                duration,
+                veterinarian: apt.staff?.user 
+                  ? `Dr. ${apt.staff.user.firstName} ${apt.staff.user.lastName}`
+                  : 'Unknown',
+                status: apt.status === 'CONFIRMED' ? 'booked' as const
+                  : apt.status === 'CANCELLED' ? 'discharged' as const
+                  : 'pending' as const,
+                isNewClient: false, // TODO: Determine from pet owner history
+                appointmentDate,
+              };
+            })
+            .filter((apt: CalendarAppointment) => {
+              // Filter appointments for the current selected date
+              const aptDate = new Date(apt.appointmentDate);
+              const selectedDate = new Date(currentDate);
+              return aptDate.toDateString() === selectedDate.toDateString();
+            });
+
+          setAppointments(transformedAppointments);
+          setError(null);
+        } else {
+          setError(result.message || result.error || 'Failed to fetch appointments');
+        }
+      } catch (err) {
+        console.error('Error fetching appointments:', err);
+        setError('An error occurred while fetching appointments');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAppointments();
+  }, [isSignedIn, getToken, clinicId, currentDate]);
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
@@ -163,8 +189,13 @@ export default function AppointmentsView() {
     setCurrentDate(newDate);
   };
 
-  const getAppointmentAtTime = (timeSlot: string) => {
-    return filteredAppointments.find(apt => apt.startTime === timeSlot);
+  // Get appointments that start at a specific time slot (for rendering)
+  const getAppointmentStartingAtSlot = (timeSlot: string) => {
+    return appointments.find(apt => {
+      const [slotHour, slotMin] = timeSlot.split(':').map(Number);
+      const [aptHour, aptMin] = apt.startTime.split(':').map(Number);
+      return slotHour === aptHour && slotMin === aptMin;
+    });
   };
 
   const calculateAppointmentHeight = (duration: number) => {
@@ -177,40 +208,25 @@ export default function AppointmentsView() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      {/* Header */}
-      <div className="border-b bg-card shadow-sm">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <CalendarIcon className="h-6 w-6 text-primary" />
-              <h1 className="text-2xl font-bold text-foreground">Appointment Calendar</h1>
+    <div className="flex-1 space-y-6 p-10">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Appointments</h2>
+          <p className="text-muted-foreground">
+            View and manage all appointments
+          </p>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <Select value={selectedVet} onValueChange={setSelectedVet}>
-              <SelectTrigger className="w-48">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filter by Veterinarian" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Veterinarians</SelectItem>
-                <SelectItem value="Dr. Chen">Dr. Chen</SelectItem>
-                <SelectItem value="Dr. Martinez">Dr. Martinez</SelectItem>
-                <SelectItem value="Dr. Johnson">Dr. Johnson</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              New Appointment
-            </Button>
-          </div>
+        <Button onClick={() => setCreateDialogOpen(true)}>
+          <Plus className="h-4 w-4" />
+          New Appointment
+        </Button>
         </div>
 
+      {/* Calendar Card */}
+      <Card>
+        <CardContent className="p-0">
         {/* Date Navigation */}
-        <div className="flex items-center justify-between px-6 pb-4">
+          <div className="flex items-center justify-center px-6 py-4 border-b relative">
           <div className="flex items-center gap-3">
             <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
               <ChevronLeft className="h-4 w-4" />
@@ -226,19 +242,36 @@ export default function AppointmentsView() {
             </Button>
           </div>
           
-          <div className="text-sm text-muted-foreground">
-            {filteredAppointments.length} appointment{filteredAppointments.length !== 1 ? 's' : ''} scheduled
+            <div className="absolute right-6 text-sm text-muted-foreground">
+              {loading ? '...' : appointments.length} appointment{appointments.length !== 1 ? 's' : ''} scheduled
+            </div>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="px-6 py-4">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
         </div>
-      </div>
+          )}
 
       {/* Calendar Grid */}
-      <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Loading appointments...</p>
+                </div>
+              </div>
+            ) : !error ? (
         <div className="min-h-full">
           {/* Time slots */}
           <div className="relative">
             {timeSlots.map((timeSlot) => {
-              const appointment = getAppointmentAtTime(timeSlot);
+              const appointment = getAppointmentStartingAtSlot(timeSlot);
               const isHourSlot = timeSlot.endsWith(':00');
               
               return (
@@ -323,7 +356,106 @@ export default function AppointmentsView() {
             })}
           </div>
         </div>
+            ) : null}
       </div>
+        </CardContent>
+      </Card>
+
+      <CreateAppointmentDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSuccess={() => {
+          // Refetch appointments after successful creation
+          const fetchAppointments = async () => {
+            if (!isSignedIn) return;
+            try {
+              const token = await getToken();
+              if (!token) return;
+              const result = await getAppointments(token, clinicId ? { clinicId } : undefined);
+              if (result.success && result.data) {
+                // Transform and filter appointments (same logic as in useEffect)
+                const transformedAppointments: CalendarAppointment[] = result.data
+                  .map((apt: Appointment) => {
+                    const calendlyData = apt.calendlyData;
+                    let startTime = '09:00';
+                    let endTime = '09:30';
+                    let appointmentDate = new Date(apt.createdAt);
+                    
+                    if (calendlyData?.resource?.start_time) {
+                      const start = new Date(calendlyData.resource.start_time);
+                      appointmentDate = start;
+                      const startHours = start.getHours().toString().padStart(2, '0');
+                      const startMins = start.getMinutes().toString().padStart(2, '0');
+                      startTime = `${startHours}:${startMins}`;
+                      
+                      if (calendlyData.resource.end_time) {
+                        const end = new Date(calendlyData.resource.end_time);
+                        const endHours = end.getHours().toString().padStart(2, '0');
+                        const endMins = end.getMinutes().toString().padStart(2, '0');
+                        endTime = `${endHours}:${endMins}`;
+                      } else {
+                        const end = new Date(start.getTime() + 30 * 60000);
+                        const endHours = end.getHours().toString().padStart(2, '0');
+                        const endMins = end.getMinutes().toString().padStart(2, '0');
+                        endTime = `${endHours}:${endMins}`;
+                      }
+                    } else if (calendlyData?.start_time) {
+                      const start = new Date(calendlyData.start_time);
+                      appointmentDate = start;
+                      const startHours = start.getHours().toString().padStart(2, '0');
+                      const startMins = start.getMinutes().toString().padStart(2, '0');
+                      startTime = `${startHours}:${startMins}`;
+                      
+                      if (calendlyData.end_time) {
+                        const end = new Date(calendlyData.end_time);
+                        const endHours = end.getHours().toString().padStart(2, '0');
+                        const endMins = end.getMinutes().toString().padStart(2, '0');
+                        endTime = `${endHours}:${endMins}`;
+                      }
+                    }
+
+                    const startMinutes = parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1]);
+                    const endMinutes = parseInt(endTime.split(':')[0]) * 60 + parseInt(endTime.split(':')[1]);
+                    const duration = endMinutes - startMinutes;
+
+                    return {
+                      id: apt.id,
+                      petName: apt.pet?.name || 'Unknown Pet',
+                      petImage: apt.pet?.imageUrl || undefined,
+                      petBreed: apt.pet?.breed || 'Unknown',
+                      ownerName: apt.petOwner?.user 
+                        ? `${apt.petOwner.user.firstName} ${apt.petOwner.user.lastName}`
+                        : 'Unknown Owner',
+                      appointmentType: calendlyData?.event_type?.name || 'Appointment',
+                      startTime,
+                      endTime,
+                      duration,
+                      veterinarian: apt.staff?.user 
+                        ? `Dr. ${apt.staff.user.firstName} ${apt.staff.user.lastName}`
+                        : 'Unknown',
+                      status: apt.status === 'CONFIRMED' ? 'booked' as const
+                        : apt.status === 'CANCELLED' ? 'discharged' as const
+                        : 'pending' as const,
+                      isNewClient: false,
+                      appointmentDate,
+                    };
+                  })
+                  .filter((apt: CalendarAppointment) => {
+                    const aptDate = new Date(apt.appointmentDate);
+                    const selectedDate = new Date(currentDate);
+                    return aptDate.toDateString() === selectedDate.toDateString();
+                  });
+
+                setAppointments(transformedAppointments);
+              }
+            } catch (err) {
+              console.error('Error refetching appointments:', err);
+            }
+          };
+          fetchAppointments();
+        }}
+      />
     </div>
   );
 }
+

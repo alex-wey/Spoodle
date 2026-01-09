@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { Button } from "../../../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../../components/ui/card";
 import { Badge } from "../../../../components/ui/badge";
@@ -11,73 +12,13 @@ import { Textarea } from "../../../../components/ui/textarea";
 import { Input } from "../../../../components/ui/input";
 import { Label } from "../../../../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../../components/ui/select";
-import { ArrowLeft, Calendar, Clock, User, FileText, Upload, ExternalLink, Edit, Save, X, ClipboardList } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, User, FileText, Upload, ExternalLink, Edit, Save, X, ClipboardList, AlertCircle } from "lucide-react";
 import { Appointment } from "../../../../components/primtives/AppointmentCard";
 import { MessagingPopup } from "../../../../components/primtives/MessagingPopup";
-import goldenRetriever from "@/assets/pets/golden-retriever.jpg";
-import tabbycat from "@/assets/pets/tabby-cat.jpg";
-import germanShepherd from "@/assets/pets/german-shepherd.jpg";
-import borderCollie from "@/assets/pets/border-collie.jpg";
-
-// Mock data - in a real app this would come from API
-const mockAppointments: Appointment[] = [
-  {
-    id: "1",
-    petName: "Max",
-    petImage: goldenRetriever.src,
-    petBreed: "Golden Retriever",
-    ownerName: "Sarah Johnson",
-    appointmentType: "Annual Checkup",
-    time: "9:00 AM",
-    isNewClient: false,
-    hasNewMessage: true,
-    veterinarian: "Chen",
-    status: "booked",
-    notes: "Vaccination due"
-  },
-  {
-    id: "2", 
-    petName: "Luna",
-    petImage: tabbycat.src,
-    petBreed: "Tabby Cat",
-    ownerName: "Michael Davis",
-    appointmentType: "Emergency Visit",
-    time: "9:30 AM",
-    isNewClient: true,
-    hasNewMessage: false,
-    veterinarian: "Chen",
-    status: "booked",
-    notes: "Limping on left front paw"
-  },
-  {
-    id: "3",
-    petName: "Rocky",
-    petImage: germanShepherd.src,
-    petBreed: "German Shepherd", 
-    ownerName: "Jennifer Wilson",
-    appointmentType: "Surgery Follow-up",
-    time: "10:15 AM",
-    isNewClient: false,
-    hasNewMessage: true,
-    veterinarian: "Martinez",
-    status: "pending",
-    notes: "Post-op examination"
-  },
-  {
-    id: "4",
-    petName: "Bella",
-    petImage: borderCollie.src,
-    petBreed: "Border Collie",
-    ownerName: "Robert Garcia",
-    appointmentType: "Dental Cleaning",
-    time: "11:00 AM", 
-    isNewClient: false,
-    hasNewMessage: false,
-    veterinarian: "Chen",
-    status: "discharged",
-    notes: "Procedure completed successfully"
-  }
-];
+import { getAppointmentById } from "../../../../lib/api";
+import { useSessionContext } from "../../../../components/SessionContext";
+import { Alert, AlertDescription } from "../../../../components/ui/alert";
+import type { Appointment as ApiAppointment } from "../../../../lib/types";
 
 interface QuestionnaireAnswer {
   question: string;
@@ -92,37 +33,131 @@ interface UploadedFile {
   size: string;
 }
 
-const mockQuestionnaire: QuestionnaireAnswer[] = [
-  { question: "What is the main concern for today's visit?", answer: "Annual vaccination and general health check" },
-  { question: "Has your pet eaten today?", answer: "Yes, normal breakfast at 7:00 AM" },
-  { question: "Any changes in behavior or appetite?", answer: "No changes noted. Pet is active and eating well." },
-  { question: "Current medications?", answer: "Monthly flea and tick prevention (last given 3 weeks ago)" },
-  { question: "Any allergies or previous reactions?", answer: "No known allergies" }
-];
-
-const mockUploads: UploadedFile[] = [
-  { id: "1", name: "vaccination-records.pdf", type: "PDF", uploadDate: "2024-01-10", size: "2.3 MB" },
-  { id: "2", name: "recent-bloodwork.pdf", type: "PDF", uploadDate: "2024-01-08", size: "1.1 MB" },
-  { id: "3", name: "pet-photos.jpg", type: "Image", uploadDate: "2024-01-10", size: "5.2 MB" }
-];
-
 export default function AppointmentDetailView() {
-  const { id: appointmentId } = useParams();
   const router = useRouter();
+  const { id: appointmentId } = useParams();
+  const { getToken, isSignedIn } = useAuth();
+  const { clinicId } = useSessionContext();
   const [isEditing, setIsEditing] = useState(false);
   const [editedNotes, setEditedNotes] = useState("");
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleTime, setRescheduleTime] = useState("");
   const [dischargeSummary, setDischargeSummary] = useState("");
   const [isUploadingNotes, setIsUploadingNotes] = useState(false);
+  const [appointment, setAppointment] = useState<Appointment | null>(null);
+  const [apiAppointment, setApiAppointment] = useState<ApiAppointment | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [questionnaire, setQuestionnaire] = useState<QuestionnaireAnswer[]>([]);
+  const [uploads, setUploads] = useState<UploadedFile[]>([]);
 
-  const appointment = mockAppointments.find(apt => apt.id === appointmentId);
+  // Transform API appointment to component format
+  const transformAppointment = (apiAppointment: ApiAppointment): Appointment => {
+    // Format time from startTime/endTime or use default
+    let time = '09:00 AM';
+    let appointmentDate = new Date(apiAppointment.createdAt);
+    
+    // Try to get time from startTime field first, then Cal.com data
+    if (apiAppointment.startTime) {
+      const start = new Date(apiAppointment.startTime);
+      appointmentDate = start;
+      const hours = start.getHours();
+      const minutes = start.getMinutes();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours % 12 || 12;
+      time = `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+    } else if (apiAppointment.calcomData?.startTime) {
+      const start = new Date(apiAppointment.calcomData.startTime);
+      appointmentDate = start;
+      const hours = start.getHours();
+      const minutes = start.getMinutes();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours % 12 || 12;
+      time = `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+    }
 
-  if (!appointment) {
+    // Map status from backend to frontend format
+    const statusMap: Record<string, "booked" | "pending" | "discharged"> = {
+      'CONFIRMED': 'booked',
+      'CANCELLED': 'pending',
+      'RESCHEDULED': 'booked',
+    };
+
+    return {
+      id: apiAppointment.id,
+      petName: apiAppointment.pet?.name || 'Unknown Pet',
+      petImage: apiAppointment.pet?.imageUrl || undefined,
+      petBreed: apiAppointment.pet?.breed || 'Unknown',
+      ownerName: apiAppointment.petOwner?.user 
+        ? `${apiAppointment.petOwner.user.firstName} ${apiAppointment.petOwner.user.lastName}`.trim() || 'Unknown Owner'
+        : 'Unknown Owner',
+      appointmentType: apiAppointment.eventTitle || 'Appointment',
+      time,
+      isNewClient: false, // TODO: Determine from pet owner creation date
+      hasNewMessage: false, // TODO: Check for new messages
+      veterinarian: apiAppointment.staff?.user
+        ? `Dr. ${apiAppointment.staff.user.firstName} ${apiAppointment.staff.user.lastName}`.trim()
+        : 'Unknown Veterinarian',
+      status: statusMap[apiAppointment.status] || 'booked',
+      notes: apiAppointment.calcomData?.additionalNotes || apiAppointment.eventDescription || undefined,
+    };
+  };
+
+  // Fetch appointment data from API
+  useEffect(() => {
+    const fetchAppointment = async () => {
+      if (!isSignedIn || !appointmentId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const token = await getToken();
+        if (!token) {
+          setError('Unable to authenticate. Please try signing in again.');
+          setLoading(false);
+          return;
+        }
+
+        const result = await getAppointmentById(appointmentId as string, token, clinicId);
+        
+        if (result.success && result.data) {
+          setApiAppointment(result.data);
+          const transformedAppointment = transformAppointment(result.data);
+          setAppointment(transformedAppointment);
+        } else {
+          setError(result.error || 'Failed to fetch appointment');
+        }
+      } catch (err: any) {
+        setError(err.message || 'An error occurred while fetching the appointment');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAppointment();
+  }, [appointmentId, isSignedIn, getToken, clinicId]);
+
+  if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <h1 className="text-2xl font-bold text-muted-foreground mb-4">Appointment Not Found</h1>
-        <Button onClick={() => router.back()}>Back to Dashboard</Button>
+        <h1 className="text-2xl font-bold text-muted-foreground mb-4">Loading appointment...</h1>
+      </div>
+    );
+  }
+
+  if (error || !appointment) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen px-4">
+        <Alert variant="destructive" className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error || 'Appointment not found'}
+          </AlertDescription>
+        </Alert>
+        <Button onClick={() => router.push('/appointments')} className="mt-4">
+          Back to Appointments
+        </Button>
       </div>
     );
   }
@@ -146,11 +181,15 @@ export default function AppointmentDetailView() {
   };
 
   const handleViewPetProfile = () => {
-    router.push(`/pets/${appointment.id}`); // Using appointment ID as pet ID for demo
+    if (apiAppointment?.petId) {
+      router.push(`/pets/${apiAppointment.petId}`);
+    }
   };
 
   const handleViewOwnerProfile = () => {
-    router.push(`/pet-owners/${appointment.id}`); // Using appointment ID as owner ID for demo
+    if (apiAppointment?.petOwnerId) {
+      router.push(`/pet-owners/${apiAppointment.petOwnerId}`);
+    }
   };
 
   const handleUploadDischargeSummary = () => {
@@ -282,14 +321,18 @@ export default function AppointmentDetailView() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockQuestionnaire.map((item, index) => (
-                    <div key={index} className="space-y-1">
-                      <Label className="text-sm font-medium">{item.question}</Label>
-                      <p className="text-sm text-muted-foreground bg-muted/50 p-2 rounded-md">
-                        {item.answer}
-                      </p>
-                    </div>
-                  ))}
+                  {questionnaire.length > 0 ? (
+                    questionnaire.map((item, index) => (
+                      <div key={index} className="space-y-1">
+                        <Label className="text-sm font-medium">{item.question}</Label>
+                        <p className="text-sm text-muted-foreground bg-muted/50 p-2 rounded-md">
+                          {item.answer}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No questionnaire responses available</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -304,22 +347,26 @@ export default function AppointmentDetailView() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {mockUploads.map((file) => (
-                    <div key={file.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-md">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        <div>
-                          <p className="text-sm font-medium">{file.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {file.type} • {file.size} • {file.uploadDate}
-                          </p>
+                  {uploads.length > 0 ? (
+                    uploads.map((file) => (
+                      <div key={file.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-md">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          <div>
+                            <p className="text-sm font-medium">{file.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {file.type} • {file.size} • {file.uploadDate}
+                            </p>
+                          </div>
                         </div>
+                        <Button variant="ghost" size="sm">
+                          View
+                        </Button>
                       </div>
-                      <Button variant="ghost" size="sm">
-                        View
-                      </Button>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No uploaded materials</p>
+                  )}
                 </div>
               </CardContent>
             </Card>

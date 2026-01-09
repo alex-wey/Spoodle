@@ -50,7 +50,7 @@ interface SessionProviderProps {
 export function SessionProvider({ children }: SessionProviderProps) {
   const { user, isLoaded: userLoaded } = useUser();
   const { isSignedIn, signOut: clerkSignOut, getToken } = useAuth();
-  const { organization, membership, isLoaded: orgLoaded } = useOrganization();
+  const { organization, isLoaded: orgLoaded } = useOrganization();
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
   const [sessionOrganization, setSessionOrganization] = useState<SessionOrganization | null>(null);
   const [clinic, setClinic] = useState<Clinic | null>(null);

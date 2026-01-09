@@ -39,14 +39,14 @@ const navigationItems = [
     icon: Calendar,
   },
   {
-    title: "Messages",
-    url: "/messages",
-    icon: MessageSquare,
-  },
-  {
     title: "Forms",
     url: "/forms",
     icon: FileText,
+  },
+  {
+    title: "Messages",
+    url: "/messages",
+    icon: MessageSquare,
   },
   {
     title: "Analytics",
