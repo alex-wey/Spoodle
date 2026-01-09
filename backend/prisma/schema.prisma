@@ -24,25 +24,27 @@ model User {
 }
 
 model PetOwner {
-  id             String          @id @default(uuid())
-  clerkUserId    String          @unique
-  clinicId       String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  bugReports     BugReport[]
-  chatMessages   ChatMessage[]
-  user           User            @relation("UserPetOwner", fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
-  clinic         Clinic?         @relation(fields: [clinicId], references: [id], onDelete: Restrict)
-  pets           Pet[]
-  settings       Settings?
-  formSubmissions FormSubmission[]
+  id                String              @id @default(uuid())
+  clerkUserId       String              @unique
+  clinicId          String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  bugReports        BugReport[]
+  chatMessages      ChatMessage[]
+  user              User                @relation("UserPetOwner", fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
+  clinic            Clinic?             @relation(fields: [clinicId], references: [id], onDelete: Restrict)
+  pets              Pet[]
+  settings          Settings?
+  formSubmissions   FormSubmission[]
+  appointments      Appointment[]
+  appointmentInvites AppointmentInvite[]
 
   @@index([clinicId])
   @@map("pet_owners")
 }
 
 model Pet {
-  id                  String          @id @default(uuid())
+  id                  String              @id @default(uuid())
   name                String
   species             String
   biologicalSex       String?
@@ -60,6 +62,8 @@ model Pet {
   tasks               Task[]
   petOwner            PetOwner        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   formSubmissions     FormSubmission[]
+  appointments        Appointment[]
+  appointmentInvites  AppointmentInvite[]
 
   @@index([ownerId])
   @@map("pets")
@@ -133,20 +137,22 @@ model Settings {
 }
 
 model Clinic {
-  id          String      @id @default(uuid())
-  clerkOrgId  String      @unique
-  name        String
-  slug        String      @unique
-  address     String?
-  phoneNumber String?
-  email       String?
-  imageUrl    String?
-  isActive    Boolean     @default(true)
-  metadata    Json?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  petOwners   PetOwner[]
-  forms       Form[]
+  id                String              @id @default(uuid())
+  clerkOrgId        String              @unique
+  name              String
+  slug              String              @unique
+  address           String?
+  phoneNumber       String?
+  email             String?
+  imageUrl          String?
+  isActive          Boolean             @default(true)
+  metadata          Json?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  petOwners         PetOwner[]
+  forms             Form[]
+  appointments      Appointment[]
+  appointmentInvites AppointmentInvite[]
 
   @@index([clerkOrgId])
   @@index([slug])
@@ -154,11 +160,13 @@ model Clinic {
 }
 
 model Staff {
-  id          String   @id @default(uuid())
-  clerkUserId String   @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation("UserStaff", fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
+  id                String              @id @default(uuid())
+  clerkUserId       String              @unique
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  user              User                @relation("UserStaff", fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
+  appointments      Appointment[]
+  appointmentInvites AppointmentInvite[]
 
   @@map("staff")
 }
@@ -236,4 +244,69 @@ model FormSubmission {
   @@index([petId])
   @@index([createdAt])
   @@map("form_submissions")
+}
+
+model Appointment {
+  id                String            @id @default(uuid())
+  externalAppointmentId String        @unique // Cal.com appointment ID
+  eventTypeId      String            // Cal.com event type ID
+  eventTitle        String?           // Cal.com event title
+  eventDescription String?           // Cal.com event description
+  clinicId         String
+  staffId          String            // Host/staff member
+  petId            String
+  petOwnerId       String
+  status           AppointmentStatus @default(CONFIRMED)
+  startTime         DateTime          // Appointment start time
+  endTime           DateTime          // Appointment end time
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  clinic           Clinic             @relation(fields: [clinicId], references: [id], onDelete: Restrict)
+  staff            Staff              @relation(fields: [staffId], references: [id], onDelete: Restrict)
+  pet              Pet                @relation(fields: [petId], references: [id], onDelete: Cascade)
+  petOwner         PetOwner           @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
+  appointmentInvites AppointmentInvite[]
+
+  @@index([clinicId])
+  @@index([staffId])
+  @@index([petId])
+  @@index([petOwnerId])
+  @@index([externalAppointmentId])
+  @@index([status])
+  @@index([startTime])
+  @@index([endTime])
+  @@map("appointments")
+}
+
+model AppointmentInvite {
+  id                String      @id @default(uuid())
+  appointmentLink   String      @unique // Cal.com appointment link URL (generated from event type)
+  eventTypeId       String      // Cal.com event type ID (used to generate appointment link)
+  clinicId          String
+  staffId           String      // Host/staff member
+  petId             String
+  petOwnerId        String
+  appointmentId     String?     // Optional link to confirmed appointment (when booking is completed)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  clinic            Clinic      @relation(fields: [clinicId], references: [id], onDelete: Restrict)
+  staff             Staff       @relation(fields: [staffId], references: [id], onDelete: Restrict)
+  pet               Pet         @relation(fields: [petId], references: [id], onDelete: Cascade)
+  petOwner          PetOwner    @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
+  appointment      Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  @@index([clinicId])
+  @@index([staffId])
+  @@index([petId])
+  @@index([petOwnerId])
+  @@index([appointmentLink])
+  @@index([appointmentId])
+  @@index([eventTypeId])
+  @@map("appointment_invites")
+}
+
+enum AppointmentStatus {
+  CONFIRMED
+  CANCELLED
+  RESCHEDULED
 }

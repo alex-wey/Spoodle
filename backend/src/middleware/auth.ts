@@ -193,7 +193,7 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
           }
         }
       } else {
-        // User already exists - sync clinic if petOwner
+        // User already exists - sync clinic based on user type
         if (petOwner && activeOrgId && !petOwner.clinicId) {
           const clinicFromOrg = await prisma.clinic.findUnique({
             where: { clerkOrgId: activeOrgId }
