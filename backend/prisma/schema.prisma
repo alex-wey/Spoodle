@@ -248,7 +248,8 @@ model FormSubmission {
 
 model Appointment {
   id                String            @id @default(uuid())
-  externalAppointmentId String        @unique // Cal.com appointment ID
+  externalAppointmentId String        @unique // Cal.com appointment ID (numeric bookingId)
+  externalAppointmentUid String       @unique // Cal.com appointment UID (used for booking confirmation link)
   eventTypeId      String            // Cal.com event type ID
   eventTitle        String?           // Cal.com event title
   eventDescription String?           // Cal.com event description
@@ -271,6 +272,7 @@ model Appointment {
   @@index([petId])
   @@index([petOwnerId])
   @@index([externalAppointmentId])
+  @@index([externalAppointmentUid])
   @@index([status])
   @@index([startTime])
   @@index([endTime])

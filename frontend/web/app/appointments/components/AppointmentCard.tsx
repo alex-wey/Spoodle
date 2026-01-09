@@ -11,7 +11,7 @@ export interface AppointmentCardData {
   startTime: Date;
   endTime: Date;
   veterinarian: string;
-  status: "booked" | "pending" | "discharged";
+  status: "CONFIRMED" | "CANCELLED" | "RESCHEDULED";
 }
 
 interface AppointmentCardProps {
@@ -20,9 +20,15 @@ interface AppointmentCardProps {
 }
 
 const statusColors: Record<string, string> = {
-  booked: "bg-primary/10 text-primary border-primary/20",
-  pending: "bg-warning/10 text-warning border-warning/20",
-  discharged: "bg-success/10 text-success border-success/20"
+  CONFIRMED: "bg-primary/10 text-primary border-primary/20",
+  RESCHEDULED: "bg-warning/10 text-warning border-warning/20",
+  CANCELLED: "bg-destructive/10 text-destructive border-destructive/20"
+};
+
+const statusLabels: Record<string, string> = {
+  CONFIRMED: "CONFIRMED",
+  RESCHEDULED: "RESCHEDULED",
+  CANCELLED: "CANCELLED"
 };
 
 export function AppointmentCard({ appointment, onClick }: AppointmentCardProps) {
@@ -48,7 +54,7 @@ export function AppointmentCard({ appointment, onClick }: AppointmentCardProps) 
                 variant="outline"
                 className={cn("text-[10px] px-1 py-0 h-4", statusColors[appointment.status])}
               >
-                {appointment.status}
+                {statusLabels[appointment.status] || appointment.status}
               </Badge>
             </div>
             <p className="text-[10px] text-muted-foreground truncate">

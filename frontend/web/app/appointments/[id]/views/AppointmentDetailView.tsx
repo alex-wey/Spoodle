@@ -10,7 +10,8 @@ import { Label } from "../../../../components/ui/label";
 import { ArrowLeft, Calendar, User, FileText, Upload, ExternalLink, AlertCircle, Clock, UserCheck, Dog, Dna } from "lucide-react";
 import { getAppointmentById } from "../../../../lib/api";
 import { useSessionContext } from "../../../../components/SessionContext";
-import { Alert, AlertDescription } from "../../../../components/ui/alert";
+import { Alert, AlertTitle, AlertDescription } from "../../../../components/ui/alert";
+import { Info } from "lucide-react";
 import type { Appointment as ApiAppointment } from "../../../../lib/types";
 
 interface QuestionnaireAnswer {
@@ -173,9 +174,9 @@ export default function AppointmentDetailView() {
   };
 
   const handleViewBookingConfirmation = () => {
-    if (apiAppointment?.externalAppointmentId) {
-      // Open Cal.com booking page
-      window.open(`https://cal.com/bookings/${apiAppointment.externalAppointmentId}`, '_blank');
+    if (apiAppointment?.externalAppointmentUid) {
+      // Cal.com booking confirmation link format: https://cal.com/booking/{uid}
+      window.open(`https://cal.com/booking/${apiAppointment.externalAppointmentUid}`, '_blank');
     }
   };
 
@@ -363,7 +364,7 @@ export default function AppointmentDetailView() {
               <CardHeader>
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
                 <Button 
                   className="w-full justify-start" 
                   variant="outline"
@@ -372,15 +373,23 @@ export default function AppointmentDetailView() {
                   <User className="h-4 w-4" />
                   View Pet Profile
                 </Button>
-                {apiAppointment?.externalAppointmentId && (
-                  <Button 
-                    className="w-full justify-start" 
-                    variant="outline"
-                    onClick={handleViewBookingConfirmation}
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    View Booking Confirmation Link
-                  </Button>
+                {apiAppointment?.externalAppointmentUid && (
+                  <>
+                    <div className="pt-2 border-t">
+                      <h4 className="text-sm font-medium mb-2">Reschedule or Cancel</h4>
+                      <Button 
+                        className="w-full justify-start" 
+                        variant="outline"
+                        onClick={handleViewBookingConfirmation}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        View Booking Link
+                      </Button>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        To reschedule or cancel this appointment, use the booking link above.
+                      </p>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>

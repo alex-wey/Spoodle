@@ -368,6 +368,8 @@ async function handleBookingCreated(payload: any, res: Response) {
 
     // Extract booking details from payload
     const bookingId = payload.bookingId || booking.bookingId;
+    const bookingUid = payload.uid || booking.uid; // Cal.com booking UID for confirmation link
+    
     const eventTitle = payload.eventTitle || booking.eventTitle || null;
     const eventDescription = payload.eventDescription || booking.eventDescription || null;
 
@@ -375,6 +377,7 @@ async function handleBookingCreated(payload: any, res: Response) {
     const appointment = await prisma.appointment.create({
       data: {
         externalAppointmentId: String(bookingId || booking.id),
+        externalAppointmentUid: String(bookingUid),
         eventTypeId: String(eventTypeId),
         eventTitle,
         eventDescription,
@@ -395,6 +398,33 @@ async function handleBookingCreated(payload: any, res: Response) {
     });
 
     console.log('✅ Appointment created from webhook:', appointment.id);
+
+    // Clean up appointment invites: delete any invites that match this booking
+    // Match criteria: same eventTypeId, petId, and petOwnerId
+    try {
+      const matchingInvites = await prisma.appointmentInvite.findMany({
+        where: {
+          eventTypeId: String(eventTypeId),
+          petId: petId,
+          petOwnerId: petOwnerId,
+        },
+      });
+
+      if (matchingInvites.length > 0) {
+        await prisma.appointmentInvite.deleteMany({
+          where: {
+            eventTypeId: String(eventTypeId),
+            petId: petId,
+            petOwnerId: petOwnerId,
+          },
+        });
+        console.log(`✅ Cleaned up ${matchingInvites.length} appointment invite(s) for pet ${petId} and event type ${eventTypeId}`);
+      }
+    } catch (inviteError: any) {
+      // Log error but don't fail the webhook - invite cleanup is not critical
+      console.error('⚠️ Error cleaning up appointment invites:', inviteError);
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Appointment created successfully',
@@ -485,6 +515,15 @@ async function handleBookingRescheduled(payload: any, res: Response) {
 
     // Extract updated booking details
     const bookingId = payload.bookingId || rescheduledBooking?.bookingId || booking.bookingId;
+    const bookingUid = payload.uid || rescheduledBooking?.uid || booking.uid;
+    
+    if (!bookingUid) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing booking UID',
+        message: 'Booking UID is required for updating appointment'
+      });
+    }
     const eventTitle = payload.eventTitle || rescheduledBooking?.eventTitle || booking.eventTitle || null;
     const eventDescription = payload.eventDescription || rescheduledBooking?.eventDescription || booking.eventDescription || null;
     const startTime = rescheduledBooking?.startTime ? new Date(rescheduledBooking.startTime) : booking.startTime ? new Date(booking.startTime) : null;
@@ -495,6 +534,7 @@ async function handleBookingRescheduled(payload: any, res: Response) {
     if (newBookingId !== oldBookingId) {
       updateData.externalAppointmentId = String(newBookingId);
     }
+    updateData.externalAppointmentUid = String(bookingUid);
     if (eventTitle !== null) {
       updateData.eventTitle = eventTitle;
     }

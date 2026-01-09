@@ -70,6 +70,7 @@ export interface DownloadDocumentResponse {
 export interface Appointment {
   id: string;
   externalAppointmentId: string;
+  externalAppointmentUid: string; // Cal.com booking UID for confirmation link
   eventTypeId: string;
   eventTitle?: string | null;
   eventDescription?: string | null;

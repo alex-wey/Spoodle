@@ -31,9 +31,7 @@ export function transformAppointment(apt: Appointment): AppointmentCardData {
     veterinarian: apt.staff?.user 
       ? `${apt.staff.user.firstName} ${apt.staff.user.lastName}`
       : 'Unknown',
-    status: apt.status === 'CONFIRMED' ? 'booked' as const
-      : apt.status === 'CANCELLED' ? 'discharged' as const
-      : 'pending' as const,
+    status: apt.status,
   };
 }
 
