@@ -12,6 +12,8 @@ Express.js API server for the Spoodle pet management platform, serving both mobi
 - OpenAI API key (for chatbot)
 - Resend API key (for email notifications)
 - AWS credentials (optional, for S3 document storage)
+- Cal.com account (for appointment scheduling)
+- Tally account (optional, for form integration)
 
 ### Installation
 
@@ -36,6 +38,13 @@ AWS_REGION=us-east-2
 AWS_ACCESS_KEY_ID=your_aws_key
 AWS_SECRET_ACCESS_KEY=your_aws_secret
 S3_BUCKET_NAME=spoodle-documents
+
+# Cal.com for appointment scheduling
+CALCOM_API_KEY=your_calcom_api_key
+CALCOM_BASE_URL=https://api.cal.com/v1
+
+# Tally for forms (optional)
+TALLY_API_KEY=your_tally_api_key
 ```
 
 3. Generate Prisma client:
@@ -69,7 +78,11 @@ backend/
 │   │   ├── chatbot.ts
 │   │   ├── settings.ts
 │   │   ├── setup.ts
-│   │   └── bug-report.ts
+│   │   ├── bug-report.ts
+│   │   ├── forms.ts
+│   │   ├── appointments.ts
+│   │   ├── appointment-invites.ts
+│   │   └── webhooks.ts
 │   ├── middleware/          # Express middleware
 │   │   ├── auth.ts
 │   │   └── validation.ts
@@ -78,7 +91,8 @@ backend/
 │       ├── clinicSync.ts
 │       ├── userSync.ts
 │       ├── staffSync.ts
-│       └── email.ts
+│       ├── email.ts
+│       └── calcom.ts
 ├── prisma/
 │   ├── schema.prisma
 │   └── migrations/
@@ -143,6 +157,29 @@ backend/
 ### Bug Reports
 - `POST /api/bug-report` - Submit bug report (sends email notification)
 
+### Forms
+- `GET /api/forms` - Get all forms (filtered by clinic)
+- `GET /api/forms/:id` - Get specific form by ID
+- `POST /api/forms` - Create new form (link Tally form to system)
+- `PUT /api/forms/:id` - Update form (title, description, isActive, etc.)
+- `GET /api/forms/:id/submissions` - Get all submissions for a form
+
+### Appointments
+- `GET /api/appointments` - Get all appointments (supports `?clinicId=`, `?status=`, `?petId=`, `?staffId=`)
+- `GET /api/appointments/:id` - Get specific appointment by ID
+- `GET /api/appointments/event-types` - Get all Cal.com event types
+- `GET /api/appointments/scheduling-link` - Generate Cal.com scheduling link for booking
+
+### Appointment Invites
+- `GET /api/appointment-invites` - Get all appointment invites (supports `?clinicId=`, `?petId=`, `?staffId=`)
+- `GET /api/appointment-invites/:id` - Get specific appointment invite by ID
+- `POST /api/appointment-invites` - Create appointment invite (generates Cal.com booking link)
+- `DELETE /api/appointment-invites/:id` - Cancel appointment invite
+
+### Webhooks
+- `POST /api/webhooks/tally` - Tally form submission webhook
+- `POST /api/webhooks/calcom` - Cal.com booking events webhook (BOOKING_CREATED, BOOKING_CANCELLED, BOOKING_RESCHEDULED)
+
 ## Available Scripts
 
 - `npm run dev` - Start development server with hot reload
@@ -164,6 +201,10 @@ backend/
 - **Clinic Management**: Multi-clinic support with organization sync
 - **AI Chatbot**: OpenAI GPT-4 integration for pet care advice
 - **Settings Management**: User preferences and profile settings
+- **Forms Integration**: Tally form integration with submission tracking and webhook handling
+- **Appointment Scheduling**: Cal.com integration for appointment booking and management
+- **Appointment Invites**: Generate and track appointment invitation links for pet owners
+- **Webhooks**: Support for Tally form submissions and Cal.com booking events (creates appointments automatically, cleans up invites)
 - **Database**: PostgreSQL with Prisma ORM
 - **Security**: Helmet, CORS, input validation, rate limiting
 
@@ -192,6 +233,11 @@ Required:
 - `AWS_ACCESS_KEY_ID` - AWS access key
 - `AWS_SECRET_ACCESS_KEY` - AWS secret key
 - `S3_BUCKET_NAME` - S3 bucket name
+- `CALCOM_API_KEY` - Cal.com API key for appointment scheduling
+- `CALCOM_BASE_URL` - Cal.com API base URL (default: https://api.cal.com/v1)
+
+Optional:
+- `TALLY_API_KEY` - Tally API key for form integration
 
 ## License
 

@@ -50,19 +50,20 @@ app/
 │   └── views/
 ├── appointments/             # Appointment management
 │   ├── [id]/
-│   │   └── views/
-│   └── views/
+│   │   └── views/            # Appointment detail view
+│   ├── components/           # AppointmentCard, CalendarGrid, WeekNavigation, etc.
+│   └── views/                # AppointmentsView (week calendar)
 ├── home/                     # Main dashboard
 │   └── views/
 ├── messages/                 # Messaging system
 │   └── views/
 ├── pets/                     # Pet management
 │   ├── [id]/
-│   │   ├── components/
-│   │   └── views/
-│   └── views/
+│   │   ├── components/       # Hero, PetRecordsSection
+│   │   └── views/            # PetProfileView
+│   └── views/                # PetsView (pet list/table)
 ├── settings/                 # Settings
-│   └── views/
+│   └── views/                # SettingsView (tabs: personal, calendar, users)
 ├── sign-in/                  # Sign-in page
 │   └── [[...rest]]/
 │       └── views/
@@ -93,11 +94,11 @@ hooks/
 - `/home` - Main dashboard with appointment kanban board
 - `/pets` - Pet list and search
 - `/pets/[id]` - Individual pet profile and medical records
-- `/appointments` - Calendar view of appointments
-- `/appointments/[id]` - Appointment details
+- `/appointments` - Week-view calendar of appointments with week navigation
+- `/appointments/[id]` - Appointment details with questionnaire and booking information
 - `/messages` - Messaging interface
 - `/analytics` - Business analytics and reports
-- `/settings` - User and clinic settings
+- `/settings` - User and clinic settings (personal info, clinic hours, user management)
 
 ## API Integration
 
@@ -121,6 +122,23 @@ The web app connects to the backend API at `NEXT_PUBLIC_API_BASE_URL`. All reque
 - `GET /api/clinics` - Get available clinics
 - `GET /api/clinics/my-clinic` - Get user's clinic
 - `POST /api/clinics/staff/verify` - Verify staff access
+
+**Forms**
+- `GET /api/forms` - Get all forms for the clinic
+- `GET /api/forms/:id` - Get specific form by ID
+- `GET /api/forms/:id/submissions` - Get form submissions
+
+**Appointments**
+- `GET /api/appointments` - Get all appointments (supports `?clinicId=`, `?status=`, `?petId=`, `?staffId=`)
+- `GET /api/appointments/:id` - Get specific appointment by ID
+- `GET /api/appointments/event-types` - Get all Cal.com event types
+- `GET /api/appointments/scheduling-link` - Generate Cal.com scheduling link
+
+**Appointment Invites**
+- `GET /api/appointment-invites` - Get all appointment invites (supports `?clinicId=`)
+- `GET /api/appointment-invites/:id` - Get specific appointment invite
+- `POST /api/appointment-invites` - Create appointment invite (sends invite to pet owner)
+- `DELETE /api/appointment-invites/:id` - Cancel appointment invite
 
 ## Available Scripts
 
@@ -146,7 +164,9 @@ The web app connects to the backend API at `NEXT_PUBLIC_API_BASE_URL`. All reque
 
 - **Dashboard**: Kanban-style appointment management
 - **Pet Management**: Complete pet profiles with medical records
-- **Appointment Calendar**: Time-slot based scheduling
+- **Appointment Calendar**: Week-view calendar with appointment scheduling via Cal.com integration
+- **Appointment Invites**: Send appointment invitation links to pet owners, track pending invites
+- **Forms Integration**: View and manage Tally form submissions linked to pets
 - **Analytics**: Revenue tracking and business metrics
 - **Messaging**: Integrated communication system
 - **Document Management**: Upload and view pet medical records
