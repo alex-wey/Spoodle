@@ -91,13 +91,13 @@ router.get('/', async (req: Request, res: Response) => {
       });
     }
 
-    // Get clinicId from query params (passed from frontend session context)
-    const clinicId = (req.query?.clinicId as string) || null;
+    // Get clinicId from query params (preferred) or from authenticated session
+    const clinicId = (req.query?.clinicId as string) || req.clinic?.id || null;
     if (!clinicId) {
       return res.status(400).json({
         success: false,
         error: 'Clinic ID required',
-        message: 'Please provide a clinicId as a query parameter',
+        message: 'Please ensure you are part of an organization with a clinic',
       });
     }
 
@@ -211,13 +211,13 @@ router.get('/scheduling-link', async (req: Request, res: Response) => {
       });
     }
 
-    // Get clinicId from query params (passed from frontend session context)
-    const clinicId = (req.query?.clinicId as string) || null;
+    // Get clinicId from query params (preferred) or from authenticated session
+    const clinicId = (req.query?.clinicId as string) || req.clinic?.id || null;
     if (!clinicId) {
       return res.status(400).json({
         success: false,
         error: 'Clinic ID required',
-        message: 'Please provide a clinicId as a query parameter',
+        message: 'Please ensure you are part of an organization with a clinic',
       });
     }
 
@@ -442,16 +442,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       });
     }
 
-    // Get clinicId from query params (passed from frontend session context)
-    const clinicId = (req.query?.clinicId as string) || null;
-    if (!clinicId) {
-      return res.status(400).json({
-        success: false,
-        error: 'Clinic ID required',
-        message: 'Please provide a clinicId as a query parameter',
-      });
-    }
-
+    // Fetch appointment first to get its clinicId
     const appointment = await prisma.appointment.findUnique({
       where: { id },
       include: {
@@ -477,13 +468,55 @@ router.get('/:id', async (req: Request, res: Response) => {
       });
     }
 
-    // Check access permissions - staff can only view appointments from their clinic
-    if (appointment.clinicId !== clinicId) {
+    // Get clinicId from query params, authenticated session, or appointment itself
+    const requestedClinicId = (req.query?.clinicId as string) || req.clinic?.id || null;
+    const appointmentClinicId = appointment.clinicId;
+
+    // If no clinicId provided, use the appointment's clinicId
+    // Otherwise verify the requested clinicId matches the appointment's clinicId
+    if (requestedClinicId && appointmentClinicId !== requestedClinicId) {
       return res.status(403).json({
         success: false,
         error: 'Access denied',
         message: 'You do not have permission to view this appointment',
       });
+    }
+
+    // Verify staff has access to this clinic (check organization membership)
+    if (appointmentClinicId && req.clinic?.id !== appointmentClinicId) {
+      // If req.clinic doesn't match, verify access via organization membership
+      const appointmentClinic = await prisma.clinic.findUnique({
+        where: { id: appointmentClinicId },
+        select: { clerkOrgId: true }
+      });
+
+      if (appointmentClinic) {
+        try {
+          const { createClerkClient } = await import('@clerk/backend');
+          const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! });
+          const { data: memberships } = await clerk.organizations.getOrganizationMembershipList({
+            organizationId: appointmentClinic.clerkOrgId,
+            userId: [req.auth.userId],
+            limit: 1
+          });
+
+          if (!memberships || memberships.length === 0) {
+            return res.status(403).json({
+              success: false,
+              error: 'Access denied',
+              message: 'You do not have permission to view appointments from this clinic',
+            });
+          }
+        } catch (error) {
+          console.error('Error verifying clinic access:', error);
+          // If verification fails, deny access for security
+          return res.status(403).json({
+            success: false,
+            error: 'Access denied',
+            message: 'Unable to verify clinic access',
+          });
+        }
+      }
     }
 
     // Fetch latest data from Cal.com

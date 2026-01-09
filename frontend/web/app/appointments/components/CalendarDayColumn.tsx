@@ -65,20 +65,26 @@ export function CalendarDayColumn({
       })}
 
       {/* Appointment Cards */}
-      {appointments.map((apt) => {
-        const style = getAppointmentStyle(apt);
-        if (!style) return null;
+      {/* Sort appointments by startTime descending (later appointments first) so they appear on top */}
+      {[...appointments]
+        .sort((a, b) => b.startTime.getTime() - a.startTime.getTime())
+        .map((apt, index) => {
+          const style = getAppointmentStyle(apt);
+          if (!style) return null;
 
-        return (
-          <div
-            key={apt.id}
-            className="absolute left-1 right-1 group"
-            style={style}
-          >
-            <AppointmentCard appointment={apt} onClick={onAppointmentClick} />
-          </div>
-        );
-      })}
+          return (
+            <div
+              key={apt.id}
+              className="absolute left-1 right-1 group"
+              style={{
+                ...style,
+                zIndex: appointments.length - index, // Later appointments get higher z-index
+              }}
+            >
+              <AppointmentCard appointment={apt} onClick={onAppointmentClick} />
+            </div>
+          );
+        })}
     </div>
   );
 }

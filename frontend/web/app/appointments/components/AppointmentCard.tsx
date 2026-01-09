@@ -25,6 +25,12 @@ const statusColors: Record<string, string> = {
   CANCELLED: "bg-destructive/10 text-destructive border-destructive/20"
 };
 
+const statusBorderColors: Record<string, string> = {
+  CONFIRMED: "border-primary/40",
+  RESCHEDULED: "border-warning/40",
+  CANCELLED: "border-destructive/40"
+};
+
 const statusLabels: Record<string, string> = {
   CONFIRMED: "CONFIRMED",
   RESCHEDULED: "RESCHEDULED",
@@ -32,9 +38,14 @@ const statusLabels: Record<string, string> = {
 };
 
 export function AppointmentCard({ appointment, onClick }: AppointmentCardProps) {
+  const borderColor = statusBorderColors[appointment.status] || "border-border";
+  
   return (
     <Card
-      className="h-full border-0 shadow-sm hover:shadow-md transition-all duration-200 group-hover:scale-[1.02] cursor-pointer"
+      className={cn(
+        "h-full border-2 shadow-sm hover:shadow-md transition-all duration-200 group-hover:scale-[1.02] cursor-pointer",
+        borderColor
+      )}
       onClick={() => onClick(appointment.id)}
     >
       <CardContent className="p-2 h-full flex flex-col">

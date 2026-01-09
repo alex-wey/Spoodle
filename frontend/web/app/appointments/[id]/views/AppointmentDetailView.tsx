@@ -10,8 +10,7 @@ import { Label } from "../../../../components/ui/label";
 import { ArrowLeft, Calendar, User, FileText, Upload, ExternalLink, AlertCircle, Clock, UserCheck, Dog, Dna } from "lucide-react";
 import { getAppointmentById } from "../../../../lib/api";
 import { useSessionContext } from "../../../../components/SessionContext";
-import { Alert, AlertTitle, AlertDescription } from "../../../../components/ui/alert";
-import { Info } from "lucide-react";
+import { Alert, AlertDescription } from "../../../../components/ui/alert";
 import type { Appointment as ApiAppointment } from "../../../../lib/types";
 
 interface QuestionnaireAnswer {
@@ -124,7 +123,8 @@ export default function AppointmentDetailView() {
           return;
         }
 
-        const result = await getAppointmentById(appointmentId as string, token, clinicId);
+        // clinicId is optional - backend will get it from the appointment itself
+        const result = await getAppointmentById(appointmentId as string, token, clinicId || undefined);
         
         if (result.success && result.data) {
           setApiAppointment(result.data);
@@ -146,18 +146,20 @@ export default function AppointmentDetailView() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <h1 className="text-2xl font-bold text-muted-foreground mb-4">Loading appointment...</h1>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <h1 className="text-2xl font-bold text-muted-foreground">Loading appointment...</h1>
       </div>
     );
   }
 
-  if (error || !appointment) {
+  // Only show error if we're not loading and there's actually an error
+  if (error && !loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen px-4">
         <Alert variant="destructive" className="max-w-md">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            {error || 'Appointment not found'}
+            {error}
           </AlertDescription>
         </Alert>
         <Button onClick={() => router.push('/appointments')} className="mt-4">
@@ -165,6 +167,21 @@ export default function AppointmentDetailView() {
         </Button>
       </div>
     );
+  }
+
+  // Show loading if appointment is not loaded yet (even if loading is false during hydration)
+  if (!appointment && !error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <h1 className="text-2xl font-bold text-muted-foreground">Loading appointment...</h1>
+      </div>
+    );
+  }
+
+  // TypeScript guard: at this point appointment must be non-null
+  if (!appointment) {
+    return null;
   }
 
   const handleViewPetProfile = () => {

@@ -443,21 +443,24 @@ async function handleBookingCancelled(payload: any, res: Response) {
   try {
     const booking = payload.booking || payload;
     
-    if (!booking || !booking.id) {
+    // Extract booking ID - can be bookingId, id, or booking.id
+    const bookingId = payload.bookingId || booking?.bookingId || booking?.id || payload.id;
+    
+    if (!bookingId) {
       return res.status(400).json({
         success: false,
         error: 'Missing required fields',
-        message: 'booking with id is required'
+        message: 'bookingId is required in webhook payload'
       });
     }
 
     // Find appointment by external appointment ID (Cal.com booking ID)
     const appointment = await prisma.appointment.findUnique({
-      where: { externalAppointmentId: String(booking.id) }
+      where: { externalAppointmentId: String(bookingId) }
     });
 
     if (!appointment) {
-      console.warn(`⚠️ Appointment not found for canceled booking: ${booking.id}`);
+      console.warn(`⚠️ Appointment not found for canceled booking: ${bookingId}`);
       return res.status(200).json({
         success: true,
         message: 'Appointment not found in database (may have been created externally)'
@@ -490,19 +493,20 @@ async function handleBookingRescheduled(payload: any, res: Response) {
     const booking = payload.booking || payload;
     const rescheduledBooking = payload.rescheduledBooking || booking;
     
-    if (!booking || !booking.id) {
+    // Extract booking IDs - rescheduleId is the old booking, bookingId is the new booking
+    const oldBookingId = payload.rescheduleId || booking?.rescheduleId || booking?.id || payload.id;
+    const newBookingId = payload.bookingId || rescheduledBooking?.bookingId || rescheduledBooking?.id || booking?.bookingId || booking?.id;
+    
+    if (!oldBookingId) {
       return res.status(400).json({
         success: false,
         error: 'Missing required fields',
-        message: 'booking with id is required'
+        message: 'rescheduleId (old booking ID) is required in webhook payload'
       });
     }
-
-    // Find appointment by external appointment ID (Cal.com booking ID)
-    // Cal.com sends both old and new booking info in reschedule events
-    const oldBookingId = booking.id;
-    const newBookingId = rescheduledBooking?.id || oldBookingId;
     
+    // Find appointment by external appointment ID (Cal.com booking ID)
+    // Use the old booking ID (rescheduleId) to find the existing appointment
     const appointment = await prisma.appointment.findUnique({
       where: { externalAppointmentId: String(oldBookingId) }
     });
@@ -514,8 +518,8 @@ async function handleBookingRescheduled(payload: any, res: Response) {
     }
 
     // Extract updated booking details
-    const bookingId = payload.bookingId || rescheduledBooking?.bookingId || booking.bookingId;
-    const bookingUid = payload.uid || rescheduledBooking?.uid || booking.uid;
+    // Use the new booking ID and UID from the rescheduled booking
+    const bookingUid = payload.uid || rescheduledBooking?.uid || booking?.uid || payload.rescheduleUid;
     
     if (!bookingUid) {
       return res.status(400).json({
@@ -531,7 +535,8 @@ async function handleBookingRescheduled(payload: any, res: Response) {
 
     // Update appointment status to RESCHEDULED and update fields
     const updateData: any = { status: 'RESCHEDULED' };
-    if (newBookingId !== oldBookingId) {
+    // Update to new booking ID if different from old one
+    if (newBookingId && newBookingId !== oldBookingId) {
       updateData.externalAppointmentId = String(newBookingId);
     }
     updateData.externalAppointmentUid = String(bookingUid);

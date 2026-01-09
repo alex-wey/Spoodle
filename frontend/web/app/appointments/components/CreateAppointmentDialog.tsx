@@ -19,9 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../../components/ui/select';
-import { Input } from '../../../components/ui/input';
 import { Alert, AlertDescription } from '../../../components/ui/alert';
-import { AlertCircle, Loader2, Send, Copy, Check, ExternalLink } from 'lucide-react';
+import { AlertCircle, Loader2, Send } from 'lucide-react';
 import { getClinicPets, getEventTypes, createAppointmentInvite } from '../../../lib/api';
 import { useSessionContext } from '../../../components/SessionContext';
 import type { Pet } from '../../../lib/types';
@@ -58,7 +57,6 @@ export function CreateAppointmentDialog({
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [schedulingUrl, setSchedulingUrl] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   
   const [selectedPetId, setSelectedPetId] = useState<string>('');
   const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>('');
@@ -125,7 +123,6 @@ export function CreateAppointmentDialog({
     setGenerating(true);
     setError(null);
     setSchedulingUrl(null);
-    setCopied(false);
 
     try {
       const token = await getToken();
@@ -160,26 +157,12 @@ export function CreateAppointmentDialog({
     }
   };
 
-  const handleCopyLink = async () => {
-    if (schedulingUrl) {
-      try {
-        await navigator.clipboard.writeText(schedulingUrl);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (err) {
-        console.error('Failed to copy link:', err);
-        setError('Failed to copy link to clipboard');
-      }
-    }
-  };
-
   const handleClose = () => {
     if (!generating) {
       setSelectedPetId('');
       setSelectedEventTypeId('');
       setError(null);
       setSchedulingUrl(null);
-      setCopied(false);
       onOpenChange(false);
     }
   };
@@ -216,29 +199,6 @@ export function CreateAppointmentDialog({
                 </AlertDescription>
               </div>
             </Alert>
-            
-            <div className="space-y-2">
-              <Label>Scheduling Link</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  value={schedulingUrl}
-                  readOnly
-                  className="font-mono text-sm"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={handleCopyLink}
-                >
-                  {copied ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
 
             <DialogFooter>
               <Button onClick={handleClose}>
