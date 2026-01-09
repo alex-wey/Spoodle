@@ -3,19 +3,17 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
+import { Card, CardContent, CardHeader } from "../../../components/ui/card";
 import { Input } from "../../../components/ui/input";
 import { Button } from "../../../components/ui/button";
 import { Badge } from "../../../components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar";
+import { Avatar, AvatarFallback } from "../../../components/ui/avatar";
 import { ScrollArea } from "../../../components/ui/scroll-area";
-import { Separator } from "../../../components/ui/separator";
 import { 
   FileText, 
   Search, 
   AlertCircle,
   Calendar,
-  User,
   Mail,
   ArrowLeft,
   ChevronRight,
@@ -141,16 +139,17 @@ export default function FormsView() {
     }
   };
 
-  const renderAnswer = (answer: any) => {
+  const renderAnswer = (answer: unknown): string => {
     if (typeof answer === 'string') {
       return answer;
     }
     if (typeof answer === 'object' && answer !== null) {
-      if (answer.value !== undefined) {
-        return answer.value;
+      const answerObj = answer as Record<string, unknown>;
+      if (answerObj.value !== undefined) {
+        return String(answerObj.value);
       }
-      if (answer.label !== undefined) {
-        return answer.label;
+      if (answerObj.label !== undefined) {
+        return String(answerObj.label);
       }
       return JSON.stringify(answer);
     }
@@ -359,7 +358,10 @@ export default function FormsView() {
                             ) : (
                               answerKeys.map((key) => {
                                 const answer = answers[key];
-                                const questionLabel = answer?.label || key;
+                                // Type guard: check if answer is an object with a label property
+                                const questionLabel = (answer && typeof answer === 'object' && 'label' in answer && typeof answer.label === 'string')
+                                  ? answer.label
+                                  : key;
                                 const answerValue = renderAnswer(answer);
                                 
                                 return (

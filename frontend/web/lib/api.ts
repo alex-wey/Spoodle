@@ -194,7 +194,7 @@ export interface Form {
   description?: string | null;
   clinicId?: string | null;
   isActive: boolean;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
   clinic?: {
@@ -216,13 +216,13 @@ export interface FormSubmission {
   petOwnerId?: string | null;
   petId?: string | null;
   submissionData: {
-    answers: Record<string, any>;
+    answers: Record<string, unknown>;
     respondentEmail?: string;
     respondentName?: string;
     petOwnerId?: string | null;
     petId?: string | null;
     submittedAt: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   createdAt: string;
   updatedAt: string;
@@ -414,7 +414,7 @@ export async function getEventTypes(sessionToken: string) {
     userId?: number;
     teamId?: number;
     teamSlug?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   }>>('/api/appointments/event-types', {
     method: 'GET',
   }, sessionToken);
@@ -481,10 +481,10 @@ export async function createAppointmentInvite(
     petOwnerId: string;
     createdAt: string;
     updatedAt: string;
-    clinic?: any;
-    staff?: any;
-    pet?: any;
-    petOwner?: any;
+    clinic?: Record<string, unknown>;
+    staff?: Record<string, unknown>;
+    pet?: Record<string, unknown>;
+    petOwner?: Record<string, unknown>;
   }>('/api/appointment-invites', {
     method: 'POST',
     body: JSON.stringify({
@@ -514,10 +514,10 @@ export async function getAppointmentInvites(sessionToken: string, clinicId?: str
     petOwnerId: string;
     createdAt: string;
     updatedAt: string;
-    clinic?: any;
-    staff?: any;
-    pet?: any;
-    petOwner?: any;
+    clinic?: Record<string, unknown>;
+    staff?: Record<string, unknown>;
+    pet?: Record<string, unknown>;
+    petOwner?: Record<string, unknown>;
   }>>(url, {
     method: 'GET',
   }, sessionToken);

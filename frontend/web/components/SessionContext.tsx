@@ -141,6 +141,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
     };
 
     fetchUserProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isSignedIn, userLoaded, orgLoaded, getToken]);
 
   // Fetch clinic information based on active organization from Clerk

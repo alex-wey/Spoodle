@@ -10,7 +10,6 @@ import {
   DialogTitle,
 } from '../../../components/ui/dialog';
 import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import {
   Select,
@@ -38,27 +37,9 @@ interface AppointmentInvite {
   petOwnerId: string;
   createdAt: string;
   updatedAt: string;
-  pet?: {
-    id: string;
-    name: string;
-    species: string;
-    breed?: string | null;
-    imageUrl?: string | null;
-  };
-  petOwner?: {
-    id: string;
-    user?: {
-      firstName: string;
-      lastName: string;
-      email?: string | null;
-    };
-  };
-  staff?: {
-    user?: {
-      firstName: string;
-      lastName: string;
-    };
-  };
+  pet?: Record<string, unknown>;
+  petOwner?: Record<string, unknown>;
+  staff?: Record<string, unknown>;
 }
 
 interface AppointmentInvitesModalProps {
@@ -85,6 +66,7 @@ export function AppointmentInvitesModal({
     if (open && isSignedIn && clinicId) {
       fetchData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, isSignedIn, clinicId]);
 
   const fetchData = async () => {
@@ -120,7 +102,7 @@ export function AppointmentInvitesModal({
       if (petsResult.success && petsResult.data) {
         setPets(petsResult.data);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[AppointmentInvitesModal] Error fetching data:', err);
       setError('An error occurred while loading data');
     } finally {
@@ -143,17 +125,56 @@ export function AppointmentInvitesModal({
     return filtered;
   }, [invites, petFilter, petOwnerFilter]);
 
+  // Helper functions to safely access nested properties
+  const getPetName = (pet: Record<string, unknown> | undefined): string => {
+    if (!pet || typeof pet.name !== 'string') return 'Unknown Pet';
+    return pet.name;
+  };
+
+  const getPetSpecies = (pet: Record<string, unknown> | undefined): string => {
+    if (!pet || typeof pet.species !== 'string') return '';
+    return pet.species;
+  };
+
+  const getPetImageUrl = (pet: Record<string, unknown> | undefined): string => {
+    if (!pet || typeof pet.imageUrl !== 'string') return '';
+    return pet.imageUrl;
+  };
+
+  const getPetOwnerName = (petOwner: Record<string, unknown> | undefined): string => {
+    if (!petOwner) return 'Unknown';
+    const user = petOwner.user;
+    if (user && typeof user === 'object' && user !== null) {
+      const userObj = user as Record<string, unknown>;
+      const firstName = typeof userObj.firstName === 'string' ? userObj.firstName : '';
+      const lastName = typeof userObj.lastName === 'string' ? userObj.lastName : '';
+      const name = `${firstName} ${lastName}`.trim();
+      return name || 'Unknown';
+    }
+    return 'Unknown';
+  };
+
   // Get unique pet owners from invites
   const petOwners = useMemo(() => {
     const ownerMap = new Map<string, { id: string; name: string }>();
     invites.forEach(invite => {
-      if (invite.petOwner && invite.petOwner.user) {
-        const ownerId = invite.petOwnerId;
-        if (!ownerMap.has(ownerId)) {
-          ownerMap.set(ownerId, {
-            id: ownerId,
-            name: `${invite.petOwner.user.firstName} ${invite.petOwner.user.lastName}`,
-          });
+      const petOwner = invite.petOwner;
+      if (petOwner) {
+        const user = petOwner.user;
+        if (user && typeof user === 'object' && user !== null) {
+          const userObj = user as Record<string, unknown>;
+          const ownerId = invite.petOwnerId;
+          if (!ownerMap.has(ownerId)) {
+            const firstName = typeof userObj.firstName === 'string' ? userObj.firstName : '';
+            const lastName = typeof userObj.lastName === 'string' ? userObj.lastName : '';
+            const name = `${firstName} ${lastName}`.trim();
+            if (name) {
+              ownerMap.set(ownerId, {
+                id: ownerId,
+                name,
+              });
+            }
+          }
         }
       }
     });
@@ -245,22 +266,22 @@ export function AppointmentInvitesModal({
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-4 flex-1">
                       <Avatar className="h-12 w-12">
-                        <AvatarImage src={invite.pet?.imageUrl || ''} alt={invite.pet?.name || ''} />
+                        <AvatarImage src={getPetImageUrl(invite.pet)} alt={getPetName(invite.pet)} />
                         <AvatarFallback>
-                          {invite.pet?.name?.charAt(0) || 'P'}
+                          {getPetName(invite.pet).charAt(0) || 'P'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold">{invite.pet?.name || 'Unknown Pet'}</h3>
-                          <Badge variant="outline" className="text-xs">
-                            {invite.pet?.species}
-                          </Badge>
+                          <h3 className="font-semibold">{getPetName(invite.pet)}</h3>
+                          {getPetSpecies(invite.pet) && (
+                            <Badge variant="outline" className="text-xs">
+                              {getPetSpecies(invite.pet)}
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Owner: {invite.petOwner?.user
-                            ? `${invite.petOwner.user.firstName} ${invite.petOwner.user.lastName}`
-                            : 'Unknown'}
+                          Owner: {getPetOwnerName(invite.petOwner)}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
                           Sent: {formatDate(invite.createdAt)}

@@ -112,7 +112,7 @@ export interface Appointment {
       phone?: string | null;
     };
   };
-  calendlyData?: any; // Calendly event data if available (legacy)
-  calcomData?: any; // Cal.com event data if available
+  calendlyData?: Record<string, unknown>; // Calendly event data if available (legacy)
+  calcomData?: Record<string, unknown>; // Cal.com event data if available
 }
 

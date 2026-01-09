@@ -8,18 +8,33 @@ export function transformAppointment(apt: Appointment): AppointmentCardData {
 
   // Fallback to Cal.com data if startTime/endTime not available
   if (apt.calcomData?.startTime) {
-    startTime = new Date(apt.calcomData.startTime);
+    const calcomStartTime = apt.calcomData.startTime;
+    if (typeof calcomStartTime === 'string' || typeof calcomStartTime === 'number') {
+      startTime = new Date(calcomStartTime);
+    }
   }
   if (apt.calcomData?.endTime) {
-    endTime = new Date(apt.calcomData.endTime);
+    const calcomEndTime = apt.calcomData.endTime;
+    if (typeof calcomEndTime === 'string' || typeof calcomEndTime === 'number') {
+      endTime = new Date(calcomEndTime);
+    }
   }
 
   // Fallback to Calendly data if available
-  if (apt.calendlyData?.resource?.start_time) {
-    startTime = new Date(apt.calendlyData.resource.start_time);
-  }
-  if (apt.calendlyData?.resource?.end_time) {
-    endTime = new Date(apt.calendlyData.resource.end_time);
+  if (apt.calendlyData?.resource) {
+    const resource = apt.calendlyData.resource as Record<string, unknown>;
+    if (resource.start_time) {
+      const startTimeValue = resource.start_time;
+      if (typeof startTimeValue === 'string' || typeof startTimeValue === 'number') {
+        startTime = new Date(startTimeValue);
+      }
+    }
+    if (resource.end_time) {
+      const endTimeValue = resource.end_time;
+      if (typeof endTimeValue === 'string' || typeof endTimeValue === 'number') {
+        endTime = new Date(endTimeValue);
+      }
+    }
   }
 
   return {

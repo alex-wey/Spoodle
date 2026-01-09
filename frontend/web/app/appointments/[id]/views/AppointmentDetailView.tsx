@@ -51,32 +51,33 @@ export default function AppointmentDetailView() {
   const [apiAppointment, setApiAppointment] = useState<ApiAppointment | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [questionnaire, setQuestionnaire] = useState<QuestionnaireAnswer[]>([]);
-  const [uploads, setUploads] = useState<UploadedFile[]>([]);
+  const [questionnaire] = useState<QuestionnaireAnswer[]>([]);
+  const [uploads] = useState<UploadedFile[]>([]);
 
   // Transform API appointment to component format
   const transformAppointment = (apiAppointment: ApiAppointment): Appointment => {
     // Format time from startTime/endTime or use default
     let time = '09:00 AM';
-    let appointmentDate = new Date(apiAppointment.createdAt);
     
     // Try to get time from startTime field first, then Cal.com data
     if (apiAppointment.startTime) {
       const start = new Date(apiAppointment.startTime);
-      appointmentDate = start;
       const hours = start.getHours();
       const minutes = start.getMinutes();
       const ampm = hours >= 12 ? 'PM' : 'AM';
       const displayHours = hours % 12 || 12;
       time = `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
     } else if (apiAppointment.calcomData?.startTime) {
-      const start = new Date(apiAppointment.calcomData.startTime);
-      appointmentDate = start;
-      const hours = start.getHours();
-      const minutes = start.getMinutes();
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      const displayHours = hours % 12 || 12;
-      time = `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+      const calcomStartTime = apiAppointment.calcomData.startTime;
+      // Type guard: ensure startTime is a string or number
+      if (typeof calcomStartTime === 'string' || typeof calcomStartTime === 'number') {
+        const start = new Date(calcomStartTime);
+        const hours = start.getHours();
+        const minutes = start.getMinutes();
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours % 12 || 12;
+        time = `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+      }
     }
 
     // Map status from backend to frontend format
@@ -133,8 +134,9 @@ export default function AppointmentDetailView() {
         } else {
           setError(result.error || 'Failed to fetch appointment');
         }
-      } catch (err: any) {
-        setError(err.message || 'An error occurred while fetching the appointment');
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'An error occurred while fetching the appointment';
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }

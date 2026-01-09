@@ -66,6 +66,7 @@ export function CreateAppointmentDialog({
     if (open && isSignedIn && clinicId) {
       fetchData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, isSignedIn, clinicId]);
 
   const fetchData = async () => {
@@ -99,7 +100,7 @@ export function CreateAppointmentDialog({
       } else {
         setError(eventTypesResult.error || eventTypesResult.message || 'Failed to fetch event types');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching data:', err);
       setError('An error occurred while loading data');
     } finally {
@@ -149,9 +150,10 @@ export function CreateAppointmentDialog({
       } else {
         setError(result.error || result.message || 'Failed to send appointment invite');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error sending appointment invite:', err);
-      setError(err.message || 'An error occurred while sending the appointment invite');
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred while sending the appointment invite';
+      setError(errorMessage);
     } finally {
       setGenerating(false);
     }
