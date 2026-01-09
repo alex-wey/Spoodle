@@ -265,7 +265,6 @@ model Appointment {
   staff            Staff              @relation(fields: [staffId], references: [id], onDelete: Restrict)
   pet              Pet                @relation(fields: [petId], references: [id], onDelete: Cascade)
   petOwner         PetOwner           @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
-  appointmentInvites AppointmentInvite[]
 
   @@index([clinicId])
   @@index([staffId])
@@ -286,21 +285,18 @@ model AppointmentInvite {
   staffId           String      // Host/staff member
   petId             String
   petOwnerId        String
-  appointmentId     String?     // Optional link to confirmed appointment (when booking is completed)
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
   clinic            Clinic      @relation(fields: [clinicId], references: [id], onDelete: Restrict)
   staff             Staff       @relation(fields: [staffId], references: [id], onDelete: Restrict)
   pet               Pet         @relation(fields: [petId], references: [id], onDelete: Cascade)
   petOwner          PetOwner    @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
-  appointment      Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
 
   @@index([clinicId])
   @@index([staffId])
   @@index([petId])
   @@index([petOwnerId])
   @@index([appointmentLink])
-  @@index([appointmentId])
   @@index([eventTypeId])
   @@map("appointment_invites")
 }

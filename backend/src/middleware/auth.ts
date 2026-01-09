@@ -222,6 +222,53 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
         }
       }
 
+      // For staff users, fetch clinic from active organization if not already set
+      if (staff && !clinic && activeOrgId) {
+        clinic = await prisma.clinic.findUnique({
+          where: { clerkOrgId: activeOrgId },
+          select: {
+            id: true,
+            clerkOrgId: true,
+            name: true,
+            slug: true,
+            address: true,
+            phoneNumber: true,
+            email: true,
+            imageUrl: true
+          }
+        });
+        
+        // If clinic not found by activeOrgId, try to find clinic via organization membership
+        if (!clinic && activeOrgId) {
+          try {
+            const { data: memberships } = await clerk.organizations.getOrganizationMembershipList({
+              organizationId: activeOrgId,
+              userId: [userId],
+              limit: 1
+            });
+            
+            if (memberships && memberships.length > 0) {
+              // User is a member of this organization, try to find clinic
+              clinic = await prisma.clinic.findUnique({
+                where: { clerkOrgId: activeOrgId },
+                select: {
+                  id: true,
+                  clerkOrgId: true,
+                  name: true,
+                  slug: true,
+                  address: true,
+                  phoneNumber: true,
+                  email: true,
+                  imageUrl: true
+                }
+              });
+            }
+          } catch (orgError) {
+            console.error('Error checking organization membership:', orgError);
+          }
+        }
+      }
+
       // Attach objects to request
       // Backward-compat: keep req.user pointing to petOwner if exists, otherwise staff
       req.user = petOwner || staff;

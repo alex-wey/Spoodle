@@ -21,8 +21,8 @@ import {
 } from '../../../components/ui/select';
 import { Input } from '../../../components/ui/input';
 import { Alert, AlertDescription } from '../../../components/ui/alert';
-import { AlertCircle, Loader2, ExternalLink, Copy, Check } from 'lucide-react';
-import { getClinicPets, getEventTypes, getSchedulingLink } from '../../../lib/api';
+import { AlertCircle, Loader2, Send, Copy, Check, ExternalLink } from 'lucide-react';
+import { getClinicPets, getEventTypes, createAppointmentInvite } from '../../../lib/api';
 import { useSessionContext } from '../../../components/SessionContext';
 import type { Pet } from '../../../lib/types';
 
@@ -109,7 +109,7 @@ export function CreateAppointmentDialog({
     }
   };
 
-  const handleGenerateLink = async (e: React.FormEvent) => {
+  const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedPetId || !selectedEventTypeId) {
@@ -135,32 +135,26 @@ export function CreateAppointmentDialog({
         return;
       }
 
-      // Generate scheduling link
-      const result = await getSchedulingLink(
+      // Create appointment invite
+      const result = await createAppointmentInvite(
         selectedEventTypeId,
         selectedPetId,
-        clinicId,
         token
       );
 
       if (result.success && result.data) {
-        setSchedulingUrl(result.data.schedulingUrl);
-        // Open link in new window
-        window.open(result.data.schedulingUrl, '_blank');
+        setSchedulingUrl(result.data.appointmentLink);
         
-        // Close dialog after a short delay and trigger refresh
-        setTimeout(() => {
-          handleClose();
-          if (onSuccess) {
-            onSuccess();
-          }
-        }, 1000);
+        // Trigger refresh without closing dialog
+        if (onSuccess) {
+          onSuccess();
+        }
       } else {
-        setError(result.error || result.message || 'Failed to generate scheduling link');
+        setError(result.error || result.message || 'Failed to send appointment invite');
       }
     } catch (err: any) {
-      console.error('Error generating scheduling link:', err);
-      setError(err.message || 'An error occurred while generating the scheduling link');
+      console.error('Error sending appointment invite:', err);
+      setError(err.message || 'An error occurred while sending the appointment invite');
     } finally {
       setGenerating(false);
     }
@@ -194,9 +188,9 @@ export function CreateAppointmentDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Generate Appointment Link</DialogTitle>
+          <DialogTitle>Send Appointment Invite</DialogTitle>
           <DialogDescription>
-            Generate a scheduling link for a pet. The pet owner will use this link to book their appointment.
+            Send an appointment invite to a pet owner. The invite will be tracked in your invites list.
           </DialogDescription>
         </DialogHeader>
 
@@ -215,10 +209,12 @@ export function CreateAppointmentDialog({
         ) : schedulingUrl ? (
           <div className="space-y-4">
             <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Scheduling link generated successfully! The link has been opened in a new window.
-              </AlertDescription>
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="m-0">
+                  Appointment invite sent successfully!
+                </AlertDescription>
+              </div>
             </Alert>
             
             <div className="space-y-2">
@@ -241,14 +237,6 @@ export function CreateAppointmentDialog({
                     <Copy className="h-4 w-4" />
                   )}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => window.open(schedulingUrl, '_blank')}
-                >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Open
-                </Button>
               </div>
             </div>
 
@@ -259,7 +247,7 @@ export function CreateAppointmentDialog({
             </DialogFooter>
           </div>
         ) : (
-          <form onSubmit={handleGenerateLink} className="space-y-4">
+          <form onSubmit={handleSendInvite} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="pet">Pet *</Label>
               <Select value={selectedPetId} onValueChange={setSelectedPetId} required>
@@ -304,24 +292,16 @@ export function CreateAppointmentDialog({
             </div>
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                disabled={generating}
-              >
-                Cancel
-              </Button>
               <Button type="submit" disabled={generating}>
                 {generating ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Sending...
                   </>
                 ) : (
                   <>
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Generate Link
+                    <Send className="h-4 w-4" />
+                    Send Invite
                   </>
                 )}
               </Button>

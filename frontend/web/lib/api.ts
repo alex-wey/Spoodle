@@ -460,3 +460,65 @@ export async function getSchedulingLink(
   }, sessionToken);
 }
 
+/**
+ * Create an appointment invite (sends invite to pet owner)
+ * @param eventTypeId - Cal.com event type ID
+ * @param petId - Pet ID
+ * @param sessionToken - Clerk session token
+ */
+export async function createAppointmentInvite(
+  eventTypeId: number | string,
+  petId: string,
+  sessionToken: string
+) {
+  return apiRequest<{
+    id: string;
+    appointmentLink: string;
+    eventTypeId: string;
+    clinicId: string;
+    staffId: string;
+    petId: string;
+    petOwnerId: string;
+    createdAt: string;
+    updatedAt: string;
+    clinic?: any;
+    staff?: any;
+    pet?: any;
+    petOwner?: any;
+  }>('/api/appointment-invites', {
+    method: 'POST',
+    body: JSON.stringify({
+      eventTypeId: String(eventTypeId),
+      petId,
+    }),
+  }, sessionToken);
+}
+
+/**
+ * Get all appointment invites
+ * @param sessionToken - Clerk session token
+ * @param clinicId - Optional clinic ID (required for staff users)
+ */
+export async function getAppointmentInvites(sessionToken: string, clinicId?: string) {
+  const url = clinicId 
+    ? `/api/appointment-invites?clinicId=${clinicId}`
+    : '/api/appointment-invites';
+  
+  return apiRequest<Array<{
+    id: string;
+    appointmentLink: string;
+    eventTypeId: string;
+    clinicId: string;
+    staffId: string;
+    petId: string;
+    petOwnerId: string;
+    createdAt: string;
+    updatedAt: string;
+    clinic?: any;
+    staff?: any;
+    pet?: any;
+    petOwner?: any;
+  }>>(url, {
+    method: 'GET',
+  }, sessionToken);
+}

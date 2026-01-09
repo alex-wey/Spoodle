@@ -16,7 +16,6 @@ router.use(authenticateClerk);
 const createInviteSchema = z.object({
   eventTypeId: z.string().min(1, 'Event type ID is required'),
   petId: z.string().uuid('Invalid pet ID'),
-  appointmentId: z.string().uuid('Invalid appointment ID').optional(),
 });
 
 /**
@@ -35,9 +34,23 @@ router.get('/', async (req: Request, res: Response) => {
 
     const where: any = {};
 
+    // Optional filters from query params
+    const { petId, staffId, clinicId: queryClinicId } = req.query;
+
     // Staff can see all clinic invites
-    if (req.staff && req.clinic) {
-      where.clinicId = req.clinic.id;
+    if (req.staff) {
+      // Use clinicId from req.clinic (set by auth middleware) or from query params
+      const targetClinicId = req.clinic?.id || (queryClinicId as string);
+      
+      if (!targetClinicId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Clinic ID required',
+          message: 'Please provide a clinicId as a query parameter or ensure you are in an organization',
+        });
+      }
+      
+      where.clinicId = targetClinicId;
     }
     // Pet owners can only see their own invites
     else if (req.petOwner) {
@@ -50,12 +63,9 @@ router.get('/', async (req: Request, res: Response) => {
       });
     }
 
-    // Optional filters
-    const { petId, staffId, clinicId, appointmentId } = req.query;
+    // Apply additional optional filters
     if (petId) where.petId = petId as string;
     if (staffId) where.staffId = staffId as string;
-    if (clinicId && req.staff) where.clinicId = clinicId as string;
-    if (appointmentId) where.appointmentId = appointmentId as string;
 
     const invites = await prisma.appointmentInvite.findMany({
       where,
@@ -97,13 +107,6 @@ router.get('/', async (req: Request, res: Response) => {
                 phone: true,
               },
             },
-          },
-        },
-        appointment: {
-          select: {
-            id: true,
-            status: true,
-            externalAppointmentId: true,
           },
         },
       },
@@ -155,7 +158,6 @@ router.get('/:id', async (req: Request, res: Response) => {
             user: true,
           },
         },
-        appointment: true,
       },
     });
 
@@ -224,7 +226,6 @@ router.post('/', async (req: Request, res: Response) => {
     const {
       eventTypeId,
       petId,
-      appointmentId,
     } = validationResult.data;
 
     // Get pet and owner information
@@ -259,28 +260,6 @@ router.post('/', async (req: Request, res: Response) => {
 
     const staffId = req.staff.id;
 
-    // If appointmentId is provided, verify it exists and belongs to the same clinic
-    if (appointmentId) {
-      const appointment = await prisma.appointment.findUnique({
-        where: { id: appointmentId },
-      });
-
-      if (!appointment) {
-        return res.status(404).json({
-          success: false,
-          error: 'Appointment not found',
-        });
-      }
-
-      if (appointment.clinicId !== clinicId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied',
-          message: 'Appointment does not belong to this clinic',
-        });
-      }
-    }
-
     // Get event type from Cal.com to generate booking link
     let eventType;
     try {
@@ -302,9 +281,12 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Get current user to build scheduling URL
-    const calcomUser = await getCurrentUser() as any;
+    const calcomUserResponse = await getCurrentUser() as any;
+    const calcomUser = calcomUserResponse?.data || calcomUserResponse;
     const username = calcomUser?.username || calcomUser?.name;
-    const eventSlug = eventType?.slug || eventType?.title?.toLowerCase().replace(/\s+/g, '-');
+    
+    const eventTypeData = eventType?.data?.eventType || eventType?.data || eventType;
+    const eventSlug = eventTypeData?.slug || eventTypeData?.title?.toLowerCase().replace(/\s+/g, '-');
 
     if (!username || !eventSlug) {
       return res.status(400).json({
@@ -315,8 +297,8 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Build Cal.com scheduling URL
-    const baseUrl = eventType?.teamId 
-      ? `https://${eventType.teamSlug}.cal.com`
+    const baseUrl = eventTypeData?.teamId 
+      ? `https://${eventTypeData.teamSlug}.cal.com`
       : 'https://cal.com';
     const schedulingUrl = `${baseUrl}/${username}/${eventSlug}`;
 
@@ -344,16 +326,45 @@ router.post('/', async (req: Request, res: Response) => {
     appointmentLink.searchParams.set('clinicId', clinicId);
     appointmentLink.searchParams.set('staffId', staffId);
 
+    const appointmentLinkString = appointmentLink.toString();
+
+    // Check if an invite with this link already exists
+    const existingInvite = await prisma.appointmentInvite.findUnique({
+      where: { appointmentLink: appointmentLinkString },
+      include: {
+        clinic: true,
+        staff: {
+          include: {
+            user: true,
+          },
+        },
+        pet: true,
+        petOwner: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    // If invite already exists, return it instead of creating a duplicate
+    if (existingInvite) {
+      return res.status(200).json({
+        success: true,
+        data: existingInvite,
+        message: 'Appointment invite already exists. Returning existing invite.',
+      });
+    }
+
     // Create invite in database with appointment link
     const invite = await prisma.appointmentInvite.create({
       data: {
-        appointmentLink: appointmentLink.toString(),
+        appointmentLink: appointmentLinkString,
         eventTypeId: eventTypeId,
         clinicId,
         staffId,
         petId,
-        petOwnerId: pet.ownerId,
-        appointmentId: appointmentId || null,
+        petOwnerId: pet.petOwner.id,
       },
       include: {
         clinic: true,
@@ -368,7 +379,6 @@ router.post('/', async (req: Request, res: Response) => {
             user: true,
           },
         },
-        appointment: true,
       },
     });
 

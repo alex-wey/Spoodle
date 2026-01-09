@@ -4,16 +4,16 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { Button } from "../../../components/ui/button";
-import { Plus, AlertCircle } from "lucide-react";
+import { Plus, AlertCircle, Mail } from "lucide-react";
 import { getAppointments } from "../../../lib/api";
 import { useSessionContext } from "../../../components/SessionContext";
 import { Alert, AlertDescription } from "../../../components/ui/alert";
 import { CreateAppointmentDialog } from "../components/CreateAppointmentDialog";
+import { AppointmentInvitesModal } from "../components/AppointmentInvitesModal";
 import { WeekNavigation } from "../components/WeekNavigation";
 import { CalendarGrid } from "../components/CalendarGrid";
 import { getWeekStart, getWeekDays } from "../utils/dateUtils";
 import { transformAppointment, filterAppointmentsForWeek } from "../utils/appointmentTransform";
-import type { Appointment } from "../../../lib/types";
 import type { AppointmentCardData } from "../components/AppointmentCard";
 
 export default function AppointmentsView() {
@@ -25,6 +25,7 @@ export default function AppointmentsView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [invitesModalOpen, setInvitesModalOpen] = useState(false);
   
   const weekDays = useMemo(() => getWeekDays(currentWeekStart), [currentWeekStart]);
   const weekAppointments = useMemo(
@@ -107,12 +108,18 @@ export default function AppointmentsView() {
           <p className="text-muted-foreground">
             View and manage all appointments
           </p>
-            </div>
-        <Button onClick={() => setCreateDialogOpen(true)}>
-          <Plus className="h-4 w-4" />
-          New Appointment
-        </Button>
         </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setInvitesModalOpen(true)}>
+            <Mail className="h-4 w-4 mr-2" />
+            Invites
+          </Button>
+          <Button onClick={() => setCreateDialogOpen(true)}>
+            <Plus className="h-4 w-4" />
+            New Appointment
+          </Button>
+        </div>
+      </div>
 
       {/* Week Navigation and Calendar Grid - Connected */}
       <div className="space-y-0">
@@ -144,6 +151,11 @@ export default function AppointmentsView() {
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onSuccess={refetchAppointments}
+      />
+
+      <AppointmentInvitesModal
+        open={invitesModalOpen}
+        onOpenChange={setInvitesModalOpen}
       />
     </div>
   );

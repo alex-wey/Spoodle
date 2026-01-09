@@ -6,15 +6,8 @@ import { useAuth } from "@clerk/nextjs";
 import { Button } from "../../../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../../components/ui/card";
 import { Badge } from "../../../../components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "../../../../components/ui/avatar";
-import { Separator } from "../../../../components/ui/separator";
-import { Textarea } from "../../../../components/ui/textarea";
-import { Input } from "../../../../components/ui/input";
 import { Label } from "../../../../components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../../components/ui/select";
-import { ArrowLeft, Calendar, Clock, User, FileText, Upload, ExternalLink, Edit, Save, X, ClipboardList, AlertCircle } from "lucide-react";
-import { Appointment } from "../../../../components/primtives/AppointmentCard";
-import { MessagingPopup } from "../../../../components/primtives/MessagingPopup";
+import { ArrowLeft, Calendar, User, FileText, Upload, ExternalLink, AlertCircle, Clock, UserCheck, Dog, Dna } from "lucide-react";
 import { getAppointmentById } from "../../../../lib/api";
 import { useSessionContext } from "../../../../components/SessionContext";
 import { Alert, AlertDescription } from "../../../../components/ui/alert";
@@ -33,17 +26,27 @@ interface UploadedFile {
   size: string;
 }
 
+interface Appointment {
+  id: string;
+  petName: string;
+  petImage?: string;
+  petBreed: string;
+  ownerName: string;
+  appointmentType: string;
+  time: string;
+  isNewClient: boolean;
+  hasNewMessage: boolean;
+  veterinarian: string;
+  status: "confirmed" | "pending" | "cancelled" | "rescheduled";
+  petId: string;
+  petOwnerId: string;
+}
+
 export default function AppointmentDetailView() {
   const router = useRouter();
   const { id: appointmentId } = useParams();
   const { getToken, isSignedIn } = useAuth();
   const { clinicId } = useSessionContext();
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedNotes, setEditedNotes] = useState("");
-  const [rescheduleDate, setRescheduleDate] = useState("");
-  const [rescheduleTime, setRescheduleTime] = useState("");
-  const [dischargeSummary, setDischargeSummary] = useState("");
-  const [isUploadingNotes, setIsUploadingNotes] = useState(false);
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [apiAppointment, setApiAppointment] = useState<ApiAppointment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,10 +80,10 @@ export default function AppointmentDetailView() {
     }
 
     // Map status from backend to frontend format
-    const statusMap: Record<string, "booked" | "pending" | "discharged"> = {
-      'CONFIRMED': 'booked',
-      'CANCELLED': 'pending',
-      'RESCHEDULED': 'booked',
+    const statusMap: Record<string, "confirmed" | "pending" | "cancelled" | "rescheduled"> = {
+      'CONFIRMED': 'confirmed',
+      'CANCELLED': 'cancelled',
+      'RESCHEDULED': 'rescheduled',
     };
 
     return {
@@ -93,13 +96,14 @@ export default function AppointmentDetailView() {
         : 'Unknown Owner',
       appointmentType: apiAppointment.eventTitle || 'Appointment',
       time,
-      isNewClient: false, // TODO: Determine from pet owner creation date
-      hasNewMessage: false, // TODO: Check for new messages
+      isNewClient: false,
+      hasNewMessage: false,
       veterinarian: apiAppointment.staff?.user
-        ? `Dr. ${apiAppointment.staff.user.firstName} ${apiAppointment.staff.user.lastName}`.trim()
+        ? `${apiAppointment.staff.user.firstName} ${apiAppointment.staff.user.lastName}`.trim()
         : 'Unknown Veterinarian',
-      status: statusMap[apiAppointment.status] || 'booked',
-      notes: apiAppointment.calcomData?.additionalNotes || apiAppointment.eventDescription || undefined,
+      status: statusMap[apiAppointment.status] || 'pending',
+      petId: apiAppointment.petId,
+      petOwnerId: apiAppointment.petOwnerId,
     };
   };
 
@@ -162,153 +166,133 @@ export default function AppointmentDetailView() {
     );
   }
 
-  const handleEditNotes = () => {
-    setEditedNotes(appointment.notes || "");
-    setIsEditing(true);
-  };
-
-  const handleSaveNotes = () => {
-    // In a real app, this would update the appointment via API
-    console.log("Saving notes:", editedNotes);
-    setIsEditing(false);
-  };
-
-  const handleReschedule = () => {
-    if (rescheduleDate && rescheduleTime) {
-      console.log("Rescheduling to:", rescheduleDate, rescheduleTime);
-      // In a real app, this would update the appointment via API
-    }
-  };
-
   const handleViewPetProfile = () => {
     if (apiAppointment?.petId) {
       router.push(`/pets/${apiAppointment.petId}`);
     }
   };
 
-  const handleViewOwnerProfile = () => {
-    if (apiAppointment?.petOwnerId) {
-      router.push(`/pet-owners/${apiAppointment.petOwnerId}`);
+  const handleViewBookingConfirmation = () => {
+    if (apiAppointment?.externalAppointmentId) {
+      // Open Cal.com booking page
+      window.open(`https://cal.com/bookings/${apiAppointment.externalAppointmentId}`, '_blank');
     }
   };
 
-  const handleUploadDischargeSummary = () => {
-    if (dischargeSummary.trim()) {
-      console.log("Uploading discharge summary:", dischargeSummary);
-      setIsUploadingNotes(false);
-      setDischargeSummary("");
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'confirmed':
+        return 'default';
+      case 'pending':
+        return 'secondary';
+      case 'cancelled':
+        return 'destructive';
+      case 'rescheduled':
+        return 'outline';
+      default:
+        return 'outline';
     }
   };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b bg-card">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => router.push("/")}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex items-center gap-4">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={appointment.petImage} alt={appointment.petName} />
-                <AvatarFallback>{appointment.petName.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <h1 className="text-2xl font-bold">{appointment.petName}&apos;s Appointment</h1>
-                <p className="text-muted-foreground">{appointment.appointmentType} - {appointment.time}</p>
-              </div>
-              <Badge variant="outline" className="ml-auto">
-                {appointment.status}
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content */}
-      <div className="container mx-auto px-6 py-6">
+      <div className="container mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Appointment Info & Questionnaire */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Appointment Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Appointment Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium">Pet Name</Label>
-                    <p className="text-sm text-muted-foreground">{appointment.petName}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Breed</Label>
-                    <p className="text-sm text-muted-foreground">{appointment.petBreed}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Owner</Label>
-                    <p className="text-sm text-muted-foreground">{appointment.ownerName}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Veterinarian</Label>
-                    <p className="text-sm text-muted-foreground">Dr. {appointment.veterinarian}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Time</Label>
-                    <p className="text-sm text-muted-foreground">{appointment.time}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Status</Label>
-                    <Badge variant="outline">{appointment.status}</Badge>
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                {/* Notes Section */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <Label className="text-sm font-medium">Notes</Label>
-                    {!isEditing && (
-                      <Button variant="ghost" size="sm" onClick={handleEditNotes}>
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
-                    )}
-                  </div>
-                  {isEditing ? (
-                    <div className="space-y-2">
-                      <Textarea
-                        value={editedNotes}
-                        onChange={(e) => setEditedNotes(e.target.value)}
-                        placeholder="Add appointment notes..."
-                      />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={handleSaveNotes}>
-                          <Save className="h-4 w-4 mr-1" />
-                          Save
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
-                          <X className="h-4 w-4 mr-1" />
-                          Cancel
-                        </Button>
+            {/* Appointment Hero Section */}
+            <Card className="overflow-hidden relative">
+              <div className="p-8">
+                <div className="flex flex-col lg:flex-row gap-6">
+                  {/* Appointment Section */}
+                  <div className="flex-1 lg:flex-[2]">
+                    <div className="flex flex-col items-center lg:items-start">
+                      {/* Basic Info */}
+                      <div className="flex-1 text-center lg:text-left min-w-0 w-full">
+                        <div className="mb-2 flex items-center gap-3">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => router.push("/appointments")}
+                          >
+                            <ArrowLeft className="h-5 w-5" />
+                          </Button>
+                          <h1 className="text-4xl font-bold text-primary">{appointment.petName}&apos;s Appointment</h1>
+                        </div>
+                        <p className="text-lg text-muted-foreground mb-4">
+                          {appointment.appointmentType} • {appointment.time}
+                        </p>
+                        
+                        {/* Quick Stats */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <div className="flex items-center gap-3 text-base">
+                            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <Dog className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Pet Name</p>
+                              <p className="font-medium text-base">{appointment.petName}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-3 text-base">
+                            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <Dna className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Breed</p>
+                              <p className="font-medium text-base">{appointment.petBreed}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-3 text-base">
+                            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <User className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Owner</p>
+                              <p className="font-medium text-base">{appointment.ownerName}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-3 text-base">
+                            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <UserCheck className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Veterinarian</p>
+                              <p className="font-medium text-base">{appointment.veterinarian}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-3 text-base">
+                            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <Clock className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Time</p>
+                              <p className="font-medium text-base">{appointment.time}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-3 text-base">
+                            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <Calendar className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Status</p>
+                              <Badge variant={getStatusBadgeVariant(appointment.status)} className="capitalize">
+                                {appointment.status}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      {appointment.notes || "No notes available"}
-                    </p>
-                  )}
+                  </div>
                 </div>
-              </CardContent>
+              </div>
             </Card>
 
             {/* Pre-visit Questionnaire */}
@@ -374,57 +358,6 @@ export default function AppointmentDetailView() {
 
           {/* Right Column - Actions & Links */}
           <div className="space-y-6">
-            {/* Discharge Summary for Pending Appointments */}
-            {appointment.status === "pending" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ClipboardList className="h-5 w-5" />
-                    Discharge Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {!isUploadingNotes ? (
-                    <Button 
-                      className="w-full" 
-                      onClick={() => setIsUploadingNotes(true)}
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Appointment Notes
-                    </Button>
-                  ) : (
-                    <div className="space-y-3">
-                      <Textarea
-                        placeholder="Enter discharge summary and appointment notes..."
-                        value={dischargeSummary}
-                        onChange={(e) => setDischargeSummary(e.target.value)}
-                        rows={4}
-                      />
-                      <div className="flex gap-2">
-                        <Button 
-                          onClick={handleUploadDischargeSummary}
-                          disabled={!dischargeSummary.trim()}
-                          className="flex-1"
-                        >
-                          <Save className="h-4 w-4 mr-1" />
-                          Save Summary
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          onClick={() => {
-                            setIsUploadingNotes(false);
-                            setDischargeSummary("");
-                          }}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
             {/* Quick Actions */}
             <Card>
               <CardHeader>
@@ -436,118 +369,19 @@ export default function AppointmentDetailView() {
                   variant="outline"
                   onClick={handleViewPetProfile}
                 >
-                  <User className="h-4 w-4 mr-2" />
+                  <User className="h-4 w-4" />
                   View Pet Profile
                 </Button>
-                <Button 
-                  className="w-full justify-start" 
-                  variant="outline"
-                  onClick={handleViewOwnerProfile}
-                >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  View Owner Profile
-                </Button>
-                
-                {/* Messaging Component */}
-                <MessagingPopup
-                  ownerName={appointment.ownerName}
-                  petName={appointment.petName}
-                  appointmentId={appointment.id}
-                />
-              </CardContent>
-            </Card>
-
-            {/* View Discharge Report - Only show for discharged appointments */}
-            {appointment.status === "discharged" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Discharge Report
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
+                {apiAppointment?.externalAppointmentId && (
                   <Button 
                     className="w-full justify-start" 
                     variant="outline"
-                    onClick={() => {
-                      // In a real app, this would open the discharge report viewer
-                      console.log("Opening discharge report for appointment:", appointment.id);
-                    }}
+                    onClick={handleViewBookingConfirmation}
                   >
-                    <FileText className="h-4 w-4 mr-2" />
-                    View Discharge Report
+                    <ExternalLink className="h-4 w-4" />
+                    View Booking Confirmation Link
                   </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Reschedule - Only show for booked appointments */}
-            {appointment.status === "booked" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    Reschedule Appointment
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="reschedule-date">New Date</Label>
-                    <Input
-                      id="reschedule-date"
-                      type="date"
-                      value={rescheduleDate}
-                      onChange={(e) => setRescheduleDate(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="reschedule-time">New Time</Label>
-                    <Select value={rescheduleTime} onValueChange={setRescheduleTime}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select time" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="09:00">9:00 AM</SelectItem>
-                        <SelectItem value="09:30">9:30 AM</SelectItem>
-                        <SelectItem value="10:00">10:00 AM</SelectItem>
-                        <SelectItem value="10:30">10:30 AM</SelectItem>
-                        <SelectItem value="11:00">11:00 AM</SelectItem>
-                        <SelectItem value="11:30">11:30 AM</SelectItem>
-                        <SelectItem value="14:00">2:00 PM</SelectItem>
-                        <SelectItem value="14:30">2:30 PM</SelectItem>
-                        <SelectItem value="15:00">3:00 PM</SelectItem>
-                        <SelectItem value="15:30">3:30 PM</SelectItem>
-                        <SelectItem value="16:00">4:00 PM</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button 
-                    className="w-full" 
-                    onClick={handleReschedule}
-                    disabled={!rescheduleDate || !rescheduleTime}
-                  >
-                    Reschedule
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Status Update */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Update Status</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full">
-                  Mark as In Progress
-                </Button>
-                <Button variant="outline" className="w-full">
-                  Mark as Completed
-                </Button>
-                <Button variant="destructive" className="w-full">
-                  Cancel Appointment
-                </Button>
+                )}
               </CardContent>
             </Card>
           </div>
