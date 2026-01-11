@@ -1,8 +1,8 @@
 import { Card, CardContent } from "../../../components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar";
-import { Badge } from "../../../components/ui/badge";
 import { cn } from "../../../lib/utils";
-import { formatTime } from "../utils/dateUtils";
+import { statusTypes } from "./WeekNavigation";
+import { formatTimeCompact } from "../utils/dateUtils";
 
 export interface AppointmentCardData {
   id: string;
@@ -12,6 +12,8 @@ export interface AppointmentCardData {
   endTime: Date;
   veterinarian: string;
   status: "CONFIRMED" | "CANCELLED" | "RESCHEDULED";
+  eventTitle?: string | null;
+  ownerName?: string;
 }
 
 interface AppointmentCardProps {
@@ -19,23 +21,13 @@ interface AppointmentCardProps {
   onClick: (appointmentId: string) => void;
 }
 
-const statusColors: Record<string, string> = {
-  CONFIRMED: "bg-primary/10 text-primary border-primary/20",
-  RESCHEDULED: "bg-warning/10 text-warning border-warning/20",
-  CANCELLED: "bg-destructive/10 text-destructive border-destructive/20"
-};
-
-const statusBorderColors: Record<string, string> = {
-  CONFIRMED: "border-primary/40",
-  RESCHEDULED: "border-warning/40",
-  CANCELLED: "border-destructive/40"
-};
-
-const statusLabels: Record<string, string> = {
-  CONFIRMED: "CONFIRMED",
-  RESCHEDULED: "RESCHEDULED",
-  CANCELLED: "CANCELLED"
-};
+// Convert bg-* colors to border-* colors
+const statusBorderColors: Record<string, string> = Object.fromEntries(
+  statusTypes.map((type) => [
+    type.status,
+    type.color.replace("bg-", "border-")
+  ])
+);
 
 export function AppointmentCard({ appointment, onClick }: AppointmentCardProps) {
   const borderColor = statusBorderColors[appointment.status] || "border-border";
@@ -43,38 +35,28 @@ export function AppointmentCard({ appointment, onClick }: AppointmentCardProps) 
   return (
     <Card
       className={cn(
-        "h-full border-2 shadow-sm hover:shadow-md transition-all duration-200 group-hover:scale-[1.02] cursor-pointer",
+        "h-full border-2 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer",
+        "bg-card",
         borderColor
       )}
       onClick={() => onClick(appointment.id)}
     >
-      <CardContent className="p-2 h-full flex flex-col">
-        <div className="flex items-start gap-2">
-          <Avatar className="h-6 w-6 flex-shrink-0">
+      <CardContent className="p-2 h-full flex flex-col min-h-0">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Avatar className="h-5 w-5 flex-shrink-0">
             <AvatarImage src={appointment.petImage} alt={appointment.petName} />
-            <AvatarFallback className="text-xs">
-              {appointment.petName.charAt(0)}
+            <AvatarFallback className="text-[9px] font-medium bg-muted">
+              {appointment.petName.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1 mb-0.5">
-              <p className="font-semibold text-xs text-foreground truncate">
-                {appointment.petName}
-              </p>
-              <Badge
-                variant="outline"
-                className={cn("text-[10px] px-1 py-0 h-4", statusColors[appointment.status])}
-              >
-                {statusLabels[appointment.status] || appointment.status}
-              </Badge>
-            </div>
-            <p className="text-[10px] text-muted-foreground truncate">
-              {formatTime(appointment.startTime)}
+          <span className="text-xs text-muted-foreground flex-shrink-0">
+            {formatTimeCompact(appointment.startTime)}
+          </span>
+          {appointment.eventTitle && (
+            <p className="font-semibold text-xs text-foreground truncate leading-tight min-w-0">
+              {appointment.eventTitle}
             </p>
-            <p className="text-[10px] text-muted-foreground truncate">
-              {appointment.veterinarian}
-            </p>
-          </div>
+          )}
         </div>
       </CardContent>
     </Card>

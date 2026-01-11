@@ -34,6 +34,22 @@ export const formatTimeShort = (date: Date): string => {
   });
 };
 
+// Format time with shorthand if on the hour (e.g., "9 AM" vs "9:30 AM")
+export const formatTimeCompact = (date: Date): string => {
+  const minutes = date.getMinutes();
+  if (minutes === 0) {
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      hour12: true
+    });
+  }
+  return date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
+};
+
 // Format date for day header - returns object with parts for better styling
 export const formatDayHeader = (date: Date): { weekday: string; day: string; month: string } => {
   const weekday = new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(date).toUpperCase();

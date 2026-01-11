@@ -242,6 +242,53 @@ export async function requireStaffClinic(req: Request, res: Response, next: Next
 }
 
 /**
+ * Get clinic-scoped where clause for Appointment queries
+ * Ensures appointments belong to pets in the user's clinic
+ */
+export function getClinicScopedAppointmentWhere(req: Request) {
+  const clinicId = getClinicId(req);
+  
+  if (!clinicId) {
+    // If no clinic, only show appointments for pets owned by the user
+    if (req.petOwner) {
+      return {
+        pet: {
+          ownerId: req.petOwner.id
+        }
+      };
+    }
+    return { id: { in: [] } };
+  }
+
+  // If user is staff, show all appointments for pets in the specified clinic
+  if (req.staff) {
+    return {
+      clinicId: clinicId,
+      pet: {
+        petOwner: {
+          clinicId: clinicId
+        }
+      }
+    };
+  }
+
+  // If user is petOwner, show appointments for their pets in their clinic
+  if (req.petOwner) {
+    return {
+      clinicId: clinicId,
+      pet: {
+        ownerId: req.petOwner.id,
+        petOwner: {
+          clinicId: clinicId
+        }
+      }
+    };
+  }
+
+  return { id: { in: [] } };
+}
+
+/**
  * Verify that a pet belongs to the user's clinic
  */
 export async function verifyPetClinicAccess(req: Request, petId: string): Promise<boolean> {

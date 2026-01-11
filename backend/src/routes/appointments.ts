@@ -8,6 +8,7 @@ import {
   getCurrentUser,
   addHiddenFieldsToEventType,
 } from '../utils/calcom.js';
+import { getClinicScopedAppointmentWhere, getClinicId } from '../utils/clinicAuth.js';
 
 const router = Router();
 
@@ -82,8 +83,8 @@ router.get('/event-types', async (req: Request, res: Response) => {
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
-    // Only staff members use the web app
-    if (!req.staff) {
+    // Allow both pet owners and staff
+    if (!req.petOwner && !req.staff) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -91,24 +92,28 @@ router.get('/', async (req: Request, res: Response) => {
       });
     }
 
-    // Get clinicId from query params (preferred) or from authenticated session
-    const clinicId = (req.query?.clinicId as string) || req.clinic?.id || null;
-    if (!clinicId) {
-      return res.status(400).json({
-        success: false,
-        error: 'Clinic ID required',
-        message: 'Please ensure you are part of an organization with a clinic',
-      });
-    }
-
+    // Get clinic-scoped where clause (handles both pet owners and staff)
+    const clinicScopedWhere = getClinicScopedAppointmentWhere(req);
+    
+    // Build the where clause with optional filters
     const where: any = {
-      clinicId: clinicId,
+      ...clinicScopedWhere,
     };
 
     // Optional filters
     const { status, petId, staffId } = req.query;
     if (status) where.status = status;
-    if (petId) where.petId = petId as string;
+    if (petId) {
+      // Add petId filter - merge with existing pet filter if present
+      if (where.pet) {
+        where.pet = {
+          ...where.pet,
+          id: petId as string,
+        };
+      } else {
+        where.petId = petId as string;
+      }
+    }
     if (staffId) where.staffId = staffId as string;
 
     const appointments = await prisma.appointment.findMany({
@@ -174,7 +179,19 @@ router.get('/', async (req: Request, res: Response) => {
             calcomData: calcomBooking,
           };
         } catch (calcomError: any) {
-          console.warn(`Failed to fetch Cal.com data for appointment ${appointment.id}:`, calcomError);
+          // Check if it's a 404 error (booking not found in Cal.com)
+          const isNotFound = calcomError?.message?.includes('404') || 
+                            calcomError?.message?.includes('does not exist') ||
+                            calcomError?.message?.includes('NotFoundException');
+          
+          if (isNotFound) {
+            // Silently handle missing bookings - they may have been deleted in Cal.com
+            // but still exist in our database
+            return appointment;
+          }
+          
+          // Log other errors (network issues, auth problems, etc.)
+          console.warn(`Failed to fetch Cal.com data for appointment ${appointment.id}:`, calcomError.message || calcomError);
           // Return appointment without Cal.com data if fetch fails
           return appointment;
         }
@@ -433,8 +450,8 @@ router.get('/:id', async (req: Request, res: Response) => {
       });
     }
 
-    // Only staff members use the web app
-    if (!req.staff) {
+    // Allow both pet owners and staff
+    if (!req.petOwner && !req.staff) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -468,53 +485,67 @@ router.get('/:id', async (req: Request, res: Response) => {
       });
     }
 
-    // Get clinicId from query params, authenticated session, or appointment itself
-    const requestedClinicId = (req.query?.clinicId as string) || req.clinic?.id || null;
-    const appointmentClinicId = appointment.clinicId;
-
-    // If no clinicId provided, use the appointment's clinicId
-    // Otherwise verify the requested clinicId matches the appointment's clinicId
-    if (requestedClinicId && appointmentClinicId !== requestedClinicId) {
-      return res.status(403).json({
-        success: false,
-        error: 'Access denied',
-        message: 'You do not have permission to view this appointment',
-      });
+    // For pet owners, verify they own the pet associated with this appointment
+    if (req.petOwner) {
+      if (appointment.petOwnerId !== req.petOwner.id) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied',
+          message: 'You do not have permission to view this appointment',
+        });
+      }
     }
 
-    // Verify staff has access to this clinic (check organization membership)
-    if (appointmentClinicId && req.clinic?.id !== appointmentClinicId) {
-      // If req.clinic doesn't match, verify access via organization membership
-      const appointmentClinic = await prisma.clinic.findUnique({
-        where: { id: appointmentClinicId },
-        select: { clerkOrgId: true }
-      });
+    // For staff, verify clinic access
+    if (req.staff) {
+      // Get clinicId from query params, authenticated session, or appointment itself
+      const requestedClinicId = (req.query?.clinicId as string) || req.clinic?.id || null;
+      const appointmentClinicId = appointment.clinicId;
 
-      if (appointmentClinic) {
-        try {
-          const { createClerkClient } = await import('@clerk/backend');
-          const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! });
-          const { data: memberships } = await clerk.organizations.getOrganizationMembershipList({
-            organizationId: appointmentClinic.clerkOrgId,
-            userId: [req.auth.userId],
-            limit: 1
-          });
+      // If no clinicId provided, use the appointment's clinicId
+      // Otherwise verify the requested clinicId matches the appointment's clinicId
+      if (requestedClinicId && appointmentClinicId !== requestedClinicId) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied',
+          message: 'You do not have permission to view this appointment',
+        });
+      }
 
-          if (!memberships || memberships.length === 0) {
+      // Verify staff has access to this clinic (check organization membership)
+      if (appointmentClinicId && req.clinic?.id !== appointmentClinicId) {
+        // If req.clinic doesn't match, verify access via organization membership
+        const appointmentClinic = await prisma.clinic.findUnique({
+          where: { id: appointmentClinicId },
+          select: { clerkOrgId: true }
+        });
+
+        if (appointmentClinic) {
+          try {
+            const { createClerkClient } = await import('@clerk/backend');
+            const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! });
+            const { data: memberships } = await clerk.organizations.getOrganizationMembershipList({
+              organizationId: appointmentClinic.clerkOrgId,
+              userId: [req.auth.userId],
+              limit: 1
+            });
+
+            if (!memberships || memberships.length === 0) {
+              return res.status(403).json({
+                success: false,
+                error: 'Access denied',
+                message: 'You do not have permission to view appointments from this clinic',
+              });
+            }
+          } catch (error) {
+            console.error('Error verifying clinic access:', error);
+            // If verification fails, deny access for security
             return res.status(403).json({
               success: false,
               error: 'Access denied',
-              message: 'You do not have permission to view appointments from this clinic',
+              message: 'Unable to verify clinic access',
             });
           }
-        } catch (error) {
-          console.error('Error verifying clinic access:', error);
-          // If verification fails, deny access for security
-          return res.status(403).json({
-            success: false,
-            error: 'Access denied',
-            message: 'Unable to verify clinic access',
-          });
         }
       }
     }
@@ -539,12 +570,21 @@ router.get('/:id', async (req: Request, res: Response) => {
         warning: 'Invalid Cal.com booking ID',
       });
     } catch (calcomError: any) {
-      console.warn('Failed to fetch Cal.com data:', calcomError);
+      // Check if it's a 404 error (booking not found in Cal.com)
+      const isNotFound = calcomError?.message?.includes('404') || 
+                        calcomError?.message?.includes('does not exist') ||
+                        calcomError?.message?.includes('NotFoundException');
+      
+      if (!isNotFound) {
+        // Only log non-404 errors (network issues, auth problems, etc.)
+        console.warn('Failed to fetch Cal.com data:', calcomError.message || calcomError);
+      }
+      
       // Return appointment data even if Cal.com fetch fails
       return res.json({
         success: true,
         data: appointment,
-        warning: 'Could not fetch latest data from Cal.com',
+        warning: isNotFound ? 'Cal.com booking not found' : 'Could not fetch latest data from Cal.com',
       });
     }
   } catch (error: any) {

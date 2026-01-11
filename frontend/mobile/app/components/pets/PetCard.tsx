@@ -1,5 +1,5 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
-import { FileText, ChevronRight } from "lucide-react-native";
+import { FileText, ChevronRight, Calendar } from "lucide-react-native";
 import type { Pet } from "../../types";
 import { calculateAge } from "../../lib/utils";
 import { getSafeImageSource } from "../../lib/imageUtils";
@@ -8,9 +8,10 @@ interface PetCardProps {
   pet: Pet;
   onPress: () => void;
   onPetDocuments: () => void;
+  onPetAppointments: () => void;
 }
 
-export function PetCard({ pet, onPress, onPetDocuments }: PetCardProps) {
+export function PetCard({ pet, onPress, onPetDocuments, onPetAppointments }: PetCardProps) {
   const petAge = pet.dateOfBirth ? calculateAge(pet.dateOfBirth) : 0;
   
   return (
@@ -75,6 +76,17 @@ export function PetCard({ pet, onPress, onPetDocuments }: PetCardProps) {
       >
         <FileText size={22} color="#FFFFFF" />
         <Text style={styles.actionText}>Pet Documents</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.actionButton}
+        onPress={(e) => {
+          e.stopPropagation();
+          onPetAppointments();
+        }}
+      >
+        <Calendar size={22} color="#FFFFFF" />
+        <Text style={styles.actionText}>Appointments</Text>
       </TouchableOpacity>
     </TouchableOpacity>
   );

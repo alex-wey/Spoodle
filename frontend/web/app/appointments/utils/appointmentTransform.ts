@@ -37,6 +37,10 @@ export function transformAppointment(apt: Appointment): AppointmentCardData {
     }
   }
 
+  const ownerName = apt.petOwner?.user
+    ? `${apt.petOwner.user.firstName} ${apt.petOwner.user.lastName}`.trim()
+    : undefined;
+
   return {
     id: apt.id,
     petName: apt.pet?.name || 'Unknown Pet',
@@ -47,6 +51,8 @@ export function transformAppointment(apt: Appointment): AppointmentCardData {
       ? `${apt.staff.user.firstName} ${apt.staff.user.lastName}`
       : 'Unknown',
     status: apt.status,
+    eventTitle: apt.eventTitle || undefined,
+    ownerName,
   };
 }
 
@@ -57,8 +63,15 @@ export function filterAppointmentsForWeek(
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekStart.getDate() + 7);
   
+  // Reset time to start of day for proper comparison
+  const weekStartNormalized = new Date(weekStart);
+  weekStartNormalized.setHours(0, 0, 0, 0);
+  const weekEndNormalized = new Date(weekEnd);
+  weekEndNormalized.setHours(0, 0, 0, 0);
+  
   return appointments.filter((apt) => {
     const aptDate = new Date(apt.startTime);
-    return aptDate >= weekStart && aptDate < weekEnd;
+    aptDate.setHours(0, 0, 0, 0);
+    return aptDate >= weekStartNormalized && aptDate < weekEndNormalized;
   });
 }

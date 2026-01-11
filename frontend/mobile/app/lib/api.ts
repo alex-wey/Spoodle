@@ -756,6 +756,127 @@ class ClerkApiClient {
       method: 'GET',
     });
   }
+
+  // Appointment endpoints
+  async getAppointments(filters?: {
+    petId?: string;
+    status?: 'CONFIRMED' | 'CANCELLED' | 'RESCHEDULED';
+    clinicId?: string;
+  }) {
+    const params = new URLSearchParams();
+    if (filters?.petId) params.append('petId', filters.petId);
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.clinicId) params.append('clinicId', filters.clinicId);
+    
+    const query = params.toString();
+    return this.request<{
+      success: boolean;
+      data: Array<{
+        id: string;
+        externalAppointmentId: string;
+        externalAppointmentUid: string;
+        eventTypeId: string;
+        eventTitle?: string | null;
+        eventDescription?: string | null;
+        clinicId: string;
+        staffId: string;
+        petId: string;
+        petOwnerId: string;
+        status: 'CONFIRMED' | 'CANCELLED' | 'RESCHEDULED';
+        startTime: string;
+        endTime: string;
+        createdAt: string;
+        updatedAt: string;
+        clinic?: {
+          id: string;
+          name: string;
+          slug: string;
+        };
+        staff?: {
+          id: string;
+          user: {
+            firstName: string;
+            lastName: string;
+            email: string;
+          };
+        };
+        pet?: {
+          id: string;
+          name: string;
+          species: string;
+          breed?: string | null;
+          imageUrl?: string | null;
+        };
+        petOwner?: {
+          id: string;
+          user: {
+            firstName: string;
+            lastName: string;
+            email: string;
+            phone?: string | null;
+          };
+        };
+        calcomData?: Record<string, unknown>;
+      }>;
+    }>(`/appointments${query ? `?${query}` : ''}`, {
+      method: 'GET',
+    });
+  }
+
+  async getAppointmentById(appointmentId: string) {
+    return this.request<{
+      success: boolean;
+      data: {
+        id: string;
+        externalAppointmentId: string;
+        externalAppointmentUid: string;
+        eventTypeId: string;
+        eventTitle?: string | null;
+        eventDescription?: string | null;
+        clinicId: string;
+        staffId: string;
+        petId: string;
+        petOwnerId: string;
+        status: 'CONFIRMED' | 'CANCELLED' | 'RESCHEDULED';
+        startTime: string;
+        endTime: string;
+        createdAt: string;
+        updatedAt: string;
+        clinic?: {
+          id: string;
+          name: string;
+          slug: string;
+        };
+        staff?: {
+          id: string;
+          user: {
+            firstName: string;
+            lastName: string;
+            email: string;
+          };
+        };
+        pet?: {
+          id: string;
+          name: string;
+          species: string;
+          breed?: string | null;
+          imageUrl?: string | null;
+        };
+        petOwner?: {
+          id: string;
+          user: {
+            firstName: string;
+            lastName: string;
+            email: string;
+            phone?: string | null;
+          };
+        };
+        calcomData?: Record<string, unknown>;
+      };
+    }>(`/appointments/${appointmentId}`, {
+      method: 'GET',
+    });
+  }
 }
 
 export const clerkApiClient = new ClerkApiClient(`${API_BASE_URL}/api`);
