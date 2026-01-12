@@ -291,8 +291,21 @@ router.get('/:id/submissions',
         });
       }
 
+      const clinicFilter = (req.query.clinicId as string | undefined) || req.petOwner?.clinicId || null;
+
       const submissions = await prisma.formSubmission.findMany({
-        where: { formId: id as string },
+        where: {
+          formId: id as string,
+          ...(clinicFilter
+            ? {
+                // Only submissions where the pet owner's clinic matches, or the form is tied to that clinic
+                OR: [
+                  { petOwner: { clinicId: clinicFilter } },
+                  { form: { clinicId: clinicFilter } },
+                ],
+              }
+            : {}),
+        },
         orderBy: { createdAt: 'desc' },
         include: {
           form: {
@@ -303,11 +316,6 @@ router.get('/:id/submissions',
             }
           },
           petOwner: {
-            select: {
-              id: true,
-              clerkUserId: true,
-              clinicId: true
-            },
             include: {
               user: {
                 select: {

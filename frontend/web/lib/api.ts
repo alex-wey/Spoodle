@@ -273,8 +273,15 @@ export async function getFormById(formId: string, sessionToken: string) {
 /**
  * Get all submissions for a specific form
  */
-export async function getFormSubmissions(formId: string, sessionToken: string) {
-  return apiRequest<FormSubmission[]>(`/api/forms/${formId}/submissions`, {
+export async function getFormSubmissions(
+  formId: string,
+  sessionToken: string,
+  clinicId?: string
+) {
+  const url = clinicId
+    ? `/api/forms/${formId}/submissions?clinicId=${clinicId}`
+    : `/api/forms/${formId}/submissions`;
+  return apiRequest<FormSubmission[]>(url, {
     method: 'GET',
   }, sessionToken);
 }

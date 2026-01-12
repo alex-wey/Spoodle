@@ -1,25 +1,32 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { Card, CardContent, CardHeader } from "../../../components/ui/card";
-import { Input } from "../../../components/ui/input";
+import { Card } from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
 import { Badge } from "../../../components/ui/badge";
-import { Avatar, AvatarFallback } from "../../../components/ui/avatar";
-import { ScrollArea } from "../../../components/ui/scroll-area";
+import { Alert, AlertDescription } from "../../../components/ui/alert";
 import { 
   FileText, 
-  Search, 
   AlertCircle,
-  Calendar,
-  Mail,
-  ArrowLeft,
-  ChevronRight,
-  Dog
+  ExternalLink
 } from "lucide-react";
-import { Alert, AlertDescription } from "../../../components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../../../components/ui/table";
 import { getForms, getFormSubmissions, type Form, type FormSubmission } from "@/lib/api";
 import { useSessionContext } from "@/components/SessionContext";
 
@@ -27,7 +34,6 @@ export default function FormsView() {
   const router = useRouter();
   const { getToken, isSignedIn } = useAuth();
   const { clinicId } = useSessionContext();
-  const [searchQuery, setSearchQuery] = useState("");
   const [forms, setForms] = useState<Form[]>([]);
   const [selectedForm, setSelectedForm] = useState<Form | null>(null);
   const [submissions, setSubmissions] = useState<FormSubmission[]>([]);
@@ -62,6 +68,9 @@ export default function FormsView() {
         
         if (result.success && result.data) {
           setForms(result.data);
+          // Auto-select Morning of Surgery Questionnaire if present, else first
+          const morning = result.data.find((f) => f.title === "Morning of Surgery Questionnaire");
+          setSelectedForm(morning || result.data[0] || null);
           setError(null);
         } else {
           setError(result.message || result.error || 'Failed to fetch forms');
@@ -92,7 +101,7 @@ export default function FormsView() {
           return;
         }
 
-        const result = await getFormSubmissions(selectedForm.id, token);
+        const result = await getFormSubmissions(selectedForm.id, token, clinicId || undefined);
         
         if (result.success && result.data) {
           setSubmissions(result.data);
@@ -107,54 +116,33 @@ export default function FormsView() {
     fetchSubmissions();
   }, [selectedForm, isSignedIn, getToken]);
 
-  const filteredForms = forms.filter(form => {
-    const searchTerm = searchQuery.toLowerCase();
-    return form.title.toLowerCase().includes(searchTerm) ||
-           (form.description && form.description.toLowerCase().includes(searchTerm));
-  });
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const petNameForRow = (submission: FormSubmission) => {
+    if (submission.pet?.name) return submission.pet.name;
+    const fields = submission.submissionData?.rawData?.data?.fields || [];
+    const hiddenPetName = fields.find((f: any) => f.type === "HIDDEN_FIELDS" && f.label?.trim() === "petName");
+    return hiddenPetName?.value || "Unknown pet";
   };
 
-  const formatRelativeTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-    
-    if (diffInHours < 1) {
-      return 'Just now';
-    } else if (diffInHours < 24) {
-      return `${Math.floor(diffInHours)} hours ago`;
-    } else {
-      const diffInDays = Math.floor(diffInHours / 24);
-      return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+  const ownerNameForRow = (submission: FormSubmission) => {
+    if (submission.petOwner?.user) {
+      const { firstName, lastName } = submission.petOwner.user;
+      const full = `${firstName || ""} ${lastName || ""}`.trim();
+      if (full) return full;
     }
+    return submission.respondentEmail || "Unknown owner";
   };
 
-  const renderAnswer = (answer: unknown): string => {
-    if (typeof answer === 'string') {
-      return answer;
-    }
-    if (typeof answer === 'object' && answer !== null) {
-      const answerObj = answer as Record<string, unknown>;
-      if (answerObj.value !== undefined) {
-        return String(answerObj.value);
-      }
-      if (answerObj.label !== undefined) {
-        return String(answerObj.label);
-      }
-      return JSON.stringify(answer);
-    }
-    return String(answer);
+  const submissionLink = (submission: FormSubmission) => {
+    if (!selectedForm) return "#";
+    return `/forms/${selectedForm.id}/submission/${submission.id}`;
   };
+
+  const rows = useMemo(() => submissions.map((s) => ({
+    id: s.id,
+    pet: petNameForRow(s),
+    owner: ownerNameForRow(s),
+    href: submissionLink(s),
+  })), [submissions, selectedForm]);
 
   if (loading) {
     return (
@@ -179,227 +167,104 @@ export default function FormsView() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Forms List */}
-      <div className="w-96 border-r bg-card">
-        <div className="p-4 border-b">
-          <div className="flex items-center gap-3 mb-4">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="lg:hidden"
-              onClick={() => router.push("/home")}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-bold">Forms</h1>
-            <Badge variant="secondary" className="ml-auto">
-              {forms.length}
-            </Badge>
+    <div className="flex flex-col h-screen bg-background">
+      <div className="border-b bg-card">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <FileText className="h-5 w-5 text-primary" />
+            <div>
+              <h1 className="text-xl font-bold">Forms</h1>
+              <p className="text-sm text-muted-foreground">Select a form to view submissions</p>
+            </div>
           </div>
-          
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search forms..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex items-center gap-3 w-full md:w-72">
+            <Select
+              value={selectedForm?.id || undefined}
+              onValueChange={(val) => {
+                const form = forms.find((f) => f.id === val) || null;
+                setSelectedForm(form);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a form" />
+              </SelectTrigger>
+              <SelectContent>
+                {forms.map((form) => (
+                  <SelectItem key={form.id} value={form.id}>
+                    {form.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Badge variant="secondary">{forms.length} form{forms.length !== 1 ? "s" : ""}</Badge>
           </div>
         </div>
-
-        <ScrollArea className="h-[calc(100vh-120px)]">
-          <div className="p-2">
-            {filteredForms.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <FileText className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                <p>No forms found</p>
-              </div>
-            ) : (
-              filteredForms.map((form) => (
-                <Card
-                  key={form.id}
-                  className={`mb-2 cursor-pointer transition-colors hover:bg-muted/50 ${
-                    selectedForm?.id === form.id ? 'bg-muted border-primary' : ''
-                  }`}
-                  onClick={() => setSelectedForm(form)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <FileText className="h-4 w-4 text-primary flex-shrink-0" />
-                          <h3 className="font-semibold text-sm truncate">{form.title}</h3>
-                        </div>
-                        {form.description && (
-                          <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
-                            {form.description}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs">
-                            {form._count?.submissions || 0} submissions
-                          </Badge>
-                          {form.isActive ? (
-                            <Badge variant="default" className="text-xs">Active</Badge>
-                          ) : (
-                            <Badge variant="secondary" className="text-xs">Inactive</Badge>
-                          )}
-                        </div>
-                      </div>
-                      <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        </ScrollArea>
       </div>
 
-      {/* Submissions View */}
-      <div className="flex-1 flex flex-col">
-        {selectedForm ? (
-          <>
-            {/* Header */}
-            <div className="p-4 border-b bg-card">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold">{selectedForm.title}</h2>
-                  {selectedForm.description && (
-                    <p className="text-sm text-muted-foreground mt-1">{selectedForm.description}</p>
-                  )}
-                </div>
-                <Badge variant="secondary">
-                  {submissions.length} submission{submissions.length !== 1 ? 's' : ''}
-                </Badge>
-              </div>
-            </div>
-
-            {/* Submissions List */}
-            {loadingSubmissions ? (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                  <p className="text-sm text-muted-foreground">Loading submissions...</p>
-                </div>
-              </div>
-            ) : submissions.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-30" />
-                  <h2 className="text-xl font-semibold mb-2">No submissions yet</h2>
-                  <p className="text-muted-foreground">
-                    Form submissions will appear here when pet owners complete this form.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <ScrollArea className="flex-1">
-                <div className="p-4 space-y-4">
-                  {submissions.map((submission) => {
-                    const answers = submission.submissionData?.answers || {};
-                    const answerKeys = Object.keys(answers);
-                    
-                    return (
-                      <Card key={submission.id} className="border-l-4 border-l-primary">
-                        <CardHeader className="pb-3">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-3 flex-1">
-                              <Avatar className="h-10 w-10">
-                                <AvatarFallback className="bg-primary text-primary-foreground">
-                                  {submission.petOwner?.user?.firstName && submission.petOwner?.user?.lastName
-                                    ? `${submission.petOwner.user.firstName.charAt(0)}${submission.petOwner.user.lastName.charAt(0)}`.toUpperCase()
-                                    : submission.respondentName 
-                                    ? submission.respondentName.split(' ').map(n => n.charAt(0)).join('').toUpperCase()
-                                    : submission.respondentEmail?.charAt(0).toUpperCase() || 'U'
-                                  }
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold">
-                                  {submission.petOwner?.user 
-                                    ? `${submission.petOwner.user.firstName} ${submission.petOwner.user.lastName}`.trim()
-                                    : submission.respondentName || submission.respondentEmail || 'Anonymous'
-                                  }
-                                </h3>
-                                <div className="flex flex-col gap-1 mt-1">
-                                  {submission.petOwner?.user?.email && (
-                                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                      <Mail className="h-3 w-3" />
-                                      {submission.petOwner.user.email}
-                                    </div>
-                                  )}
-                                  {submission.pet && (
-                                    <div className="flex items-center gap-1 text-sm text-primary font-medium">
-                                      <Dog className="h-3 w-3" />
-                                      {submission.pet.name} {submission.pet.species && `(${submission.pet.species})`}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="text-right ml-4">
-                              <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
-                                <Calendar className="h-3 w-3" />
-                                {formatRelativeTime(submission.createdAt)}
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                {formatDate(submission.createdAt)}
-                              </p>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            {answerKeys.length === 0 ? (
-                              <p className="text-sm text-muted-foreground italic">No answers provided</p>
-                            ) : (
-                              answerKeys.map((key) => {
-                                const answer = answers[key];
-                                // Type guard: check if answer is an object with a label property
-                                const questionLabel = (answer && typeof answer === 'object' && 'label' in answer && typeof answer.label === 'string')
-                                  ? answer.label
-                                  : key;
-                                const answerValue = renderAnswer(answer);
-                                
-                                return (
-                                  <div key={key} className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                      <FileText className="h-4 w-4 text-primary" />
-                                      <h4 className="font-medium text-sm text-foreground">
-                                        {questionLabel}
-                                      </h4>
-                                    </div>
-                                    <div className="ml-6 pl-4 border-l-2 border-muted">
-                                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                                        {answerValue}
-                                      </p>
-                                    </div>
-                                  </div>
-                                );
-                              })
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
-            )}
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-30" />
-              <h2 className="text-xl font-semibold mb-2">Select a form</h2>
-              <p className="text-muted-foreground">
-                Choose a form from the list to view submissions from pet owners.
-              </p>
+      <div className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
+        {!selectedForm ? (
+          <div className="flex h-full items-center justify-center text-center">
+            <div>
+              <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-40" />
+              <h2 className="text-lg font-semibold">Select a form</h2>
+              <p className="text-sm text-muted-foreground">Choose a form to see submissions.</p>
             </div>
           </div>
+        ) : loadingSubmissions ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+              <p className="text-sm text-muted-foreground">Loading submissions...</p>
+            </div>
+          </div>
+        ) : submissions.length === 0 ? (
+          <Card className="p-6 text-center">
+            <FileText className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-40" />
+            <h2 className="text-lg font-semibold mb-1">No submissions yet</h2>
+            <p className="text-sm text-muted-foreground">
+              Form submissions will appear here when pet owners complete this form.
+            </p>
+          </Card>
+        ) : (
+          <Card className="overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <div>
+                <h2 className="text-lg font-semibold">{selectedForm.title}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {submissions.length} submission{submissions.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-1/3">Pet</TableHead>
+                    <TableHead className="w-1/3">Pet Owner</TableHead>
+                    <TableHead className="w-1/3 text-right">Form Submission</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((row) => (
+                    <TableRow key={row.id}>
+                      <TableCell>{row.pet}</TableCell>
+                      <TableCell>{row.owner}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => router.push(row.href)}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Open
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
         )}
       </div>
     </div>
