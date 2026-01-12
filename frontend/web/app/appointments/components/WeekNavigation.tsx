@@ -2,8 +2,9 @@ import { Button } from "../../../components/ui/button";
 import { Card, CardContent } from "../../../components/ui/card";
 import { ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { formatMonthYear } from "../utils/dateUtils";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../../components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "../../../components/ui/popover";
 import { cn } from "../../../lib/utils";
+import { useState } from "react";
 
 interface WeekNavigationProps {
   weekDays: Date[];
@@ -30,6 +31,7 @@ export function WeekNavigation({
 }: WeekNavigationProps) {
   // Use the middle of the week (Wednesday) to determine the month/year
   const monthYearDate = weekDays[3]; // Wednesday (index 3)
+  const [infoOpen, setInfoOpen] = useState(false);
 
   return (
     <Card className="rounded-b-none border-b-0">
@@ -65,29 +67,28 @@ export function WeekNavigation({
             <div className="text-sm text-muted-foreground">
               {loading ? '...' : appointmentCount} appointment{appointmentCount !== 1 ? 's' : ''} this week
             </div>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Appointment status legend"
-                  >
-                    <Info className="h-4 w-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="p-2">
-                  <div className="flex flex-col gap-1.5">
-                    {statusTypes.map((type) => (
-                      <div key={type.status} className="flex items-center gap-2">
-                        <div className={cn("w-3 h-3 rounded-sm border border-border/50", type.color)} />
-                        <span className="text-xs">{type.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Popover open={infoOpen} onOpenChange={setInfoOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Appointment status legend"
+                  onClick={() => setInfoOpen(!infoOpen)}
+                >
+                  <Info className="h-4 w-4" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="bottom" align="end" className="p-2 w-fit">
+                <div className="flex flex-col gap-1.5">
+                  {statusTypes.map((type) => (
+                    <div key={type.status} className="flex items-center gap-2">
+                      <div className={cn("w-3 h-3 rounded-sm border border-border/50", type.color)} />
+                      <span className="text-xs">{type.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </CardContent>

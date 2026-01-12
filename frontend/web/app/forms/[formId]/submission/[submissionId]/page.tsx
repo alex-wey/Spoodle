@@ -118,7 +118,7 @@ export default function SubmissionDetailPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-3"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading submission...</p>
         </div>
       </div>
@@ -127,39 +127,50 @@ export default function SubmissionDetailPage() {
 
   if (error || !submission) {
     return (
-      <div className="max-w-3xl mx-auto p-6">
+      <div className="flex-1 space-y-6 p-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        </div>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error || "Submission not found."}</AlertDescription>
         </Alert>
-        <Button className="mt-4" variant="outline" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-4">
+    <div className="flex-1 space-y-6 p-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground mb-1">Form</p>
-          <h1 className="text-2xl font-semibold">{submission.form?.title || "Form submission"}</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Pet: {submission.pet?.name || "Unknown"} • Owner:{" "}
-            {submission.petOwner?.user
-              ? `${submission.petOwner.user.firstName} ${submission.petOwner.user.lastName}`.trim()
-              : submission.respondentEmail || "Unknown"}
-          </p>
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">{submission.form?.title || "Form submission"}</h2>
+            <p className="text-muted-foreground">
+              Pet: {submission.pet?.name || "Unknown"} • Owner:{" "}
+              {submission.petOwner?.user
+                ? `${submission.petOwner.user.firstName} ${submission.petOwner.user.lastName}`.trim()
+                : submission.respondentEmail || "Unknown"}
+            </p>
+          </div>
         </div>
-        <Button variant="ghost" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
       </div>
 
-      <Card className="p-5 space-y-4">
+      <Card className="p-6">
+        <div className="space-y-4">
         {fields.length === 0 ? (
           <p className="text-sm text-muted-foreground">No answers provided.</p>
         ) : (
@@ -175,6 +186,7 @@ export default function SubmissionDetailPage() {
             </div>
           ))
         )}
+        </div>
       </Card>
     </div>
   );

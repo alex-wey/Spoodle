@@ -757,6 +757,51 @@ class ClerkApiClient {
     });
   }
 
+  // Form invites endpoints
+  async getFormInvites(petId?: string) {
+    const url = petId 
+      ? `/form-invites?petId=${petId}`
+      : '/form-invites';
+    
+    return this.request<{
+      success: boolean;
+      data: Array<{
+        id: string;
+        formLink: string;
+        formName: string;
+        clinicId: string;
+        petId: string;
+        petOwnerId: string;
+        createdAt: string;
+        updatedAt: string;
+        clinic?: {
+          id: string;
+          name: string;
+          slug: string;
+        };
+        pet?: {
+          id: string;
+          name: string;
+          species: string;
+          breed?: string;
+          imageUrl?: string;
+        };
+        petOwner?: {
+          id: string;
+          user?: {
+            firstName: string;
+            lastName: string;
+            email?: string;
+            phone?: string;
+          };
+        };
+      }>;
+      message?: string;
+    }>(url, {
+      method: 'GET',
+    });
+  }
+
   // Appointment endpoints
   async getAppointments(filters?: {
     petId?: string;

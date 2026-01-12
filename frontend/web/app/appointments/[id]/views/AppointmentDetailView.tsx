@@ -348,6 +348,25 @@ export default function AppointmentDetailView() {
     <div className="min-h-screen bg-background">
       {/* Main Content */}
       <div className="container mx-auto px-6 py-8">
+        {/* Header Section */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => router.push("/appointments")}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight">Appointment Details</h2>
+              <p className="text-muted-foreground">
+                View and manage appointment information
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Appointment Info & Questionnaire */}
           <div className="lg:col-span-2 space-y-6">
@@ -360,14 +379,7 @@ export default function AppointmentDetailView() {
                     <div className="flex flex-col items-center lg:items-start">
                       {/* Basic Info */}
                       <div className="flex-1 text-center lg:text-left min-w-0 w-full">
-                        <div className="mb-2 flex items-center gap-3">
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => router.push("/appointments")}
-                          >
-                            <ArrowLeft className="h-5 w-5" />
-                          </Button>
+                        <div className="mb-2">
                           <h1 className="text-4xl font-bold text-primary">{appointment.petName}&apos;s Appointment</h1>
                         </div>
                         <p className="text-lg text-muted-foreground mb-4">

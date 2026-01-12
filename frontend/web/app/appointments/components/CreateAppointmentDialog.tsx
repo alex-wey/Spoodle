@@ -20,10 +20,11 @@ import {
   SelectValue,
 } from '../../../components/ui/select';
 import { Alert, AlertDescription } from '../../../components/ui/alert';
-import { AlertCircle, Loader2, Send, ExternalLink } from 'lucide-react';
-import { getClinicPets, getEventTypes, createAppointmentInvite } from '../../../lib/api';
+import { AlertCircle, Loader2, ChevronRight } from 'lucide-react';
+import { getClinicPets, getEventTypes, getSchedulingLink, createFormInvite } from '../../../lib/api';
 import { useSessionContext } from '../../../components/SessionContext';
 import type { Pet } from '../../../lib/types';
+import { CalEmbed } from './CalEmbed';
 
 interface EventType {
   id: number;
@@ -60,9 +61,13 @@ export function CreateAppointmentDialog({
   
   const [selectedPetId, setSelectedPetId] = useState<string>('');
   const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>('');
-  const [selectedFormUrl, setSelectedFormUrl] = useState<string>('https://tally.so/r/Y50xYz');
+  const [selectedFormUrl, setSelectedFormUrl] = useState<string>('none');
 
   const formOptions = [
+    {
+      label: 'None',
+      url: 'none',
+    },
     {
       label: 'Morning of Surgery Questionnaire',
       url: 'https://tally.so/r/Y50xYz',
@@ -116,7 +121,7 @@ export function CreateAppointmentDialog({
     }
   };
 
-  const handleSendInvite = async (e: React.FormEvent) => {
+  const handleOpenSchedulingLink = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedPetId || !selectedEventTypeId) {
@@ -131,7 +136,6 @@ export function CreateAppointmentDialog({
 
     setGenerating(true);
     setError(null);
-    setSchedulingUrl(null);
 
     try {
       const token = await getToken();
@@ -141,26 +145,49 @@ export function CreateAppointmentDialog({
         return;
       }
 
-      // Create appointment invite (form is just an optional link, not sent to backend here)
-      const result = await createAppointmentInvite(
+      // Get scheduling link
+      const result = await getSchedulingLink(
         selectedEventTypeId,
         selectedPetId,
+        clinicId,
         token
       );
 
       if (result.success && result.data) {
-        setSchedulingUrl(result.data.appointmentLink);
+        const url = result.data.schedulingUrl;
         
-        // Trigger refresh without closing dialog
-        if (onSuccess) {
-          onSuccess();
+        // Create form invite if a form is selected (not "none")
+        if (selectedFormUrl && selectedFormUrl !== 'none') {
+          try {
+            // Find the form name from formOptions
+            const selectedForm = formOptions.find(form => form.url === selectedFormUrl);
+            const formName = selectedForm?.label || 'Form';
+            
+            const formInviteResult = await createFormInvite(
+              selectedFormUrl,
+              formName,
+              selectedPetId,
+              token
+            );
+            
+            if (!formInviteResult.success) {
+              console.warn('Failed to create form invite:', formInviteResult.error || formInviteResult.message);
+              // Don't fail the whole operation if form invite creation fails
+            }
+          } catch (formError) {
+            console.error('Error creating form invite:', formError);
+            // Don't fail the whole operation if form invite creation fails
+          }
         }
+        
+        // Set scheduling URL to show embed
+        setSchedulingUrl(url);
       } else {
-        setError(result.error || result.message || 'Failed to send appointment invite');
+        setError(result.error || result.message || 'Failed to generate scheduling link');
       }
     } catch (err: unknown) {
-      console.error('Error sending appointment invite:', err);
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred while sending the appointment invite';
+      console.error('Error generating scheduling link:', err);
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred while generating the scheduling link';
       setError(errorMessage);
     } finally {
       setGenerating(false);
@@ -171,26 +198,50 @@ export function CreateAppointmentDialog({
     if (!generating) {
       setSelectedPetId('');
       setSelectedEventTypeId('');
+      setSelectedFormUrl('none');
       setError(null);
       setSchedulingUrl(null);
       onOpenChange(false);
     }
   };
 
+  const handleBookingSuccess = () => {
+    console.log('Booking successful, refreshing appointments');
+    // Close dialog first
+    handleClose();
+    
+    // Trigger refresh with retry logic since webhook may take a moment
+    if (onSuccess) {
+      // Immediate refresh
+      onSuccess();
+      
+      // Retry refresh after delays to catch webhook-created appointment
+      setTimeout(() => {
+        onSuccess();
+      }, 2000);
+      
+      setTimeout(() => {
+        onSuccess();
+      }, 5000);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className={schedulingUrl ? "sm:max-w-[900px] max-w-[95vw]" : "sm:max-w-[500px]"}>
         <DialogHeader>
-          <DialogTitle>Send Appointment Invite</DialogTitle>
+          <DialogTitle>Create Appointment</DialogTitle>
           <DialogDescription>
-            Send an appointment invite to a pet owner. The invite will be tracked in your invites list.
+            Select a pet and event type to open the Cal.com booking page.
           </DialogDescription>
         </DialogHeader>
 
         {error && (
           <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="m-0">{error}</AlertDescription>
+            </div>
           </Alert>
         )}
 
@@ -201,23 +252,18 @@ export function CreateAppointmentDialog({
           </div>
         ) : schedulingUrl ? (
           <div className="space-y-4">
-            <Alert>
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="m-0">
-                  Appointment invite sent successfully!
-                </AlertDescription>
-              </div>
-            </Alert>
-
+            <CalEmbed 
+              schedulingUrl={schedulingUrl}
+              onBookingSuccess={handleBookingSuccess}
+            />
             <DialogFooter>
-              <Button onClick={handleClose}>
-                Done
+              <Button variant="outline" onClick={handleClose}>
+                Cancel
               </Button>
             </DialogFooter>
           </div>
         ) : (
-          <form onSubmit={handleSendInvite} className="space-y-4">
+          <form onSubmit={handleOpenSchedulingLink} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="pet">Pet *</Label>
               <Select value={selectedPetId} onValueChange={setSelectedPetId} required>
@@ -285,12 +331,11 @@ export function CreateAppointmentDialog({
                 {generating ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Sending...
                   </>
                 ) : (
                   <>
-                    <Send className="h-4 w-4" />
-                    Send Invite
+                    Next
+                    <ChevronRight className="h-4 w-4" />
                   </>
                 )}
               </Button>

@@ -186,106 +186,100 @@ export default function FormsView() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      <div className="border-b bg-card">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3">
-            <FileText className="h-5 w-5 text-primary" />
-            <div>
-              <h1 className="text-xl font-bold">Forms</h1>
-              <p className="text-sm text-muted-foreground">Select a form to view submissions</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 w-full md:w-72">
-            <Select
-              value={selectedForm?.id || undefined}
-              onValueChange={(val) => {
-                const form = forms.find((f) => f.id === val) || null;
-                setSelectedForm(form);
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a form" />
-              </SelectTrigger>
-              <SelectContent>
-                {forms.map((form) => (
-                  <SelectItem key={form.id} value={form.id}>
-                    {form.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Badge variant="secondary">{forms.length} form{forms.length !== 1 ? "s" : ""}</Badge>
-          </div>
+    <div className="flex-1 space-y-6 p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Forms</h2>
+          <p className="text-muted-foreground">
+            Select a form to view submissions
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select
+            value={selectedForm?.id || undefined}
+            onValueChange={(val) => {
+              const form = forms.find((f) => f.id === val) || null;
+              setSelectedForm(form);
+            }}
+          >
+            <SelectTrigger className="w-72">
+              <SelectValue placeholder="Choose a form" />
+            </SelectTrigger>
+            <SelectContent>
+              {forms.map((form) => (
+                <SelectItem key={form.id} value={form.id}>
+                  {form.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Badge variant="default">{forms.length} form{forms.length !== 1 ? "s" : ""}</Badge>
         </div>
       </div>
 
-      <div className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
-        {!selectedForm ? (
-          <div className="flex h-full items-center justify-center text-center">
+      {!selectedForm ? (
+        <Card className="p-6 text-center">
+          <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-40" />
+          <h2 className="text-lg font-semibold mb-1">Select a form</h2>
+          <p className="text-sm text-muted-foreground">Choose a form to see submissions.</p>
+        </Card>
+      ) : loadingSubmissions ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+            <p className="text-sm text-muted-foreground">Loading submissions...</p>
+          </div>
+        </div>
+      ) : submissions.length === 0 ? (
+        <Card className="p-6 text-center">
+          <FileText className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-40" />
+          <h2 className="text-lg font-semibold mb-1">No submissions yet</h2>
+          <p className="text-sm text-muted-foreground">
+            Form submissions will appear here when pet owners complete this form.
+          </p>
+        </Card>
+      ) : (
+        <Card className="overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b">
             <div>
-              <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-40" />
-              <h2 className="text-lg font-semibold">Select a form</h2>
-              <p className="text-sm text-muted-foreground">Choose a form to see submissions.</p>
+              <h2 className="text-lg font-semibold">{selectedForm.title}</h2>
+              <p className="text-sm text-muted-foreground">
+                {submissions.length} submission{submissions.length !== 1 ? "s" : ""}
+              </p>
             </div>
           </div>
-        ) : loadingSubmissions ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-              <p className="text-sm text-muted-foreground">Loading submissions...</p>
-            </div>
-          </div>
-        ) : submissions.length === 0 ? (
-          <Card className="p-6 text-center">
-            <FileText className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-40" />
-            <h2 className="text-lg font-semibold mb-1">No submissions yet</h2>
-            <p className="text-sm text-muted-foreground">
-              Form submissions will appear here when pet owners complete this form.
-            </p>
-          </Card>
-        ) : (
-          <Card className="overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b">
-              <div>
-                <h2 className="text-lg font-semibold">{selectedForm.title}</h2>
-                <p className="text-sm text-muted-foreground">
-                  {submissions.length} submission{submissions.length !== 1 ? "s" : ""}
-                </p>
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-1/3">Pet</TableHead>
-                    <TableHead className="w-1/3">Pet Owner</TableHead>
-                    <TableHead className="w-1/3 text-right">Form Submission</TableHead>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-1/3">Pet</TableHead>
+                  <TableHead className="w-1/3">Pet Owner</TableHead>
+                  <TableHead className="w-1/3 text-right">Form Submission</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell>{row.pet}</TableCell>
+                    <TableCell>{row.owner}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => router.push(row.href)}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        Open
+                      </Button>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.map((row) => (
-                    <TableRow key={row.id}>
-                      <TableCell>{row.pet}</TableCell>
-                      <TableCell>{row.owner}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => router.push(row.href)}
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Open
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </Card>
-        )}
-      </div>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

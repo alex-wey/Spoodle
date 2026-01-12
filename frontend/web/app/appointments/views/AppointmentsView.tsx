@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { Button } from "../../../components/ui/button";
-import { Plus, AlertCircle, Mail } from "lucide-react";
+import { Plus, AlertCircle } from "lucide-react";
 import { getAppointments } from "../../../lib/api";
 import { useSessionContext } from "../../../components/SessionContext";
 import { Alert, AlertDescription } from "../../../components/ui/alert";
@@ -110,10 +110,10 @@ export default function AppointmentsView() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setInvitesModalOpen(true)}>
+          {/* <Button variant="outline" onClick={() => setInvitesModalOpen(true)}>
             <Mail className="h-4 w-4 mr-2" />
             Invites
-          </Button>
+          </Button> */}
           <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="h-4 w-4" />
             New Appointment

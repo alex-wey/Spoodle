@@ -199,6 +199,26 @@ router.post('/tally', async (req: Request, res: Response) => {
         console.log(`   Linked to Pet: ${submission.pet.name} (${submission.pet.species})`);
       }
 
+      // Delete form invites for this pet and petOwner
+      // Find form invites that match the petId and petOwnerId
+      if (petId && petOwnerId) {
+        try {
+          const deletedInvites = await prisma.formInvite.deleteMany({
+            where: {
+              petId: petId,
+              petOwnerId: petOwnerId,
+            },
+          });
+          
+          if (deletedInvites.count > 0) {
+            console.log(`🗑️  Deleted ${deletedInvites.count} form invite(s) for pet ${petId} and petOwner ${petOwnerId}`);
+          }
+        } catch (deleteError) {
+          // Log error but don't fail the webhook - form submission is more important
+          console.error('⚠️  Error deleting form invites (non-fatal):', deleteError);
+        }
+      }
+
       return res.status(200).json({
         success: true,
         message: 'Webhook processed successfully',

@@ -529,3 +529,70 @@ export async function getAppointmentInvites(sessionToken: string, clinicId?: str
     method: 'GET',
   }, sessionToken);
 }
+
+/**
+ * Create a form invite
+ * @param formLink - Tally form URL
+ * @param formName - Display name for the form
+ * @param petId - Pet ID
+ * @param sessionToken - Clerk session token
+ */
+export async function createFormInvite(
+  formLink: string,
+  formName: string,
+  petId: string,
+  sessionToken: string
+) {
+  return apiRequest<{
+    id: string;
+    formLink: string;
+    formName: string;
+    clinicId: string;
+    petId: string;
+    petOwnerId: string;
+    createdAt: string;
+    updatedAt: string;
+    clinic?: Record<string, unknown>;
+    pet?: Record<string, unknown>;
+    petOwner?: Record<string, unknown>;
+  }>('/api/form-invites', {
+    method: 'POST',
+    body: JSON.stringify({
+      formLink,
+      formName,
+      petId,
+    }),
+  }, sessionToken);
+}
+
+/**
+ * Get all form invites
+ * @param sessionToken - Clerk session token
+ * @param clinicId - Optional clinic ID (required for staff users)
+ * @param petId - Optional pet ID to filter by
+ */
+export async function getFormInvites(sessionToken: string, clinicId?: string, petId?: string) {
+  const params = new URLSearchParams();
+  if (clinicId) params.append('clinicId', clinicId);
+  if (petId) params.append('petId', petId);
+  
+  const url = params.toString() 
+    ? `/api/form-invites?${params.toString()}`
+    : '/api/form-invites';
+  
+  return apiRequest<Array<{
+    id: string;
+    formLink: string;
+    formName: string;
+    clinicId: string;
+    petId: string;
+    petOwnerId: string;
+    createdAt: string;
+    updatedAt: string;
+    clinic?: Record<string, unknown>;
+    pet?: Record<string, unknown>;
+    petOwner?: Record<string, unknown>;
+  }>>(url, {
+    method: 'GET',
+  }, sessionToken);
+}

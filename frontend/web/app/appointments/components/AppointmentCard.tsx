@@ -21,13 +21,12 @@ interface AppointmentCardProps {
   onClick: (appointmentId: string) => void;
 }
 
-// Convert bg-* colors to border-* colors
-const statusBorderColors: Record<string, string> = Object.fromEntries(
-  statusTypes.map((type) => [
-    type.status,
-    type.color.replace("bg-", "border-")
-  ])
-);
+// Map status to border colors explicitly
+const statusBorderColors: Record<string, string> = {
+  CONFIRMED: "border-primary",
+  RESCHEDULED: "border-warning",
+  CANCELLED: "border-destructive",
+};
 
 export function AppointmentCard({ appointment, onClick }: AppointmentCardProps) {
   const borderColor = statusBorderColors[appointment.status] || "border-border";
