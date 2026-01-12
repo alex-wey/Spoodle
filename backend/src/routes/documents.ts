@@ -481,7 +481,7 @@ router.post('/upload',
       if (!hasAccess) {
         console.error('❌ Pet not found or does not belong to user/clinic:', {
           requestedPetId: petId,
-          clinicId: req.petOwner?.clinicId || req.staff?.clinicId
+          clinicId: req.petOwner?.clinicId
         });
         return res.status(400).json({
           success: false,
