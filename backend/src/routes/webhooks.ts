@@ -59,76 +59,78 @@ router.post('/tally', async (req: Request, res: Response) => {
 
       console.log(`✅ Found form in database: ${form.id} (${form.title})`);
 
-      // Extract respondent information
-      const respondentEmail = respondent?.email || null;
-      const respondentName = respondent?.name || null;
+      // Extract hidden fields from Tally payload (can arrive either in answers or rawData.data.fields)
+      const hiddenFieldMap = (() => {
+        const fields = data?.data?.fields || data?.fields || [];
+        const map: Record<string, string | null> = {};
+
+        for (const field of fields) {
+          if (field?.type === 'HIDDEN_FIELDS') {
+            const label = (field.label || '').trim();
+            const value = field.value ?? null;
+            if (!label) continue;
+
+            if (label === 'petId') map.petId = value;
+            if (label === 'petOwnerId') map.petOwnerId = value;
+            if (label === 'petName') map.petName = value;
+            if (label === 'email') map.email = value;
+            if (label === 'phone') map.phone = value;
+          }
+        }
+        return map;
+      })();
+
+      // Extract respondent information and hidden fields (from query params mapped as hidden fields in Tally)
+      let respondentEmail = respondent?.email || answers?.email || hiddenFieldMap.email || null;
+      const respondentName = respondent?.name || answers?.name || answers?.petOwnerName || null;
+      const explicitPetOwnerId = answers?.petOwnerId?.value || answers?.petOwnerId || hiddenFieldMap.petOwnerId || null;
+      const explicitPetId = answers?.petId?.value || answers?.petId || hiddenFieldMap.petId || null;
+      const petNameFromForm = answers?.petName?.value || answers?.petName || hiddenFieldMap.petName || null;
       
-      // Try to find PetOwner by email
-      let petOwnerId: string | null = null;
-      let petId: string | null = null;
-      
-      if (respondentEmail) {
+      // Try to link PetOwner and Pet
+      let petOwnerId: string | null = explicitPetOwnerId || null;
+      let petId: string | null = explicitPetId || null;
+
+      // If petOwnerId not provided, try to find by email
+      if (!petOwnerId && respondentEmail) {
         try {
-          // Find User by email, then get PetOwner
           const user = await prisma.user.findUnique({
             where: { email: respondentEmail },
             include: { petOwner: true }
           });
-          
           if (user?.petOwner) {
             petOwnerId = user.petOwner.id;
             console.log(`✅ Found PetOwner: ${petOwnerId} for email: ${respondentEmail}`);
-            
-            // Try to find Pet from form answers
-            // Common field names: petId, pet, petName, selectedPet, etc.
-            const petFields = ['petId', 'pet', 'petName', 'selectedPet', 'pet_id', 'pet_name'];
-            let foundPetId: string | null = null;
-            
-            // Check answers for pet identifier
-            for (const field of petFields) {
-              const petValue = answers[field]?.value || answers[field];
-              if (petValue) {
-                // Try to find pet by ID (UUID format)
-                if (typeof petValue === 'string' && petValue.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-                  const pet = await prisma.pet.findFirst({
-                    where: {
-                      id: petValue,
-                      ownerId: petOwnerId
-                    }
-                  });
-                  if (pet) {
-                    foundPetId = pet.id;
-                    break;
-                  }
-                }
-                // Try to find pet by name
-                else if (typeof petValue === 'string') {
-                  const pet = await prisma.pet.findFirst({
-                    where: {
-                      name: { contains: petValue, mode: 'insensitive' },
-                      ownerId: petOwnerId
-                    }
-                  });
-                  if (pet) {
-                    foundPetId = pet.id;
-                    break;
-                  }
-                }
-              }
-            }
-            
-            if (foundPetId) {
-              petId = foundPetId;
-              console.log(`✅ Found Pet: ${petId} for PetOwner: ${petOwnerId}`);
-            } else {
-              console.log(`ℹ️ No pet found in form answers for PetOwner: ${petOwnerId}`);
-            }
-          } else {
-            console.log(`ℹ️ No PetOwner found for email: ${respondentEmail}`);
           }
         } catch (error) {
-          console.error('❌ Error finding PetOwner/Pet:', error);
-          // Continue without linking - submission will still be saved
+          console.error('❌ Error finding PetOwner by email:', error);
+        }
+      }
+
+      // If petId not provided, try to find pet belonging to the petOwner by ID or name from form fields
+      if (!petId && petOwnerId) {
+        const petFields = ['petId', 'pet', 'petName', 'selectedPet', 'pet_id', 'pet_name'];
+        for (const field of petFields) {
+          const petValue = answers[field]?.value || answers[field];
+          if (!petValue) continue;
+
+          if (typeof petValue === 'string' && petValue.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+            const pet = await prisma.pet.findFirst({
+              where: { id: petValue, ownerId: petOwnerId }
+            });
+            if (pet) {
+              petId = pet.id;
+              break;
+            }
+          } else if (typeof petValue === 'string') {
+            const pet = await prisma.pet.findFirst({
+              where: { name: { contains: petValue, mode: 'insensitive' }, ownerId: petOwnerId }
+            });
+            if (pet) {
+              petId = pet.id;
+              break;
+            }
+          }
         }
       }
       
