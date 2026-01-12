@@ -114,7 +114,7 @@ export default function FormsView() {
     };
 
     fetchSubmissions();
-  }, [selectedForm, isSignedIn, getToken]);
+  }, [selectedForm, isSignedIn, getToken, clinicId]);
 
   const petNameForRow = (submission: FormSubmission) => {
     if (submission.pet?.name) return submission.pet.name;
@@ -137,12 +137,12 @@ export default function FormsView() {
     return `/forms/${selectedForm.id}/submission/${submission.id}`;
   };
 
-  const rows = useMemo(() => submissions.map((s) => ({
+  const rows = submissions.map((s) => ({
     id: s.id,
     pet: petNameForRow(s),
     owner: ownerNameForRow(s),
     href: submissionLink(s),
-  })), [submissions, selectedForm]);
+  }));
 
   if (loading) {
     return (

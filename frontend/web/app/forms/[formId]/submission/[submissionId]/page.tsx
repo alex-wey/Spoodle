@@ -63,31 +63,52 @@ export default function SubmissionDetailPage() {
     fetchSubmission();
   }, [formId, submissionId, isSignedIn, clinicId, getToken]);
 
+  type RawField = {
+    key?: string;
+    type?: string;
+    label?: string;
+    value?: unknown;
+    options?: Array<{
+      id?: string;
+      text?: string;
+      label?: string;
+      value?: string;
+    }>;
+  };
+
   const fields: FieldDisplay[] = useMemo(() => {
-    if (!submission?.submissionData?.rawData?.data?.fields) return [];
-    const rawFields = submission.submissionData.rawData.data.fields as any[];
+    const raw = submission?.submissionData?.rawData?.data?.fields;
+    const rawFields: RawField[] = Array.isArray(raw) ? raw : [];
+
     return rawFields
       .filter((f) => f.type !== "HIDDEN_FIELDS")
       .map((f) => {
         const label = f.label || f.key || "Question";
         const val = f.value;
+
         if (Array.isArray(val) && Array.isArray(f.options)) {
           const mapped = val
-            .map((id: string) => {
-              const opt = f.options.find((o: any) => o.id === id || String(o.id) === String(id));
-              return opt?.text || opt?.label || opt?.value || id;
+            .map((id) => {
+              const opt = f.options?.find(
+                (o) => o?.id === id || String(o?.id) === String(id)
+              );
+              return opt?.text || opt?.label || opt?.value || String(id);
             })
             .join(", ");
           return { label, value: mapped || "Not answered" };
         }
+
         if (val === null || val === undefined || val === "") {
           return { label, value: "Not answered" };
         }
+
         if (typeof val === "object") {
-          if (val.label) return { label, value: String(val.label) };
-          if (val.value) return { label, value: String(val.value) };
-          return { label, value: JSON.stringify(val) };
+          const obj = val as { label?: unknown; value?: unknown };
+          if (obj.label !== undefined) return { label, value: String(obj.label) };
+          if (obj.value !== undefined) return { label, value: String(obj.value) };
+          return { label, value: JSON.stringify(obj) };
         }
+
         return { label, value: String(val) };
       });
   }, [submission]);
