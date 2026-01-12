@@ -77,7 +77,8 @@ export default function SubmissionDetailPage() {
   };
 
   const fields: FieldDisplay[] = useMemo(() => {
-    const raw = submission?.submissionData?.rawData?.data?.fields;
+    const rawData = submission?.submissionData?.rawData as { data?: { fields?: unknown } } | undefined;
+    const raw = rawData?.data?.fields;
     const rawFields: RawField[] = Array.isArray(raw) ? raw : [];
 
     return rawFields
