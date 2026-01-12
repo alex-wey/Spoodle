@@ -3,7 +3,7 @@ import { cn } from "../../../lib/utils";
 import { CalendarDayColumn } from "./CalendarDayColumn";
 import { AppointmentCardData } from "./AppointmentCard";
 import { formatTimeShort, formatDayHeader } from "../utils/dateUtils";
-import { HOURS_PER_DAY, PIXELS_PER_HOUR } from "../utils/calendarConstants";
+import { START_HOUR, HOURS_PER_DAY, PIXELS_PER_HOUR } from "../utils/calendarConstants";
 
 interface CalendarGridProps {
   weekDays: Date[];
@@ -90,7 +90,7 @@ export function CalendarGrid({
           {/* Time Column */}
           <div className="border-r border-border bg-muted/30 relative">
             {Array.from({ length: HOURS_PER_DAY }, (_, i) => {
-              const hour = 6 + i;
+              const hour = START_HOUR + i;
               const isLastRow = i === HOURS_PER_DAY - 1;
               return (
                 <div

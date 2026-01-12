@@ -1,6 +1,6 @@
 import { cn } from "../../../lib/utils";
 import { AppointmentCard, AppointmentCardData } from "./AppointmentCard";
-import { HOURS_PER_DAY, PIXELS_PER_HOUR, PIXELS_PER_MINUTE } from "../utils/calendarConstants";
+import { START_HOUR, END_HOUR, HOURS_PER_DAY, PIXELS_PER_HOUR, PIXELS_PER_MINUTE } from "../utils/calendarConstants";
 
 interface CalendarDayColumnProps {
   day: Date;
@@ -21,12 +21,12 @@ export function CalendarDayColumn({
     const startHour = apt.startTime.getHours();
     const startMinute = apt.startTime.getMinutes();
     
-    // Only show appointments between 6 AM and 6 PM
-    if (startHour < 6 || startHour >= 18) {
+    // Only show appointments within the configured visible window
+    if (startHour < START_HOUR || startHour >= END_HOUR) {
       return null;
     }
 
-    const top = ((startHour - 6) * PIXELS_PER_HOUR) + (startMinute * PIXELS_PER_MINUTE);
+    const top = ((startHour - START_HOUR) * PIXELS_PER_HOUR) + (startMinute * PIXELS_PER_MINUTE);
     const duration = (apt.endTime.getTime() - apt.startTime.getTime()) / (1000 * 60);
     const height = Math.max(duration * PIXELS_PER_MINUTE, 40);
 

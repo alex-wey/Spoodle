@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '../../../components/ui/select';
 import { Alert, AlertDescription } from '../../../components/ui/alert';
-import { AlertCircle, Loader2, Send } from 'lucide-react';
+import { AlertCircle, Loader2, Send, ExternalLink } from 'lucide-react';
 import { getClinicPets, getEventTypes, createAppointmentInvite } from '../../../lib/api';
 import { useSessionContext } from '../../../components/SessionContext';
 import type { Pet } from '../../../lib/types';
@@ -60,6 +60,14 @@ export function CreateAppointmentDialog({
   
   const [selectedPetId, setSelectedPetId] = useState<string>('');
   const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>('');
+  const [selectedFormUrl, setSelectedFormUrl] = useState<string>('https://tally.so/r/Y50xYz');
+
+  const formOptions = [
+    {
+      label: 'Morning of Surgery Questionnaire',
+      url: 'https://tally.so/r/Y50xYz',
+    },
+  ];
 
   // Fetch pets and event types when dialog opens
   useEffect(() => {
@@ -133,7 +141,7 @@ export function CreateAppointmentDialog({
         return;
       }
 
-      // Create appointment invite
+      // Create appointment invite (form is just an optional link, not sent to backend here)
       const result = await createAppointmentInvite(
         selectedEventTypeId,
         selectedPetId,
@@ -247,6 +255,25 @@ export function CreateAppointmentDialog({
                           ({eventType.length} min)
                         </span>
                       )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="form">Form (Optional)</Label>
+              <Select
+                value={selectedFormUrl}
+                onValueChange={(value) => setSelectedFormUrl(value)}
+              >
+                <SelectTrigger id="form">
+                  <SelectValue placeholder="Select a form" />
+                </SelectTrigger>
+                <SelectContent>
+                  {formOptions.map((form) => (
+                    <SelectItem key={form.url} value={form.url}>
+                      {form.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

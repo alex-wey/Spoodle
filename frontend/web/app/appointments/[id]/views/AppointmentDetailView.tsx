@@ -199,6 +199,18 @@ export default function AppointmentDetailView() {
     }
   };
 
+  const handleOpenQuestionnaire = () => {
+    if (!apiAppointment) return;
+    const formUrl = new URL('https://tally.so/r/Y50xYz');
+    // Pass identifiers so submissions can be linked to pet and owner
+    formUrl.searchParams.set('petId', apiAppointment.petId);
+    formUrl.searchParams.set('petOwnerId', apiAppointment.petOwnerId);
+    if (apiAppointment.pet?.name) formUrl.searchParams.set('petName', apiAppointment.pet.name);
+    if (apiAppointment.petOwner?.user?.email) formUrl.searchParams.set('email', apiAppointment.petOwner.user.email);
+    if (apiAppointment.petOwner?.user?.phone) formUrl.searchParams.set('phone', apiAppointment.petOwner.user.phone);
+    window.open(formUrl.toString(), '_blank', 'noopener,noreferrer');
+  };
+
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'confirmed':
@@ -335,8 +347,20 @@ export default function AppointmentDetailView() {
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-muted-foreground">No questionnaire responses available</p>
+                    <p className="text-sm text-muted-foreground">
+                      Please have the pet owner complete the pre-visit questionnaire.
+                    </p>
                   )}
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleOpenQuestionnaire}
+                    className="flex items-center gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Open Morning of Surgery Questionnaire
+                  </Button>
                 </div>
               </CardContent>
             </Card>

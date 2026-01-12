@@ -122,12 +122,6 @@ export default function FormsView() {
     value?: unknown;
   };
 
-  type RawField = {
-    type?: string;
-    label?: string;
-    value?: unknown;
-  };
-
   const petNameForRow = (submission: FormSubmission) => {
     if (submission.pet?.name) return submission.pet.name;
     const rawData = submission.submissionData?.rawData as { data?: { fields?: unknown } } | undefined;
