@@ -122,9 +122,16 @@ export default function FormsView() {
     value?: unknown;
   };
 
+  type RawField = {
+    type?: string;
+    label?: string;
+    value?: unknown;
+  };
+
   const petNameForRow = (submission: FormSubmission) => {
     if (submission.pet?.name) return submission.pet.name;
-    const rawFields = submission.submissionData?.rawData?.data?.fields;
+    const rawData = submission.submissionData?.rawData as { data?: { fields?: unknown } } | undefined;
+    const rawFields = rawData?.data?.fields;
     const fields: RawField[] = Array.isArray(rawFields) ? rawFields : [];
     const hiddenPetName = fields.find(
       (f) => f.type === "HIDDEN_FIELDS" && f.label?.trim() === "petName"
