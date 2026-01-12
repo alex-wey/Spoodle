@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import type { ChangeEvent } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { Button } from "../../../../components/ui/button";
@@ -8,10 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../../../components
 import { Badge } from "../../../../components/ui/badge";
 import { Label } from "../../../../components/ui/label";
 import { ArrowLeft, Calendar, User, FileText, Upload, ExternalLink, AlertCircle, Clock, UserCheck, Dog, Dna } from "lucide-react";
-import { getAppointmentById } from "../../../../lib/api";
+import { downloadDocument, getAppointmentById, getPetDocuments, uploadDocument } from "../../../../lib/api";
 import { useSessionContext } from "../../../../components/SessionContext";
 import { Alert, AlertDescription } from "../../../../components/ui/alert";
-import type { Appointment as ApiAppointment } from "../../../../lib/types";
+import type { Appointment as ApiAppointment, Document as ApiDocument } from "../../../../lib/types";
 
 interface QuestionnaireAnswer {
   question: string;
@@ -52,7 +53,11 @@ export default function AppointmentDetailView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [questionnaire] = useState<QuestionnaireAnswer[]>([]);
-  const [uploads] = useState<UploadedFile[]>([]);
+  const [documents, setDocuments] = useState<ApiDocument[]>([]);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Transform API appointment to component format
   const transformAppointment = (apiAppointment: ApiAppointment): Appointment => {
@@ -144,6 +149,119 @@ export default function AppointmentDetailView() {
 
     fetchAppointment();
   }, [appointmentId, isSignedIn, getToken, clinicId]);
+
+  // Fetch documents for this pet (veterinary_notes only)
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      if (!apiAppointment || !isSignedIn) return;
+      setDocumentsLoading(true);
+      try {
+        const token = await getToken();
+        if (!token) {
+          setDocumentsLoading(false);
+          return;
+        }
+        const result = await getPetDocuments(apiAppointment.petId, token, clinicId || undefined);
+        if ((result as any)?.success && (result as any)?.data) {
+          const docs = (result as any).data as ApiDocument[];
+          setDocuments(docs.filter((d) => d.category === 'veterinary_notes'));
+        }
+      } catch (err) {
+        console.error('Error fetching documents', err);
+      } finally {
+        setDocumentsLoading(false);
+      }
+    };
+
+    fetchDocuments();
+  }, [apiAppointment, isSignedIn, getToken, clinicId]);
+
+  const formatDate = (dateString: string) => {
+    const d = new Date(dateString);
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (!bytes && bytes !== 0) return '';
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), sizes.length - 1);
+    const value = bytes / Math.pow(1024, i);
+    return `${value.toFixed(value >= 10 || i === 0 ? 0 : 1)} ${sizes[i]}`;
+  };
+
+  const handleSelectFile = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !apiAppointment) return;
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const token = await getToken();
+      if (!token) {
+        setUploadError('Unable to authenticate. Please sign in again.');
+        setUploading(false);
+        return;
+      }
+
+      const now = new Date();
+      const displayDate = now.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      const displayName = `Discharge Report ${displayDate}`;
+
+      const formData = new FormData();
+      formData.append('petId', apiAppointment.petId);
+      formData.append('category', 'veterinary_notes');
+      formData.append('fileName', displayName);
+      formData.append('hospitalName', apiAppointment.clinic?.name || 'Clinic');
+      formData.append('date', now.toISOString());
+      formData.append('document', file);
+      if (clinicId) {
+        formData.append('clinicId', clinicId);
+      }
+
+      const result = await uploadDocument(formData, token);
+      if (result.success) {
+        const docsResult = await getPetDocuments(apiAppointment.petId, token, clinicId || undefined);
+        if ((docsResult as any)?.success && (docsResult as any)?.data) {
+          const docs = (docsResult as any).data as ApiDocument[];
+          setDocuments(docs.filter((d) => d.category === 'veterinary_notes'));
+        }
+        setUploadError(null);
+      } else {
+        setUploadError(result.error || result.message || 'Upload failed');
+      }
+    } catch (err) {
+      console.error('Upload error', err);
+      setUploadError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleViewDocument = async (doc: ApiDocument) => {
+    try {
+      const token = await getToken();
+      if (!token) {
+        setUploadError('Unable to authenticate. Please sign in again.');
+        return;
+      }
+      const resp = await downloadDocument(doc.id, token, clinicId || undefined);
+      const url = (resp as any)?.data?.url || (resp as any)?.url;
+      if (url) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } else {
+        setUploadError('Unable to open document');
+      }
+    } catch (err) {
+      console.error('View document error', err);
+      setUploadError(err instanceof Error ? err.message : 'Unable to open document');
+    }
+  };
 
   if (loading) {
     return (
@@ -374,27 +492,52 @@ export default function AppointmentDetailView() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  {uploads.length > 0 ? (
-                    uploads.map((file) => (
-                      <div key={file.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-md">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          <div>
-                            <p className="text-sm font-medium">{file.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {file.type} • {file.size} • {file.uploadDate}
-                            </p>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="sm">
-                          View
-                        </Button>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No uploaded materials</p>
+                <div className="space-y-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                      className="hidden"
+                      onChange={handleUpload}
+                    />
+                    <Button onClick={handleSelectFile} disabled={uploading}>
+                      {uploading ? 'Uploading...' : 'Upload Discharge Report'}
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      Saved as "Discharge Report &lt;Date&gt;" in veterinary_notes
+                    </p>
+                  </div>
+                  {uploadError && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{uploadError}</AlertDescription>
+                    </Alert>
                   )}
+                  <div className="space-y-2">
+                    {documentsLoading ? (
+                      <p className="text-sm text-muted-foreground">Loading materials...</p>
+                    ) : documents.length > 0 ? (
+                      documents.map((doc) => (
+                        <div key={doc.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-md">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
+                            <div>
+                              <p className="text-sm font-medium">{doc.fileName}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {doc.mimeType} • {formatFileSize(doc.fileSize)} • {formatDate(doc.createdAt)}
+                              </p>
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="sm" onClick={() => handleViewDocument(doc)}>
+                            View
+                          </Button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No uploaded materials</p>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>

@@ -130,7 +130,16 @@ export default function FormsView() {
     const hiddenPetName = fields.find(
       (f) => f.type === "HIDDEN_FIELDS" && f.label?.trim() === "petName"
     );
-    return hiddenPetName?.value || "Unknown pet";
+    if (typeof hiddenPetName?.value === "string") {
+      return hiddenPetName.value;
+    }
+    if (Array.isArray(hiddenPetName?.value)) {
+      return hiddenPetName?.value.filter(Boolean).join(", ");
+    }
+    if (hiddenPetName?.value != null) {
+      return String(hiddenPetName.value);
+    }
+    return "Unknown pet";
   };
 
   const ownerNameForRow = (submission: FormSubmission) => {

@@ -451,15 +451,6 @@ router.post('/upload',
         });
       }
 
-      // Only pet owners can upload documents (staff view but don't upload)
-      if (!req.petOwner) {
-        return res.status(403).json({
-          success: false,
-          error: 'Permission denied',
-          message: 'Only pet owners can upload documents'
-        });
-      }
-
       // Check if file was uploaded
       if (!(req as any).file) {
         return res.status(400).json({
@@ -476,56 +467,29 @@ router.post('/upload',
       console.log('  FileName:', userFileName);
       console.log('  File details:', req.file);
       
-      // If petId is provided, verify pet belongs to the user's clinic
-      let selectedPetId = petId;
-      if (petId) {
-        const petOwnerId = req.petOwner!.id;
-        console.log('🔍 Pet lookup:', {
-          petId,
-          petOwnerId,
-          clerkUserId: req.petOwner!.clerkUserId,
-          clinicId: req.petOwner!.clinicId
+      if (!petId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing petId',
+          message: 'petId is required to upload a document'
         });
-        
-        // Verify pet belongs to petOwner and their clinic
-        const hasAccess = await verifyPetClinicAccess(req, petId as string);
-        
-        if (!hasAccess) {
-          console.error('❌ Pet not found or does not belong to user/clinic:', {
-            requestedPetId: petId,
-            petOwnerId,
-            clinicId: req.petOwner!.clinicId
-          });
-          return res.status(400).json({
-            success: false,
-            error: 'Invalid pet',
-            message: 'Pet not found or does not belong to your clinic'
-          });
-        }
-        
-        console.log('✅ Pet verified for clinic access');
-      } else {
-        // If no petId provided, get the user's first pet from their clinic
-        const petOwnerId = req.petOwner!.id;
-        const clinicWhere = req.petOwner!.clinicId 
-          ? { ownerId: petOwnerId, petOwner: { clinicId: req.petOwner!.clinicId } }
-          : { ownerId: petOwnerId };
-        
-        const userPets = await prisma.pet.findMany({
-          where: clinicWhere,
-          take: 1
-        });
-        
-        if (userPets.length > 0) {
-          selectedPetId = userPets[0]!.id;
-        } else {
-          return res.status(400).json({
-            success: false,
-            error: 'No pets found',
-            message: 'Please add a pet first before uploading documents'
-          });
-        }
       }
+
+      // Verify pet belongs to the user's clinic (supports petOwner or staff)
+      let selectedPetId = petId;
+      const hasAccess = await verifyPetClinicAccess(req, petId as string);
+      if (!hasAccess) {
+        console.error('❌ Pet not found or does not belong to user/clinic:', {
+          requestedPetId: petId,
+          clinicId: req.petOwner?.clinicId || req.staff?.clinicId
+        });
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid pet',
+          message: 'Pet not found or does not belong to your clinic'
+        });
+      }
+      console.log('✅ Pet verified for clinic access');
       
       // Get file path or S3 location
       let filePath: string;
