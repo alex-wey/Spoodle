@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { Card } from "../../../components/ui/card";
@@ -116,10 +116,19 @@ export default function FormsView() {
     fetchSubmissions();
   }, [selectedForm, isSignedIn, getToken, clinicId]);
 
+  type RawField = {
+    type?: string;
+    label?: string;
+    value?: unknown;
+  };
+
   const petNameForRow = (submission: FormSubmission) => {
     if (submission.pet?.name) return submission.pet.name;
-    const fields = submission.submissionData?.rawData?.data?.fields || [];
-    const hiddenPetName = fields.find((f: any) => f.type === "HIDDEN_FIELDS" && f.label?.trim() === "petName");
+    const rawFields = submission.submissionData?.rawData?.data?.fields;
+    const fields: RawField[] = Array.isArray(rawFields) ? rawFields : [];
+    const hiddenPetName = fields.find(
+      (f) => f.type === "HIDDEN_FIELDS" && f.label?.trim() === "petName"
+    );
     return hiddenPetName?.value || "Unknown pet";
   };
 
