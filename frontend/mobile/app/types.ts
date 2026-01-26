@@ -124,3 +124,8 @@ export interface BugReport {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Default export to satisfy Expo Router route scanner (not used as a component)
+export default function TypesPlaceholder() {
+  return null;
+}

@@ -159,3 +159,8 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     });
   },
 }));
+
+// Default export to satisfy Expo Router route scanner (not used as a component)
+export default function DocumentsStorePlaceholder() {
+  return null;
+}

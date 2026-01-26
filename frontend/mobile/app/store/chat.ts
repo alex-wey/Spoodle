@@ -206,3 +206,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }
   },
 }));
+
+// Default export to satisfy Expo Router route scanner (not used as a component)
+export default function ChatStorePlaceholder() {
+  return null;
+}
