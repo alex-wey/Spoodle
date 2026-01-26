@@ -72,6 +72,10 @@ export function CreateAppointmentDialog({
       label: 'Morning of Surgery Questionnaire',
       url: 'https://tally.so/r/Y50xYz',
     },
+    {
+      label: 'Pre-Surgery Instructions',
+      url: 'https://tally.so/r/RGDvYj',
+    },
   ];
 
   // Fetch pets and event types when dialog opens

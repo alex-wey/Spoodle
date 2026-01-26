@@ -7,7 +7,7 @@ import {
   addUserToClerkOrganization,
   removeUserFromClerkOrganization
 } from '../utils/clinicSync.js';
-import { assignClinicToPetOwner } from '../utils/userSync.js';
+import { assignClinicToPetOwner, getOrCreateUser } from '../utils/userSync.js';
 import { requireStaffClinic } from '../utils/clinicAuth.js';
 
 const router = Router();
@@ -105,10 +105,13 @@ router.get('/by-organization/:organizationId', authenticateClerk, async (req: Re
  * GET /api/clinics/my-clinic
  * Get the current user's clinic information
  * Requires authentication
+ *
+ * Note: This endpoint was originally pet-owner only. We now allow staff too
+ * so the mobile app can fetch clinic context without hitting a 401.
  */
 router.get('/my-clinic', authenticateClerk, async (req: Request, res: Response) => {
   try {
-    if (!req.petOwner) {
+    if (!req.petOwner && !req.staff) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required'
@@ -147,12 +150,45 @@ router.get('/my-clinic', authenticateClerk, async (req: Request, res: Response) 
  */
 router.post('/select', authenticateClerk, async (req: Request, res: Response) => {
   try {
-    if (!req.auth || !req.petOwner) {
+    if (!req.auth) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
         message: 'Please log in to select a clinic'
       });
+    }
+
+    // Ensure we have a petOwner record; create one on the fly for staff users
+    let petOwner = req.petOwner;
+    if (!petOwner) {
+      const email = req.userProfile?.email;
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing email',
+          message: 'Email is required to create a pet owner record'
+        });
+      }
+
+      const clerkUserData = {
+        clerkUserId: req.auth.userId,
+        email,
+        firstName: req.userProfile?.firstName || 'User',
+        lastName: req.userProfile?.lastName || '',
+        phone: req.userProfile?.phone ?? null
+      };
+
+      try {
+        petOwner = await getOrCreateUser(clerkUserData);
+        req.petOwner = petOwner;
+      } catch (createError) {
+        console.error('Failed to create pet owner during clinic select:', createError);
+        return res.status(500).json({
+          success: false,
+          error: 'Unable to create pet owner',
+          message: 'Could not create pet owner record for this user'
+        });
+      }
     }
 
     const { clinicId } = req.body;
@@ -185,17 +221,17 @@ router.post('/select', authenticateClerk, async (req: Request, res: Response) =>
     }
 
     // Check if user already has a clinic assigned
-    if (req.petOwner.clinicId) {
+    if (petOwner.clinicId) {
       return res.status(400).json({
         success: false,
         error: 'Clinic already assigned',
         message: 'You have already selected a clinic',
-        currentClinic: await getClinicById(req.petOwner.clinicId)
+        currentClinic: await getClinicById(petOwner.clinicId)
       });
     }
 
     // Assign clinic to pet owner
-    const updatedPetOwner = await assignClinicToPetOwner(req.petOwner.id, clinicId);
+    const updatedPetOwner = await assignClinicToPetOwner(petOwner.id, clinicId);
 
     // Add user to Clerk organization
     try {
@@ -216,9 +252,9 @@ router.post('/select', authenticateClerk, async (req: Request, res: Response) =>
   } catch (error) {
     console.error('Select clinic error:', error);
     return res.status(500).json({
-      success: false,
-      error: 'Server error',
-      message: 'Unable to select clinic'
+        success: false,
+        error: 'Server error',
+        message: 'Unable to select clinic'
     });
   }
 });
