@@ -218,9 +218,10 @@ router.post('/tally', async (req: Request, res: Response) => {
               orderBy: { createdAt: 'desc' },
               select: { id: true, name: true }
             });
-            if (ownerPets.length > 0) {
-              petId = ownerPets[0].id;
-              console.log(`ℹ️ Using fallback pet for discharge doc: ${ownerPets[0].id} (${ownerPets[0].name || 'Unnamed'})`);
+            const firstPet = ownerPets[0];
+            if (firstPet) {
+              petId = firstPet.id;
+              console.log(`ℹ️ Using fallback pet for discharge doc: ${firstPet.id} (${firstPet.name || 'Unnamed'})`);
             }
           }
 
