@@ -205,9 +205,9 @@ router.post('/tally', async (req: Request, res: Response) => {
       // Generate and store a discharge report document when the discharge form is submitted
       // Form mapping: discharge form (tallyId pbDM2q or title contains "discharge") -> create doc for pet in veterinary_notes
       try {
-        const formTitle = form.title || '';
+        const formTitle = form?.title || '';
         const isDischargeForm =
-          form.tallyFormId === 'pbDM2q' ||
+          form?.tallyFormId === 'pbDM2q' ||
           formTitle.toLowerCase().includes('discharge');
 
         if (isDischargeForm) {
@@ -224,7 +224,7 @@ router.post('/tally', async (req: Request, res: Response) => {
             }
           }
 
-          const petIdForDoc = petId || submission.petId || null;
+          const petIdForDoc = petId ?? submission.petId ?? null;
           if (petIdForDoc) {
             const useS3 = process.env.USE_S3 === 'true';
             const uploadDir = process.env.UPLOAD_DIR || './uploads';
