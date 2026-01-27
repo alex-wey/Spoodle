@@ -89,6 +89,16 @@ export function getClinicScopedPetWhere(req: Request) {
     return { id: { in: [] } };
   }
 
+  // If this request is acting as petOwner (e.g., mobile) prefer owner-only scope
+  if (req.petOwner && req.userType === 'petOwner') {
+    return {
+      ownerId: req.petOwner.id,
+      petOwner: {
+        clinicId: clinicId
+      }
+    };
+  }
+
   // If user is staff, show all pets in the specified clinic
   if (req.staff) {
     return {

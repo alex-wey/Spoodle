@@ -123,11 +123,12 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
       };
 
       // Determine user type by checking existing database records first
-      // Users are mutually exclusive: either staff OR petOwner, not both
       let petOwner: Awaited<ReturnType<typeof getOrCreateUser>> | undefined = undefined;
       let staff: Awaited<ReturnType<typeof getOrCreateStaff>> | undefined = undefined;
       let clinic = null;
       let userType: 'petOwner' | 'staff' = 'petOwner';
+      const clientType = (req.headers['x-client-type'] as string | undefined)?.toLowerCase();
+      const isMobileRequest = clientType === 'mobile';
 
       // Check if user already has a Staff or PetOwner record in the database
       const existingUser = await prisma.user.findUnique({
@@ -138,9 +139,13 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
         }
       });
 
-      // If user already exists, use their existing record type
+      // If user already exists, prefer petOwner for mobile requests (even if staff exists)
       if (existingUser) {
-        if (existingUser.staff) {
+        if (isMobileRequest && existingUser.petOwner) {
+          petOwner = existingUser.petOwner;
+          staff = existingUser.staff || undefined; // keep staff reference for downstream needs
+          userType = 'petOwner';
+        } else if (existingUser.staff) {
           staff = existingUser.staff;
           userType = 'staff';
         } else if (existingUser.petOwner) {
@@ -152,8 +157,7 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
       // If no existing record, determine user type from request source
       // Web requests = staff, Mobile requests = petOwner
       if (!existingUser || (!staff && !petOwner)) {
-        const clientType = req.headers['x-client-type'] as string;
-        const detectedUserType = clientType === 'mobile' ? 'petOwner' : 'staff';
+        const detectedUserType = isMobileRequest ? 'petOwner' : 'staff';
 
         if (detectedUserType === 'staff') {
           // Web signup - create staff record
@@ -194,6 +198,12 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
         }
       } else {
         // User already exists - sync clinic based on user type
+        // If this is a mobile request and we don't have a petOwner yet (e.g., user was staff-only), create/attach one and prefer it.
+        if (isMobileRequest && !petOwner) {
+          petOwner = await getOrCreateUser(clerkUserData);
+          userType = 'petOwner';
+        }
+
         if (petOwner && activeOrgId && !petOwner.clinicId) {
           const clinicFromOrg = await prisma.clinic.findUnique({
             where: { clerkOrgId: activeOrgId }

@@ -1,5 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../index.js';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import * as path from 'path';
+import * as fs from 'fs/promises';
 
 const router = Router();
 
@@ -66,13 +69,13 @@ router.post('/tally', async (req: Request, res: Response) => {
 
         for (const field of fields) {
           if (field?.type === 'HIDDEN_FIELDS') {
-            const label = (field.label || '').trim();
+            const label = (field.label || '').trim().toLowerCase();
             const value = field.value ?? null;
             if (!label) continue;
 
-            if (label === 'petId') map.petId = value;
-            if (label === 'petOwnerId') map.petOwnerId = value;
-            if (label === 'petName') map.petName = value;
+            if (label === 'petid') map.petId = value;
+            if (label === 'petownerid') map.petOwnerId = value;
+            if (label === 'petname') map.petName = value;
             if (label === 'email') map.email = value;
             if (label === 'phone') map.phone = value;
           }
@@ -199,19 +202,126 @@ router.post('/tally', async (req: Request, res: Response) => {
         console.log(`   Linked to Pet: ${submission.pet.name} (${submission.pet.species})`);
       }
 
-      // Delete form invites for this pet and petOwner
-      // Find form invites that match the petId and petOwnerId
-      if (petId && petOwnerId) {
+      // Generate and store a discharge report document when the discharge form is submitted
+      // Form mapping: discharge form (tallyId pbDM2q or title contains "discharge") -> create doc for pet in veterinary_notes
+      try {
+        const isDischargeForm =
+          form.tallyFormId === 'pbDM2q' ||
+          (form.title && form.title.toLowerCase().includes('discharge'));
+
+        if (isDischargeForm) {
+          // Last-resort pet lookup: if we have petOwnerId but no petId, use the most recent pet for this owner
+          if (!petId && petOwnerId) {
+            const ownerPets = await prisma.pet.findMany({
+              where: { ownerId: petOwnerId },
+              orderBy: { createdAt: 'desc' },
+              select: { id: true, name: true }
+            });
+            if (ownerPets.length > 0) {
+              petId = ownerPets[0].id;
+              console.log(`ℹ️ Using fallback pet for discharge doc: ${ownerPets[0].id} (${ownerPets[0].name || 'Unnamed'})`);
+            }
+          }
+
+          const petIdForDoc = petId || submission.petId || null;
+          if (petIdForDoc) {
+            const useS3 = process.env.USE_S3 === 'true';
+            const uploadDir = process.env.UPLOAD_DIR || './uploads';
+            const documentsDir = path.join(uploadDir, 'documents');
+            const today = new Date();
+            const dateLabel = today.toISOString().slice(0, 10);
+            const displayName = `Discharge Report ${petNameFromForm || 'Pet'} ${dateLabel}`;
+            const baseFileName = `discharge-${petIdForDoc}-${Date.now()}.txt`;
+            const content = [
+              `Discharge Report`,
+              ``,
+              `Pet: ${petNameFromForm || 'Unknown'}`,
+              `Date: ${dateLabel}`,
+              `Pet ID: ${petIdForDoc}`,
+              petOwnerId ? `Pet Owner ID: ${petOwnerId}` : null,
+              respondentEmail ? `Owner Email: ${respondentEmail}` : null,
+              ``,
+              `Submission Data:`,
+              JSON.stringify(answers || {}, null, 2),
+            ].filter(Boolean).join('\n');
+            const buffer = Buffer.from(content, 'utf8');
+            let filePathStored = '';
+            let fileSize = buffer.length;
+            const mimeType = 'text/plain';
+            let storedViaS3 = false;
+
+            if (useS3) {
+              try {
+                const bucket = process.env.S3_BUCKET_NAME || 'spoodle-documents';
+                const region = process.env.AWS_REGION || 'us-east-2';
+                const client = new S3Client({
+                  region,
+                  credentials: {
+                    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+                    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+                  },
+                });
+                const key = `documents/${baseFileName}`;
+                await client.send(new PutObjectCommand({
+                  Bucket: bucket,
+                  Key: key,
+                  Body: buffer,
+                  ContentType: mimeType,
+                }));
+                filePathStored = `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
+                storedViaS3 = true;
+              } catch (s3Err) {
+                console.error('⚠️ S3 upload failed, falling back to local storage:', s3Err);
+              }
+            }
+
+            if (!storedViaS3) {
+              try {
+                await fs.mkdir(documentsDir, { recursive: true });
+                const fullPath = path.join(documentsDir, baseFileName);
+                await fs.writeFile(fullPath, buffer);
+                filePathStored = fullPath;
+              } catch (localErr) {
+                console.error('❌ Local write failed for discharge doc:', localErr);
+                throw localErr;
+              }
+            }
+
+            await prisma.document.create({
+              data: {
+                petId: petIdForDoc,
+                category: 'veterinary_notes',
+                fileName: displayName,
+                filePath: filePathStored,
+                fileSize,
+                mimeType,
+              },
+            });
+            console.log(`📄 Created discharge doc for pet ${petIdForDoc}: ${displayName}`);
+          } else {
+            console.warn('⚠️ Discharge form submitted but no petId found to attach document.');
+          }
+        }
+      } catch (docErr) {
+        console.error('⚠️ Error creating discharge document:', docErr);
+      }
+
+      // Delete form invites for this petOwner (and pet if provided) so submitted forms disappear
+      // Fallback: if petOwnerId is missing but petId is known, delete by petId
+      if (petOwnerId || petId) {
         try {
-          const deletedInvites = await prisma.formInvite.deleteMany({
-            where: {
-              petId: petId,
-              petOwnerId: petOwnerId,
-            },
-          });
+          const where: any = {};
+          if (petOwnerId) where.petOwnerId = petOwnerId;
+          if (petId) where.petId = petId;
+
+          const deletedInvites = await prisma.formInvite.deleteMany({ where });
           
           if (deletedInvites.count > 0) {
-            console.log(`🗑️  Deleted ${deletedInvites.count} form invite(s) for pet ${petId} and petOwner ${petOwnerId}`);
+            console.log(
+              `🗑️  Deleted ${deletedInvites.count} form invite(s)` +
+              (petOwnerId ? ` for petOwner ${petOwnerId}` : '') +
+              (petId ? ` and pet ${petId}` : '')
+            );
           }
         } catch (deleteError) {
           // Log error but don't fail the webhook - form submission is more important
