@@ -1,10 +1,103 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../index.js';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import PDFDocument from 'pdfkit';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
 const router = Router();
+
+type TallyFieldOption = { id?: string; text?: string; label?: string; value?: unknown };
+type TallyField = {
+  key?: string;
+  label?: string;
+  type?: string;
+  value?: unknown;
+  options?: TallyFieldOption[];
+};
+
+function formatFieldValue(value: unknown, options?: TallyFieldOption[]): string {
+  if (Array.isArray(value)) {
+    if (options && options.length > 0) {
+      const mapped = value
+        .map((id: any) => {
+          const opt = options.find(
+            (o) => o?.id === id || String(o?.id) === String(id)
+          );
+          return opt?.text || opt?.label || opt?.value || id;
+        })
+        .filter(Boolean);
+      return mapped.length ? mapped.join(', ') : value.join(', ');
+    }
+    return value.join(', ');
+  }
+  if (value && typeof value === 'object') {
+    if ('url' in (value as any) && 'name' in (value as any)) {
+      return `${(value as any).name} (${(value as any).url})`;
+    }
+    if ('label' in (value as any)) return String((value as any).label);
+    if ('value' in (value as any)) return String((value as any).value);
+    return JSON.stringify(value);
+  }
+  if (value === null || value === undefined || value === '') return 'Not answered';
+  return String(value);
+}
+
+async function generateDischargePdf({
+  petName,
+  petId,
+  petOwnerId,
+  ownerEmail,
+  dateLabel,
+  vetName,
+  fields,
+  submissionJson,
+}: {
+  petName: string;
+  petId?: string | null;
+  petOwnerId?: string | null;
+  ownerEmail?: string | null;
+  dateLabel: string;
+  vetName?: string | null;
+  fields: TallyField[];
+  submissionJson: string;
+}): Promise<Buffer> {
+  return await new Promise((resolve) => {
+    const doc = new PDFDocument({ margin: 40, size: 'A4' });
+    const chunks: Buffer[] = [];
+    doc.on('data', (d) => chunks.push(d));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+
+    doc.fontSize(18).fillColor('#1f3a93').text(`Discharge Report ${petName} ${dateLabel}`, { align: 'center' });
+    doc.moveDown();
+
+    doc.fontSize(11).fillColor('#000').text(`Pet: ${petName}`);
+    if (vetName) doc.text(`Veterinarian: ${vetName}`);
+    doc.text(`Date: ${dateLabel}`);
+    if (petId) doc.text(`Pet ID: ${petId}`);
+    if (petOwnerId) doc.text(`Pet Owner ID: ${petOwnerId}`);
+    if (ownerEmail) doc.text(`Owner Email: ${ownerEmail}`);
+    doc.moveDown();
+
+    doc.fontSize(13).fillColor('#1f3a93').text('Form Responses', { underline: true });
+    doc.moveDown(0.5);
+
+    fields.forEach((field) => {
+      const label = field.label || field.key || 'Question';
+      const value = formatFieldValue(field.value, field.options);
+      doc.fontSize(11).fillColor('#000').text(label, { continued: false, underline: false });
+      doc.moveDown(0.1);
+      doc.fontSize(10).fillColor('#444').text(value);
+      doc.moveDown();
+    });
+
+    doc.fontSize(13).fillColor('#1f3a93').text('Submission Data (raw)', { underline: true });
+    doc.moveDown(0.3);
+    doc.fontSize(8).fillColor('#444').text(submissionJson);
+
+    doc.end();
+  });
+}
 
 // Tally webhook endpoint - receives form submissions
 // This endpoint should NOT require authentication as Tally will call it directly
@@ -247,23 +340,27 @@ router.post('/tally', async (req: Request, res: Response) => {
             const today = new Date();
             const dateLabel = today.toISOString().slice(0, 10);
             const displayName = `Discharge Report ${petNameFromForm || 'Pet'} ${dateLabel}`;
-            const baseFileName = `discharge-${petIdForDoc}-${Date.now()}.txt`;
-            const content = [
-              `Discharge Report`,
-              ``,
-              `Pet: ${petNameFromForm || 'Unknown'}`,
-              `Date: ${dateLabel}`,
-              `Pet ID: ${petIdForDoc}`,
-              petOwnerId ? `Pet Owner ID: ${petOwnerId}` : null,
-              respondentEmail ? `Owner Email: ${respondentEmail}` : null,
-              ``,
-              `Submission Data:`,
-              JSON.stringify(answers || {}, null, 2),
-            ].filter(Boolean).join('\n');
-            const buffer = Buffer.from(content, 'utf8');
+            const baseFileName = `discharge-${petIdForDoc}-${Date.now()}.pdf`;
+
+            // Collect visible fields (exclude hidden) for the PDF
+            const rawFields = (data?.data?.fields || data?.fields || []) as TallyField[];
+            const visibleFields = rawFields.filter((f) => f?.type !== 'HIDDEN_FIELDS');
+            const submissionJson = JSON.stringify(answers || {}, null, 2);
+
+            const pdfBuffer = await generateDischargePdf({
+              petName: petNameFromForm || 'Unknown',
+              petId: petIdForDoc,
+              petOwnerId,
+              ownerEmail: respondentEmail,
+              dateLabel,
+              vetName: undefined,
+              fields: visibleFields,
+              submissionJson,
+            });
+
             let filePathStored = '';
-            let fileSize = buffer.length;
-            const mimeType = 'text/plain';
+            let fileSize = pdfBuffer.length;
+            const mimeType = 'application/pdf';
             let storedViaS3 = false;
 
             if (useS3) {
@@ -281,7 +378,7 @@ router.post('/tally', async (req: Request, res: Response) => {
                 await client.send(new PutObjectCommand({
                   Bucket: bucket,
                   Key: key,
-                  Body: buffer,
+                  Body: pdfBuffer,
                   ContentType: mimeType,
                 }));
                 filePathStored = `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
@@ -295,7 +392,7 @@ router.post('/tally', async (req: Request, res: Response) => {
               try {
                 await fs.mkdir(documentsDir, { recursive: true });
                 const fullPath = path.join(documentsDir, baseFileName);
-                await fs.writeFile(fullPath, buffer);
+                await fs.writeFile(fullPath, pdfBuffer);
                 filePathStored = fullPath;
               } catch (localErr) {
                 console.error('❌ Local write failed for discharge doc:', localErr);
