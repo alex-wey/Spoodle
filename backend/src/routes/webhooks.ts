@@ -54,11 +54,11 @@ async function generateDischargePdf({
   submissionJson,
 }: {
   petName: string;
-  petId?: string | null;
-  petOwnerId?: string | null;
-  ownerEmail?: string | null;
+  petId?: string | null | undefined;
+  petOwnerId?: string | null | undefined;
+  ownerEmail?: string | null | undefined;
   dateLabel: string;
-  vetName?: string | null;
+  vetName?: string | null | undefined;
   fields: TallyField[];
   submissionJson: string;
 }): Promise<Buffer> {
