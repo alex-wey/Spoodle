@@ -202,6 +202,20 @@ router.post('/tally', async (req: Request, res: Response) => {
         console.log(`   Linked to Pet: ${submission.pet.name} (${submission.pet.species})`);
       }
 
+      // Debug logging for discharge detection and IDs
+      console.log('🔎 Discharge debug:', {
+        formId,
+        formTitle,
+        tallyFormId: form?.tallyFormId,
+        isDischargeForm:
+          (form?.tallyFormId === 'pbDM2q') ||
+          (formTitle.toLowerCase().includes('discharge')),
+        petIdCurrent: petId,
+        submissionPetId: submission.petId,
+        petOwnerId,
+        petNameFromForm,
+      });
+
       // Generate and store a discharge report document when the discharge form is submitted
       // Form mapping: discharge form (tallyId pbDM2q or title contains "discharge") -> create doc for pet in veterinary_notes
       try {
