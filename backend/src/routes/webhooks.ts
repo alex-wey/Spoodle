@@ -202,14 +202,18 @@ router.post('/tally', async (req: Request, res: Response) => {
         console.log(`   Linked to Pet: ${submission.pet.name} (${submission.pet.species})`);
       }
 
+      // Prepare discharge metadata
+      const formTitle = form?.title || '';
+      const isDischargeForm =
+        (form?.tallyFormId === 'pbDM2q') ||
+        formTitle.toLowerCase().includes('discharge');
+
       // Debug logging for discharge detection and IDs
       console.log('🔎 Discharge debug:', {
         formId,
         formTitle,
         tallyFormId: form?.tallyFormId,
-        isDischargeForm:
-          (form?.tallyFormId === 'pbDM2q') ||
-          (formTitle.toLowerCase().includes('discharge')),
+        isDischargeForm,
         petIdCurrent: petId,
         submissionPetId: submission.petId,
         petOwnerId,
@@ -219,10 +223,6 @@ router.post('/tally', async (req: Request, res: Response) => {
       // Generate and store a discharge report document when the discharge form is submitted
       // Form mapping: discharge form (tallyId pbDM2q or title contains "discharge") -> create doc for pet in veterinary_notes
       try {
-        const formTitle = form?.title || '';
-        const isDischargeForm =
-          form?.tallyFormId === 'pbDM2q' ||
-          formTitle.toLowerCase().includes('discharge');
 
         if (isDischargeForm) {
           // Last-resort pet lookup: if we have petOwnerId but no petId, use the most recent pet for this owner
