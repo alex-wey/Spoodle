@@ -109,31 +109,44 @@ async function generateDischargePdf({
       doc.moveDown();
     }
 
-    doc.fontSize(18).fillColor('#1f3a93').text(`Discharge Report ${petName} ${dateLabel}`, { align: 'center' });
-    doc.moveDown();
+    // Title
+    doc.fontSize(20).fillColor('#1f3a93').text('Discharge Report', { align: 'center' });
+    doc.moveDown(0.3);
+    doc.fontSize(14).fillColor('#1f3a93').text(`${petName} — ${dateLabel}`, { align: 'center' });
+    doc.moveDown(1);
 
+    // Clinic / Pet summary in a light layout
     doc.fontSize(11).fillColor('#000');
     if (clinicName) doc.text(`Clinic: ${clinicName}`);
     doc.text(`Pet: ${petName}`);
     if (vetName) doc.text(`Veterinarian: ${vetName}`);
     doc.text(`Date: ${dateLabel}`);
     if (ownerEmail) doc.text(`Owner Email: ${ownerEmail}`);
-    doc.moveDown();
-
-    doc.fontSize(13).fillColor('#1f3a93').text('Form Responses', { underline: true });
     doc.moveDown(0.5);
+
+    // Divider
+    doc.moveTo(doc.x, doc.y).lineTo(doc.page.width - doc.page.margins.right, doc.y).strokeColor('#d0d0d0').stroke();
+    doc.moveDown(0.8);
+
+    // Form responses styled
+    doc.fontSize(13).fillColor('#1f3a93').text('Form Responses', { underline: true });
+    doc.moveDown(0.6);
 
     fields.forEach((field) => {
       const label = field.label || field.key || 'Question';
       const value = formatFieldValue(field.value, field.options);
+      const boxTop = doc.y;
+      doc.rect(doc.x - 2, boxTop - 2, doc.page.width - doc.page.margins.left - doc.page.margins.right + 4, 40).strokeColor('#e6e6e6').lineWidth(0.5).stroke();
       doc.fontSize(11).fillColor('#000').text(label, { continued: false, underline: false });
       doc.moveDown(0.1);
       doc.fontSize(10).fillColor('#444').text(value);
-      doc.moveDown();
+      doc.moveDown(0.6);
     });
 
-    doc.fontSize(13).fillColor('#1f3a93').text('Submission Data (raw)', { underline: true });
-    doc.moveDown(0.3);
+    // Raw submission (for debugging) in smaller font
+    doc.moveDown(0.5);
+    doc.fontSize(12).fillColor('#1f3a93').text('Submission Data (raw)', { underline: true });
+    doc.moveDown(0.2);
     doc.fontSize(8).fillColor('#444').text(submissionJson);
 
     doc.end();
