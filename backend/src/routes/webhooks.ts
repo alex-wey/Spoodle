@@ -135,8 +135,6 @@ async function generateDischargePdf({
     fields.forEach((field) => {
       const label = field.label || field.key || 'Question';
       const value = formatFieldValue(field.value, field.options);
-      const boxTop = doc.y;
-      doc.rect(doc.x - 2, boxTop - 2, doc.page.width - doc.page.margins.left - doc.page.margins.right + 4, 40).strokeColor('#e6e6e6').lineWidth(0.5).stroke();
       doc.fontSize(11).fillColor('#000').text(label, { continued: false, underline: false });
       doc.moveDown(0.1);
       doc.fontSize(10).fillColor('#444').text(value);
