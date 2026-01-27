@@ -50,6 +50,9 @@ async function generateDischargePdf({
   ownerEmail,
   dateLabel,
   vetName,
+  clinicName,
+  spoodleLogoUrl,
+  clinicLogoUrl,
   fields,
   submissionJson,
 }: {
@@ -59,23 +62,61 @@ async function generateDischargePdf({
   ownerEmail?: string | null | undefined;
   dateLabel: string;
   vetName?: string | null | undefined;
+  clinicName?: string | null | undefined;
+  spoodleLogoUrl?: string | null | undefined;
+  clinicLogoUrl?: string | null | undefined;
   fields: TallyField[];
   submissionJson: string;
 }): Promise<Buffer> {
+  // Helper to fetch remote images for logos
+  const fetchImageBuffer = async (url?: string | null) => {
+    if (!url) return null;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const ab = await res.arrayBuffer();
+      return Buffer.from(ab);
+    } catch (err) {
+      console.error('⚠️ Failed to fetch logo:', err);
+      return null;
+    }
+  };
+
+  const [spoodleLogo, clinicLogo] = await Promise.all([
+    fetchImageBuffer(spoodleLogoUrl || undefined),
+    fetchImageBuffer(clinicLogoUrl || undefined),
+  ]);
+
   return await new Promise((resolve) => {
     const doc = new PDFDocument({ margin: 40, size: 'A4' });
     const chunks: Buffer[] = [];
     doc.on('data', (d) => chunks.push(d));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
 
+    // Header with logos
+    if (spoodleLogo || clinicLogo) {
+      const headerY = doc.y;
+      const logoHeight = 60;
+      const gap = 20;
+      if (spoodleLogo) {
+        doc.image(spoodleLogo, doc.x, headerY, { fit: [150, logoHeight] });
+      }
+      if (clinicLogo) {
+        const startX = spoodleLogo ? doc.x + 170 : doc.x;
+        doc.image(clinicLogo, startX, headerY, { fit: [150, logoHeight], align: 'right' });
+      }
+      doc.moveDown(logoHeight / 14);
+      doc.moveDown();
+    }
+
     doc.fontSize(18).fillColor('#1f3a93').text(`Discharge Report ${petName} ${dateLabel}`, { align: 'center' });
     doc.moveDown();
 
-    doc.fontSize(11).fillColor('#000').text(`Pet: ${petName}`);
+    doc.fontSize(11).fillColor('#000');
+    if (clinicName) doc.text(`Clinic: ${clinicName}`);
+    doc.text(`Pet: ${petName}`);
     if (vetName) doc.text(`Veterinarian: ${vetName}`);
     doc.text(`Date: ${dateLabel}`);
-    if (petId) doc.text(`Pet ID: ${petId}`);
-    if (petOwnerId) doc.text(`Pet Owner ID: ${petOwnerId}`);
     if (ownerEmail) doc.text(`Owner Email: ${ownerEmail}`);
     doc.moveDown();
 
@@ -354,6 +395,9 @@ router.post('/tally', async (req: Request, res: Response) => {
               ownerEmail: respondentEmail,
               dateLabel,
               vetName: undefined,
+              clinicName: form.clinic?.name || undefined,
+              spoodleLogoUrl: process.env.SPOODLE_LOGO_URL || undefined,
+              clinicLogoUrl: form.clinic?.imageUrl || undefined,
               fields: visibleFields,
               submissionJson,
             });
