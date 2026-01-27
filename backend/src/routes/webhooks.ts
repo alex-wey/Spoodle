@@ -205,9 +205,10 @@ router.post('/tally', async (req: Request, res: Response) => {
       // Generate and store a discharge report document when the discharge form is submitted
       // Form mapping: discharge form (tallyId pbDM2q or title contains "discharge") -> create doc for pet in veterinary_notes
       try {
+        const formTitle = form.title || '';
         const isDischargeForm =
           form.tallyFormId === 'pbDM2q' ||
-          (form.title && form.title.toLowerCase().includes('discharge'));
+          formTitle.toLowerCase().includes('discharge');
 
         if (isDischargeForm) {
           // Last-resort pet lookup: if we have petOwnerId but no petId, use the most recent pet for this owner
