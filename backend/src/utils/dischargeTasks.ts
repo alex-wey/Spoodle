@@ -208,13 +208,14 @@ export async function createTasksFromDischarge(
     console.log('🔍 [DischargeTasks] Discharge date:', dischargeDate, 'First evening time:', firstEveningTime);
 
     // Parse medications - check multiple possible field names
+    // Check dedicated medication fields FIRST before general discharge instructions
     const medicationFields = [
-      'Discharge Instructions', 'discharge instructions',
       'Medications', 'medications', 
       'Medication', 'medication',
       'Prescriptions', 'prescriptions', 
       'Prescription', 'prescription', 
-      'Meds', 'meds'
+      'Meds', 'meds',
+      'Discharge Instructions', 'discharge instructions'
     ];
     const medications: ParsedMedication[] = [];
 
