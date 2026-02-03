@@ -150,7 +150,7 @@ function extractDischargeDateTime(answers: any): { dischargeDate: Date; firstEve
   }
 
   // Extract first evening dose time (default: 7pm, or 2 hours after discharge if discharge time provided)
-  let firstEveningTime = '19:00'; // Default 7pm
+  let firstEveningTime: string = '19:00'; // Default 7pm with explicit type
   const timeFields = ['firstEveningTime', 'firstDoseTime', 'dischargeTime'];
   for (const field of timeFields) {
     const value = answers[field]?.value || answers[field];
@@ -246,10 +246,12 @@ export async function createTasksFromDischarge(
         let recurrenceTimes: string[] = [];
         let recurrenceEndDate: Date | null = null;
 
+        const eveningTime = firstEveningTime || '19:00'; // Fallback to 7pm
+        
         switch (med.frequency) {
           case 'once_daily':
             recurrencePattern = 'daily';
-            recurrenceTimes = [firstEveningTime];
+            recurrenceTimes = [eveningTime];
             recurrenceEndDate = new Date(dischargeDate);
             recurrenceEndDate.setUTCDate(recurrenceEndDate.getUTCDate() + durationDays - 1);
             break;
@@ -258,14 +260,14 @@ export async function createTasksFromDischarge(
             recurrencePattern = 'daily';
             // Default to 7am and 7pm, but use firstEveningTime for first evening dose
             const morningTime = '07:00';
-            recurrenceTimes = [morningTime, firstEveningTime];
+            recurrenceTimes = [morningTime, eveningTime];
             recurrenceEndDate = new Date(dischargeDate);
             recurrenceEndDate.setUTCDate(recurrenceEndDate.getUTCDate() + durationDays - 1);
             break;
           case 'three_times_daily':
           case 'every_8_hours':
             recurrencePattern = 'daily';
-            recurrenceTimes = ['08:00', '14:00', firstEveningTime];
+            recurrenceTimes = ['08:00', '14:00', eveningTime];
             recurrenceEndDate = new Date(dischargeDate);
             recurrenceEndDate.setUTCDate(recurrenceEndDate.getUTCDate() + durationDays - 1);
             break;
