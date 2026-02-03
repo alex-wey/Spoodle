@@ -599,7 +599,12 @@ export default function TaskCalendarScreen() {
   };
 
   const expandRecurringTask = (task: any, forDate?: Date): any[] => {
-    if (!task.recurring || task.recurrencePattern !== 'weekly') {
+    if (!task.recurring) {
+      return [task];
+    }
+
+    // Only expand 'daily' and 'weekly' patterns
+    if (task.recurrencePattern !== 'daily' && task.recurrencePattern !== 'weekly') {
       return [task];
     }
 
@@ -623,11 +628,16 @@ export default function TaskCalendarScreen() {
     let times: string[] = [];
 
     try {
-      if (task.recurrenceDaysOfWeek) {
+      // For daily recurrence, include all days of the week
+      if (task.recurrencePattern === 'daily') {
+        daysOfWeek = [0, 1, 2, 3, 4, 5, 6]; // All days
+      } else if (task.recurrenceDaysOfWeek) {
+        // For weekly recurrence, use specified days
         daysOfWeek = typeof task.recurrenceDaysOfWeek === 'string' 
           ? JSON.parse(task.recurrenceDaysOfWeek) 
           : task.recurrenceDaysOfWeek;
       }
+      
       if (task.recurrenceTimes) {
         const parsedTimes = typeof task.recurrenceTimes === 'string' 
           ? JSON.parse(task.recurrenceTimes) 
@@ -659,6 +669,9 @@ export default function TaskCalendarScreen() {
     }
 
     const currentDate = new Date(startDate);
+    const originalStartDateStr = startDate.toISOString().split('T')[0];
+    const originalStartTime = task.scheduledTime;
+    
     while (currentDate <= endDate) {
       const dayOfWeek = currentDate.getDay();
       
@@ -667,6 +680,17 @@ export default function TaskCalendarScreen() {
         
         if (!forDate || dateStr === checkDateStr) {
           for (const time of times) {
+            // On the first day, skip times that are before the original scheduledTime
+            // (e.g., for BID meds starting at 7pm, don't show 7am dose on first day)
+            if (dateStr === originalStartDateStr && originalStartTime) {
+              const [origHour, origMin] = originalStartTime.split(':').map(Number);
+              const [timeHour, timeMin] = time.split(':').map(Number);
+              
+              if (timeHour < origHour || (timeHour === origHour && timeMin < origMin)) {
+                continue; // Skip this time on the first day
+              }
+            }
+            
             const occurrenceKey = `${dateStr}_${time}`;
             
             const skipped = skippedOccurrences[task.id] || [];
