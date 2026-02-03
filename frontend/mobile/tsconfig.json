@@ -4,6 +4,8 @@
     "strict": true,
     "jsx": "react-native",
     "baseUrl": ".",
+    "skipLibCheck": true,
+    "types": [],
     "paths": {
       "@/*": ["./src/*", "./*"],
       "@/components/*": ["./src/components/*", "./components/*"],

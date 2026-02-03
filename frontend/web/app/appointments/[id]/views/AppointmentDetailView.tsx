@@ -329,6 +329,25 @@ export default function AppointmentDetailView() {
     window.open(formUrl.toString(), '_blank', 'noopener,noreferrer');
   };
 
+  const handleOpenDischargeForm = () => {
+    if (!apiAppointment) return;
+    const formUrl = new URL('https://tally.so/r/pbDM2q');
+    formUrl.searchParams.set('petId', apiAppointment.petId);
+    formUrl.searchParams.set('petOwnerId', apiAppointment.petOwnerId);
+    if (apiAppointment.pet?.name) formUrl.searchParams.set('petName', apiAppointment.pet.name);
+    if (apiAppointment.petOwner?.user?.email) formUrl.searchParams.set('email', apiAppointment.petOwner.user.email);
+    if (apiAppointment.petOwner?.user?.phone) formUrl.searchParams.set('phone', apiAppointment.petOwner.user.phone);
+    // Optional context fields
+    const today = new Date().toISOString().slice(0, 10);
+    formUrl.searchParams.set('todayDate', today);
+    if (apiAppointment.staff?.user) {
+      const vetName = `${apiAppointment.staff.user.firstName || ''} ${apiAppointment.staff.user.lastName || ''}`.trim();
+      if (vetName) formUrl.searchParams.set('vetName', vetName);
+    }
+    // Open in a new tab (reliable for Tally)
+    window.open(formUrl.toString(), '_blank', 'noopener,noreferrer');
+  };
+
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'confirmed':
@@ -516,6 +535,10 @@ export default function AppointmentDetailView() {
                     <Button onClick={handleSelectFile} disabled={uploading}>
                       {uploading ? 'Uploading...' : 'Upload Discharge Report'}
                     </Button>
+                    <Button variant="outline" onClick={handleOpenDischargeForm} className="flex items-center gap-2">
+                      <ExternalLink className="h-4 w-4" />
+                      Open Discharge Form (Tally)
+                    </Button>
                     <p className="text-xs text-muted-foreground">
                       Saved as "Discharge Report &lt;Date&gt;" in veterinary_notes
                     </p>
@@ -594,6 +617,7 @@ export default function AppointmentDetailView() {
           </div>
         </div>
       </div>
+
     </div>
   );
 }

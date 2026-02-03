@@ -26,13 +26,17 @@ function parseMedicationInstruction(instruction: string): ParsedMedication | nul
   const text = instruction.trim();
   if (!text) return null;
 
+  console.log(`   🔍 Parsing medication: "${text.substring(0, 100)}"`);
+
   // Extract medication name (usually first word before dosage)
   const nameMatch = text.match(/^([A-Za-z]+(?:\s+[A-Za-z]+)?)/);
   const name = nameMatch && nameMatch[1] ? nameMatch[1] : 'Medication';
+  console.log(`   📝 Extracted name: "${name}"`);
 
   // Extract total quantity (#10, #5, #20, etc.)
   const quantityMatch = text.match(/#(\d+)/);
   const totalQuantity = quantityMatch && quantityMatch[1] ? parseInt(quantityMatch[1], 10) : 0;
+  console.log(`   📦 Extracted quantity: ${totalQuantity}`);
 
   // Extract dose per administration (1 tab, 1/2 tab, 2 tabs, etc.)
   let dosePerAdmin = 1;
@@ -83,6 +87,8 @@ function parseMedicationInstruction(instruction: string): ParsedMedication | nul
   }
 
   const dosageMatch = text.match(/\d+\s*mg/i);
+  console.log(`   💊 Dose per admin: ${dosePerAdmin}, Frequency: ${frequency}`);
+  
   return {
     name,
     dosage: dosageMatch && dosageMatch[0] ? dosageMatch[0] : '',
@@ -222,7 +228,10 @@ export async function createTasksFromDischarge(
           const medStrings = value.split('\n').filter(s => s.trim());
           for (const medStr of medStrings) {
             const parsed = parseMedicationInstruction(medStr);
-            if (parsed) medications.push(parsed);
+            if (parsed) {
+              console.log(`   📊 Parsed: ${parsed.name} - ${parsed.totalQuantity} total, ${parsed.dosePerAdmin} per dose, ${parsed.frequency}`);
+              medications.push(parsed);
+            }
           }
         } else if (Array.isArray(value)) {
           // Array of medications
@@ -232,6 +241,8 @@ export async function createTasksFromDischarge(
             if (parsed) medications.push(parsed);
           }
         }
+        // Break after finding first matching field to avoid duplicates
+        break;
       }
     }
 
@@ -370,7 +381,7 @@ export async function createTasksFromDischarge(
         });
         created++;
         console.log('✅ Created water task for first night');
-        break;
+        break; // Only create one water task
       }
     }
 
@@ -411,18 +422,28 @@ export async function createTasksFromDischarge(
         });
         created++;
         console.log(`✅ Created activity restriction task (${durationDays} days)`);
-        break;
+        break; // Only create one activity task
       }
     }
 
     // Create other instruction tasks (dental care, e-collar, etc.)
     const otherFields = ['Other instructions', 'other instructions', 'Other Instructions', 'Additional Instructions', 'additionalInstructions', 'Special Instructions', 'specialInstructions', 'Notes', 'notes'];
+    let otherInstructionsValue: string | null = null;
+    
+    // Find the first matching field (avoid duplicates)
     for (const field of otherFields) {
       const value = answers[field] || answers[field.toLowerCase()];
       if (value && typeof value === 'string' && value.trim()) {
         console.log(`✅ [DischargeTasks] Found other instructions field "${field}"`);
-        // Check for dental care (typically 2 weeks later)
-        if (value.toLowerCase().includes('dental') || value.toLowerCase().includes('brushing')) {
+        otherInstructionsValue = value;
+        break; // Stop after finding first match
+      }
+    }
+    
+    if (otherInstructionsValue) {
+      const value = otherInstructionsValue;
+      // Check for dental care (typically 2 weeks later)
+      if (value.toLowerCase().includes('dental') || value.toLowerCase().includes('brushing')) {
           const dentalDate = new Date(dischargeDate);
           dentalDate.setUTCDate(dentalDate.getUTCDate() + 14); // 2 weeks later
           dentalDate.setUTCHours(9, 0, 0, 0);
@@ -464,8 +485,7 @@ export async function createTasksFromDischarge(
             },
           });
           created++;
-          console.log('✅ Created e-collar reminder task');
-        }
+        console.log('✅ Created e-collar reminder task');
       }
     }
 

@@ -528,9 +528,7 @@ export async function getAppointmentInvites(sessionToken: string, clinicId?: str
   }>>(url, {
     method: 'GET',
   }, sessionToken);
-}
-
-/**
+}/**
  * Create a form invite
  * @param formLink - Tally form URL
  * @param formName - Display name for the form

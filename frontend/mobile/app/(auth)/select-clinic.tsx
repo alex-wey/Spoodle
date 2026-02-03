@@ -147,23 +147,11 @@ export default function SelectClinicScreen() {
         // Successfully selected clinic, navigate to main app
         router.replace('/(tabs)/pets');
       } else {
-        // If backend says already assigned, treat as success and continue
-        const msg = response.message || response.error || '';
-        if (msg.toLowerCase().includes('already selected') || msg.toLowerCase().includes('already assigned')) {
-          router.replace('/(tabs)/pets');
-          return;
-        }
         showErrorToast(response.message || 'Failed to select clinic');
       }
     } catch (err: any) {
       console.error('Error selecting clinic:', err);
-      const msg = (err?.message || '').toLowerCase();
-      if (msg.includes('already selected') || msg.includes('already assigned')) {
-        // User already has a clinic, proceed to main app
-        router.replace('/(tabs)/pets');
-      } else {
-        showErrorToast('Failed to select clinic. Please try again.');
-      }
+      showErrorToast('Failed to select clinic. Please try again.');
     } finally {
       setSelecting(false);
     }

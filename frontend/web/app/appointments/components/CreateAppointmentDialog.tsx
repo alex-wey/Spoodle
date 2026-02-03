@@ -76,6 +76,10 @@ export function CreateAppointmentDialog({
       label: 'Pre-Surgery Instructions',
       url: 'https://tally.so/r/RGDvYj',
     },
+    {
+      label: 'Medication Protocol for a Stress-Free Recovery',
+      url: 'https://tally.so/r/xXJ4y5',
+    },
   ];
 
   // Fetch pets and event types when dialog opens
