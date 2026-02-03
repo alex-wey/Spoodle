@@ -4,6 +4,7 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import PDFDocument from 'pdfkit';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import { createTasksFromDischarge } from '../utils/dischargeTasks.js';
 
 const router = Router();
 
@@ -399,6 +400,19 @@ router.post('/tally', async (req: Request, res: Response) => {
             const visibleFields = rawFields.filter((f) => f?.type !== 'HIDDEN_FIELDS');
             const submissionJson = JSON.stringify(answers || {}, null, 2);
 
+            // Convert fields array to keyed object for task creation
+            const fieldsMap: Record<string, any> = {};
+            for (const field of rawFields) {
+              if (field?.label && field?.type !== 'HIDDEN_FIELDS') {
+                // Use label as key (with original casing)
+                const key = field.label.trim();
+                fieldsMap[key] = field.value;
+                // Also add lowercase version for case-insensitive matching
+                fieldsMap[key.toLowerCase()] = field.value;
+              }
+            }
+            console.log('🔍 [Webhook] Converted fields to map. Keys:', Object.keys(fieldsMap).filter(k => !k.match(/^[a-z]/)));
+
             const pdfBuffer = await generateDischargePdf({
               petName: petNameFromForm || 'Unknown',
               petId: petIdForDoc,
@@ -466,6 +480,28 @@ router.post('/tally', async (req: Request, res: Response) => {
               },
             });
             console.log(`📄 Created discharge doc for pet ${petIdForDoc}: ${displayName}`);
+
+            // Create tasks from discharge instructions
+            console.log('🔍 [Webhook] About to create tasks from discharge...');
+            try {
+              const taskResult = await createTasksFromDischarge(
+                petIdForDoc,
+                fieldsMap,  // Use fieldsMap instead of answers
+                petNameFromForm || 'Pet'
+              );
+              if (taskResult.created > 0) {
+                console.log(`📅 Created ${taskResult.created} task(s) from discharge instructions`);
+              } else {
+                console.warn('⚠️ No tasks were created from discharge form');
+              }
+              if (taskResult.errors.length > 0) {
+                console.warn('⚠️ Some tasks failed to create:', taskResult.errors);
+              }
+            } catch (taskErr: any) {
+              // Log but don't fail the webhook - document creation is more important
+              console.error('⚠️ Error creating tasks from discharge (non-fatal):', taskErr);
+              console.error('⚠️ Stack trace:', taskErr.stack);
+            }
           } else {
             console.warn('⚠️ Discharge form submitted but no petId found to attach document.');
           }
