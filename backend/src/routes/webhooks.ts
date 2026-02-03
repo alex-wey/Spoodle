@@ -404,11 +404,26 @@ router.post('/tally', async (req: Request, res: Response) => {
             const fieldsMap: Record<string, any> = {};
             for (const field of rawFields) {
               if (field?.label && field?.type !== 'HIDDEN_FIELDS') {
-                // Use label as key (with original casing)
                 const key = field.label.trim();
-                fieldsMap[key] = field.value;
-                // Also add lowercase version for case-insensitive matching
-                fieldsMap[key.toLowerCase()] = field.value;
+                let value = field.value;
+                
+                // Handle dropdown/select fields: Tally sends option IDs, we need the labels
+                if ((field.type === 'DROPDOWN' || field.type === 'MULTIPLE_CHOICE') && field.options && Array.isArray(field.value)) {
+                  // Map option IDs to their labels
+                  const selectedLabels = field.value
+                    .map((optionId: string) => {
+                      const option = field.options?.find((opt: any) => opt.id === optionId);
+                      return option?.text || option?.label || optionId;
+                    })
+                    .filter(Boolean);
+                  
+                  // Use the first selected label (for single-select dropdowns)
+                  value = selectedLabels.length === 1 ? selectedLabels[0] : selectedLabels;
+                  console.log(`   🔽 Dropdown field "${key}": ${JSON.stringify(field.value)} → "${value}"`);
+                }
+                
+                fieldsMap[key] = value;
+                fieldsMap[key.toLowerCase()] = value;
               }
             }
             console.log('🔍 [Webhook] Converted fields to map. Keys:', Object.keys(fieldsMap).filter(k => !k.match(/^[a-z]/)));
