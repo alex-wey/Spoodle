@@ -384,8 +384,10 @@ export async function createTasksFromDischarge(
         const weeksMatch = value.match(/(\d+)\s*weeks?/i);
         let durationDays = 5; // Default
         if (daysMatch) {
-          durationDays = parseInt(daysMatch[2] || daysMatch[1], 10);
-        } else if (weeksMatch) {
+          const maxDays = daysMatch[2];
+          const minDays = daysMatch[1];
+          durationDays = parseInt((maxDays || minDays || '5'), 10);
+        } else if (weeksMatch && weeksMatch[1]) {
           durationDays = parseInt(weeksMatch[1], 10) * 7;
         }
 
