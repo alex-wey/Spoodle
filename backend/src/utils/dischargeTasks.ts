@@ -28,11 +28,11 @@ function parseMedicationInstruction(instruction: string): ParsedMedication | nul
 
   // Extract medication name (usually first word before dosage)
   const nameMatch = text.match(/^([A-Za-z]+(?:\s+[A-Za-z]+)?)/);
-  const name = nameMatch ? nameMatch[1] : 'Medication';
+  const name = nameMatch && nameMatch[1] ? nameMatch[1] : 'Medication';
 
   // Extract total quantity (#10, #5, #20, etc.)
   const quantityMatch = text.match(/#(\d+)/);
-  const totalQuantity = quantityMatch ? parseInt(quantityMatch[1], 10) : 0;
+  const totalQuantity = quantityMatch && quantityMatch[1] ? parseInt(quantityMatch[1], 10) : 0;
 
   // Extract dose per administration (1 tab, 1/2 tab, 2 tabs, etc.)
   let dosePerAdmin = 1;
@@ -45,11 +45,13 @@ function parseMedicationInstruction(instruction: string): ParsedMedication | nul
   
   for (const pattern of dosePatterns) {
     const doseMatch = text.match(pattern);
-    if (doseMatch) {
+    if (doseMatch && doseMatch[1]) {
       const doseStr = doseMatch[1];
       if (doseStr.includes('/')) {
-        const [num, den] = doseStr.split('/').map(Number);
-        if (den && den > 0) {
+        const parts = doseStr.split('/').map(Number);
+        const num = parts[0];
+        const den = parts[1];
+        if (num !== undefined && den && den > 0) {
           dosePerAdmin = num / den;
           break;
         }
@@ -80,9 +82,10 @@ function parseMedicationInstruction(instruction: string): ParsedMedication | nul
     frequency = 'as_needed';
   }
 
+  const dosageMatch = text.match(/\d+\s*mg/i);
   return {
     name,
-    dosage: text.match(/\d+\s*mg/i)?.[0] || '',
+    dosage: dosageMatch && dosageMatch[0] ? dosageMatch[0] : '',
     totalQuantity,
     dosePerAdmin,
     frequency,
@@ -165,12 +168,15 @@ function extractDischargeDateTime(answers: any): { dischargeDate: Date; firstEve
   const dischargeTimeField = answers['dischargeTime']?.value || answers['dischargeTime'];
   if (dischargeTimeField && typeof dischargeTimeField === 'string') {
     const timeMatch = dischargeTimeField.match(/(\d{1,2}):(\d{2})/);
-    if (timeMatch) {
-      const [hours, minutes] = timeMatch.slice(1).map(Number);
-      const dischargeDateTime = new Date(dischargeDate);
-      dischargeDateTime.setUTCHours(hours, minutes, 0, 0);
-      dischargeDateTime.setUTCHours(dischargeDateTime.getUTCHours() + 2); // Add 2 hours
-      firstEveningTime = `${dischargeDateTime.getUTCHours().toString().padStart(2, '0')}:${dischargeDateTime.getUTCMinutes().toString().padStart(2, '0')}`;
+    if (timeMatch && timeMatch[1] && timeMatch[2]) {
+      const hours = parseInt(timeMatch[1], 10);
+      const minutes = parseInt(timeMatch[2], 10);
+      if (!isNaN(hours) && !isNaN(minutes)) {
+        const dischargeDateTime = new Date(dischargeDate);
+        dischargeDateTime.setUTCHours(hours, minutes, 0, 0);
+        dischargeDateTime.setUTCHours(dischargeDateTime.getUTCHours() + 2); // Add 2 hours
+        firstEveningTime = `${dischargeDateTime.getUTCHours().toString().padStart(2, '0')}:${dischargeDateTime.getUTCMinutes().toString().padStart(2, '0')}`;
+      }
     }
   }
 
@@ -267,7 +273,9 @@ export async function createTasksFromDischarge(
 
         // Create first task (tonight's dose)
         const firstDoseDate = new Date(dischargeDate);
-        const [firstHours, firstMinutes] = firstEveningTime.split(':').map(Number);
+        const timeParts = firstEveningTime.split(':');
+        const firstHours = parseInt(timeParts[0] || '19', 10);
+        const firstMinutes = parseInt(timeParts[1] || '0', 10);
         firstDoseDate.setUTCHours(firstHours, firstMinutes, 0, 0);
 
         // Build title with dose information
@@ -309,7 +317,9 @@ export async function createTasksFromDischarge(
       if (value && typeof value === 'string' && value.trim()) {
         console.log(`✅ [DischargeTasks] Found feeding field "${field}"`);
         const feedingTime = new Date(dischargeDate);
-        const [hours, minutes] = firstEveningTime.split(':').map(Number);
+        const timeParts = firstEveningTime.split(':');
+        const hours = parseInt(timeParts[0] || '19', 10);
+        const minutes = parseInt(timeParts[1] || '0', 10);
         feedingTime.setUTCHours(hours, minutes, 0, 0);
 
         await prisma.task.create({
@@ -338,7 +348,9 @@ export async function createTasksFromDischarge(
       if (value && typeof value === 'string' && value.trim()) {
         console.log(`✅ [DischargeTasks] Found water field "${field}"`);
         const waterTime = new Date(dischargeDate);
-        const [hours, minutes] = firstEveningTime.split(':').map(Number);
+        const timeParts = firstEveningTime.split(':');
+        const hours = parseInt(timeParts[0] || '19', 10);
+        const minutes = parseInt(timeParts[1] || '0', 10);
         waterTime.setUTCHours(hours, minutes, 0, 0);
 
         await prisma.task.create({
@@ -429,7 +441,9 @@ export async function createTasksFromDischarge(
         // Check for e-collar instruction
         if (value.toLowerCase().includes('e-collar') || value.toLowerCase().includes('collar')) {
           const collarTime = new Date(dischargeDate);
-          const [hours, minutes] = firstEveningTime.split(':').map(Number);
+          const timeParts = firstEveningTime.split(':');
+          const hours = parseInt(timeParts[0] || '19', 10);
+          const minutes = parseInt(timeParts[1] || '0', 10);
           collarTime.setUTCHours(hours, minutes, 0, 0);
 
           await prisma.task.create({
