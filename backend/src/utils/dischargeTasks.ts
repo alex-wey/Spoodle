@@ -273,18 +273,19 @@ export async function createTasksFromDischarge(
             break;
         }
 
-        // Create first task (tonight's dose)
+        // Create recurring task (don't create a separate first task)
+        // The recurring task will handle all occurrences including the first one
         const firstDoseDate = new Date(dischargeDate);
         const timeParts = firstEveningTime.split(':');
         const firstHours = parseInt(timeParts[0] || '19', 10);
         const firstMinutes = parseInt(timeParts[1] || '0', 10);
         firstDoseDate.setUTCHours(firstHours, firstMinutes, 0, 0);
 
-        // Build title with dose information
+        // Build title with dose information in instruction format
         const doseInfo = med.dosePerAdmin !== 1 
           ? `${med.dosePerAdmin} ${med.dosePerAdmin < 1 ? 'tab' : 'tabs'}`
           : '1 tab';
-        const title = `Give ${med.name}${med.dosage ? ` (${med.dosage})` : ''} - ${doseInfo}`;
+        const title = `Give ${med.name} ${doseInfo}${med.dosage ? ` (${med.dosage})` : ''}`;
 
         await prisma.task.create({
           data: {
@@ -328,7 +329,7 @@ export async function createTasksFromDischarge(
           data: {
             petId,
             taskType: 'feeding',
-            title: `Feed ${petName} - First Night (Half Meal)`,
+            title: `Feed ${petName} half meal with food`,
             description: value,
             scheduledDate: feedingTime,
             scheduledTime: firstEveningTime,
@@ -359,7 +360,7 @@ export async function createTasksFromDischarge(
           data: {
             petId,
             taskType: 'care',
-            title: `Offer Water - Small Amounts`,
+            title: `Offer ${petName} small amounts of water`,
             description: value,
             scheduledDate: waterTime,
             scheduledTime: firstEveningTime,
@@ -398,7 +399,7 @@ export async function createTasksFromDischarge(
           data: {
             petId,
             taskType: 'care',
-            title: `Activity Restriction Reminder`,
+            title: `Leash-walk ${petName} only (restricted activity)`,
             description: value,
             scheduledDate: activityTime,
             scheduledTime: '12:00',
@@ -430,7 +431,7 @@ export async function createTasksFromDischarge(
             data: {
               petId,
               taskType: 'care',
-              title: `Dental Care Reminder`,
+              title: `Start brushing ${petName}'s teeth or dental treats`,
               description: value,
               scheduledDate: dentalDate,
               scheduledTime: '09:00',
@@ -454,7 +455,7 @@ export async function createTasksFromDischarge(
             data: {
               petId,
               taskType: 'care',
-              title: `E-Collar Reminder`,
+              title: `Check if ${petName} needs e-collar`,
               description: value,
               scheduledDate: collarTime,
               scheduledTime: firstEveningTime,
