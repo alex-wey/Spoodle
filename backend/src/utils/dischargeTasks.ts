@@ -126,76 +126,219 @@ function parseMedicationInstruction(instruction: string): ParsedMedication | nul
 }
 
 /**
- * Extract structured medication data from form fields (new structured form format)
+ * Extract medications when Tally sends repeated sections as arrays
+ * (When multiple medication sections all have the same field name)
  */
-function extractStructuredMedication(answers: any): ParsedMedication | null {
-  // Check for structured medication fields
-  const name = answers['Name'] || answers['name'] || answers['Medication Name'] || answers['medication_name'];
-  const strength = answers['Strength/Dosage'] || answers['strength/dosage'] || answers['strength'] || answers['dosage'];
-  const quantityStr = answers['Total quantity dispensed'] || answers['total quantity dispensed'] || answers['quantity'];
-  const doseAmountStr = answers['Dose amount'] || answers['dose amount'] || answers['dose'];
-  const doseUnit = answers['Dose unit'] || answers['dose unit'] || answers['unit'];
-  const frequencyStr = answers['Frequency'] || answers['frequency'];
-  const instructions = answers['Other instructions'] || answers['other instructions'] || answers['Special Instructions'] || '';
-
-  // If any required fields are missing, return null
-  if (!name || !quantityStr || !doseAmountStr || !frequencyStr) {
-    console.log('   ⚠️ Missing required structured medication fields');
-    return null;
-  }
-
-  console.log(`   ✅ Found structured medication data:`, { name, strength, quantityStr, doseAmountStr, doseUnit, frequencyStr });
-
-  // Parse total quantity
-  const totalQuantity = parseInt(String(quantityStr), 10);
-  if (isNaN(totalQuantity) || totalQuantity <= 0) {
-    console.log(`   ⚠️ Invalid total quantity: ${quantityStr}`);
-    return null;
-  }
-
-  // Parse dose amount (can be "1", "0.5", "1/2", etc.)
-  let dosePerAdmin = 1;
-  const doseStr = String(doseAmountStr).trim();
-  if (doseStr.includes('/')) {
-    // Handle fractions like "1/2"
-    const parts = doseStr.split('/').map(s => parseFloat(s.trim()));
-    if (parts.length === 2 && parts[0] && parts[1]) {
-      dosePerAdmin = parts[0] / parts[1];
-    }
-  } else {
-    const parsed = parseFloat(doseStr);
-    if (!isNaN(parsed) && parsed > 0) {
-      dosePerAdmin = parsed;
-    }
-  }
-
-  // Map frequency dropdown value to internal frequency code
-  let frequency: ParsedMedication['frequency'] = 'twice_daily'; // default
-  const freqLower = String(frequencyStr).toLowerCase();
+function extractArrayBasedMedications(answers: any): ParsedMedication[] {
+  const medications: ParsedMedication[] = [];
   
-  if (freqLower.includes('once') || freqLower.includes('sid') || freqLower.includes('qd') || freqLower.includes('daily') && !freqLower.includes('twice') && !freqLower.includes('three')) {
-    frequency = 'once_daily';
-  } else if (freqLower.includes('twice') || freqLower.includes('bid') || freqLower.includes('q12h') || freqLower.includes('q12')) {
-    frequency = 'twice_daily';
-  } else if (freqLower.includes('three') || freqLower.includes('tid') || freqLower.includes('q8h') || freqLower.includes('q8')) {
-    frequency = 'three_times_daily';
-  } else if (freqLower.includes('four') || freqLower.includes('qid') || freqLower.includes('q6h') || freqLower.includes('q6')) {
-    frequency = 'every_8_hours'; // Using every_8_hours as closest match for QID
-  } else if (freqLower.includes('as needed') || freqLower.includes('prn')) {
-    frequency = 'as_needed';
+  // Check if medication fields are arrays (Tally's repeated section format)
+  const names = answers['Name'] || answers['name'] || answers['Medication Name'];
+  
+  if (!Array.isArray(names)) {
+    return []; // Not array-based, return empty
   }
+  
+  console.log(`   🔍 Found array-based medication data with ${names.length} medication(s)`);
+  
+  // Get all field arrays
+  const strengths = answers['Strength/Dosage'] || answers['strength/dosage'] || [];
+  const quantities = answers['Total quantity dispensed'] || answers['total quantity dispensed'] || [];
+  const doseAmounts = answers['Dose amount'] || answers['dose amount'] || [];
+  const doseUnits = answers['Dose unit'] || answers['dose unit'] || [];
+  const frequencies = answers['Frequency'] || answers['frequency'] || [];
+  const routes = answers['Route of administration'] || answers['route of administration'] || [];
+  const prescriptionLabels = answers['Prescription label'] || answers['prescription label'] || [];
+  
+  // Iterate through each medication
+  for (let i = 0; i < names.length; i++) {
+    const name = names[i];
+    
+    if (!name || !name.trim()) {
+      console.log(`   ⏭️ Medication ${i + 1}: Empty name, skipping`);
+      continue;
+    }
+    
+    const strength = strengths[i] || '';
+    const quantityStr = quantities[i];
+    const doseAmountStr = doseAmounts[i];
+    const doseUnit = doseUnits[i];
+    const frequencyStr = frequencies[i];
+    const route = routes[i] || '';
+    const instructions = prescriptionLabels[i] || '';
+    
+    // Validate required fields
+    if (!quantityStr || !doseAmountStr || !frequencyStr) {
+      console.log(`   ⚠️ Medication ${i + 1} (${name}): Missing required fields, skipping`);
+      continue;
+    }
+    
+    console.log(`   ✅ Processing Medication ${i + 1}:`, { name, strength, quantityStr, doseAmountStr, doseUnit, frequencyStr });
+    
+    // Parse total quantity
+    const totalQuantity = parseInt(String(quantityStr), 10);
+    if (isNaN(totalQuantity) || totalQuantity <= 0) {
+      console.log(`   ⚠️ Medication ${i + 1}: Invalid quantity: ${quantityStr}`);
+      continue;
+    }
+    
+    // Parse dose amount (can be "1", "0.5", "1/2", etc.)
+    let dosePerAdmin = 1;
+    const doseStr = String(doseAmountStr).trim();
+    if (doseStr.includes('/')) {
+      const parts = doseStr.split('/').map(s => parseFloat(s.trim()));
+      if (parts.length === 2 && parts[0] && parts[1]) {
+        dosePerAdmin = parts[0] / parts[1];
+      }
+    } else {
+      const parsed = parseFloat(doseStr);
+      if (!isNaN(parsed) && parsed > 0) {
+        dosePerAdmin = parsed;
+      }
+    }
+    
+    // Map frequency (SID/BID/TID)
+    let frequency: ParsedMedication['frequency'] = 'twice_daily';
+    const freqLower = String(frequencyStr).toLowerCase();
+    
+    if (freqLower.includes('sid') || freqLower.includes('once')) {
+      frequency = 'once_daily';
+    } else if (freqLower.includes('bid') || freqLower.includes('twice')) {
+      frequency = 'twice_daily';
+    } else if (freqLower.includes('tid') || freqLower.includes('three')) {
+      frequency = 'three_times_daily';
+    } else if (freqLower.includes('qid') || freqLower.includes('four')) {
+      frequency = 'every_8_hours';
+    } else if (freqLower.includes('prn') || freqLower.includes('as needed')) {
+      frequency = 'as_needed';
+    }
+    
+    console.log(`   📊 Parsed Medication ${i + 1}: ${name} - ${totalQuantity} total, ${dosePerAdmin} per dose, ${frequency}`);
+    
+    medications.push({
+      name,
+      dosage: strength || '',
+      totalQuantity,
+      dosePerAdmin,
+      doseUnit: doseUnit || 'tablet(s)',
+      frequency,
+      instructions: instructions || `${name} ${strength || ''} ${route ? `(${route})` : ''} - Give ${doseAmountStr} ${doseUnit || 'tablet(s)'} ${frequencyStr}`,
+    });
+  }
+  
+  return medications;
+}
 
-  console.log(`   📊 Parsed structured med: ${name} - ${totalQuantity} total, ${dosePerAdmin} per dose, ${frequency}`);
+/**
+ * Extract structured medication data from form fields (new structured form format)
+ * Supports unlimited medications (Medication 1, Medication 2, Medication 3, ...)
+ */
+function extractStructuredMedications(answers: any): ParsedMedication[] {
+  const medications: ParsedMedication[] = [];
+  
+  // Try to extract medications dynamically - loop until we stop finding them
+  let i = 1;
+  let maxAttempts = 20; // Safety limit to prevent infinite loops
+  let consecutiveMissing = 0;
+  
+  while (i <= maxAttempts && consecutiveMissing < 2) {
+    const prefix = i === 1 ? '' : ` ${i}`; // "Medication Name" for first, "Medication Name 2" for second, etc.
+    
+    // Check for medication fields with and without number suffix
+    const nameKey = i === 1 ? 'Medication Name' : `Medication ${i} Name`;
+    const strengthKey = i === 1 ? 'Strength/Dosage' : `Medication ${i} Strength/Dosage`;
+    const quantityKey = i === 1 ? 'Total quantity dispensed' : `Medication ${i} Total quantity dispensed`;
+    const doseAmountKey = i === 1 ? 'Dose amount' : `Medication ${i} Dose amount`;
+    const doseUnitKey = i === 1 ? 'Dose unit' : `Medication ${i} Dose unit`;
+    const frequencyKey = i === 1 ? 'Frequency' : `Medication ${i} Frequency`;
+    const routeKey = i === 1 ? 'Route of administration' : `Medication ${i} Route of administration`;
+    const instructionsKey = i === 1 ? 'Prescription label' : `Medication ${i} Prescription label`;
+    
+    const name = answers[nameKey] || answers[nameKey.toLowerCase()];
+    const strength = answers[strengthKey] || answers[strengthKey.toLowerCase()];
+    const quantityStr = answers[quantityKey] || answers[quantityKey.toLowerCase()];
+    const doseAmountStr = answers[doseAmountKey] || answers[doseAmountKey.toLowerCase()];
+    const doseUnit = answers[doseUnitKey] || answers[doseUnitKey.toLowerCase()];
+    const frequencyStr = answers[frequencyKey] || answers[frequencyKey.toLowerCase()];
+    const route = answers[routeKey] || answers[routeKey.toLowerCase()];
+    const instructions = answers[instructionsKey] || answers[instructionsKey.toLowerCase()] || '';
 
-  return {
-    name,
-    dosage: strength || '',
-    totalQuantity,
-    dosePerAdmin,
-    doseUnit: doseUnit || 'tablet(s)',
-    frequency,
-    instructions: instructions || `${name} ${strength || ''} - Give ${doseAmountStr} ${doseUnit || 'tablet(s)'} ${frequencyStr}`,
-  };
+    // If name is missing, skip this medication (it's not filled)
+    if (!name) {
+      console.log(`   ⏭️ Medication ${i}: No name found, skipping`);
+      consecutiveMissing++;
+      i++;
+      continue;
+    }
+    
+    // Reset consecutive missing counter when we find a medication
+    consecutiveMissing = 0;
+    
+    // If other required fields are missing, log warning but continue
+    if (!quantityStr || !doseAmountStr || !frequencyStr) {
+      console.log(`   ⚠️ Medication ${i} (${name}): Missing required fields, skipping`);
+      i++;
+      continue;
+    }
+
+    console.log(`   ✅ Found Medication ${i} data:`, { name, strength, quantityStr, doseAmountStr, doseUnit, frequencyStr, route });
+
+    // Parse total quantity
+    const totalQuantity = parseInt(String(quantityStr), 10);
+    if (isNaN(totalQuantity) || totalQuantity <= 0) {
+      console.log(`   ⚠️ Medication ${i}: Invalid total quantity: ${quantityStr}`);
+      continue;
+    }
+
+    // Parse dose amount (can be "1", "0.5", "1/2", etc.)
+    let dosePerAdmin = 1;
+    const doseStr = String(doseAmountStr).trim();
+    if (doseStr.includes('/')) {
+      // Handle fractions like "1/2"
+      const parts = doseStr.split('/').map(s => parseFloat(s.trim()));
+      if (parts.length === 2 && parts[0] && parts[1]) {
+        dosePerAdmin = parts[0] / parts[1];
+      }
+    } else {
+      const parsed = parseFloat(doseStr);
+      if (!isNaN(parsed) && parsed > 0) {
+        dosePerAdmin = parsed;
+      }
+    }
+
+    // Map frequency dropdown value to internal frequency code (now using SID/BID/TID)
+    let frequency: ParsedMedication['frequency'] = 'twice_daily'; // default
+    const freqLower = String(frequencyStr).toLowerCase();
+    
+    if (freqLower.includes('sid') || freqLower.includes('once')) {
+      frequency = 'once_daily';
+    } else if (freqLower.includes('bid') || freqLower.includes('twice')) {
+      frequency = 'twice_daily';
+    } else if (freqLower.includes('tid') || freqLower.includes('three')) {
+      frequency = 'three_times_daily';
+    } else if (freqLower.includes('qid') || freqLower.includes('four')) {
+      frequency = 'every_8_hours'; // Using every_8_hours as closest match for QID (actually 6h but we'll treat as 4x/day)
+    } else if (freqLower.includes('prn') || freqLower.includes('as needed')) {
+      frequency = 'as_needed';
+    }
+
+    console.log(`   📊 Parsed Medication ${i}: ${name} - ${totalQuantity} total, ${dosePerAdmin} per dose, ${frequency}`);
+
+    medications.push({
+      name,
+      dosage: strength || '',
+      totalQuantity,
+      dosePerAdmin,
+      doseUnit: doseUnit || 'tablet(s)',
+      frequency,
+      instructions: instructions || `${name} ${strength || ''} ${route ? `(${route})` : ''} - Give ${doseAmountStr} ${doseUnit || 'tablet(s)'} ${frequencyStr}`,
+    });
+    
+    i++; // Move to next medication
+  }
+  
+  console.log(`   🔍 Total medications found: ${medications.length}`);
+  return medications;
 }
 
 /**
@@ -306,15 +449,26 @@ export async function createTasksFromDischarge(
     const { dischargeDate, firstEveningTime } = extractDischargeDateTime(answers);
     console.log('🔍 [DischargeTasks] Discharge date:', dischargeDate, 'First evening time:', firstEveningTime);
 
-    // First, try to extract structured medication data (new form format)
-    const medications: ParsedMedication[] = [];
+    // First, try to extract structured medication data (new form format with multiple medications)
+    let medications: ParsedMedication[] = [];
     
     console.log('🔍 [DischargeTasks] Attempting to extract structured medication data...');
-    const structuredMed = extractStructuredMedication(answers);
-    if (structuredMed) {
-      console.log('✅ [DischargeTasks] Found structured medication data');
-      medications.push(structuredMed);
+    
+    // Try array-based format first (Tally repeated sections with same field names)
+    const arrayBasedMeds = extractArrayBasedMedications(answers);
+    if (arrayBasedMeds.length > 0) {
+      console.log(`✅ [DischargeTasks] Found ${arrayBasedMeds.length} medication(s) in array format`);
+      medications = arrayBasedMeds;
     } else {
+      // Try numbered format (Medication 1, Medication 2, Medication 3, etc.)
+      const structuredMeds = extractStructuredMedications(answers);
+      if (structuredMeds.length > 0) {
+        console.log(`✅ [DischargeTasks] Found ${structuredMeds.length} structured medication(s)`);
+        medications = structuredMeds;
+      }
+    }
+    
+    if (medications.length === 0) {
       console.log('⚠️ [DischargeTasks] No structured medication data found, trying text parsing...');
       
       // Fallback: Parse medications from text fields (old form format)
