@@ -639,6 +639,7 @@ export default function TaskCalendarScreen() {
       }
       
       if (task.recurrenceTimes) {
+        console.log(`  📋 Raw recurrenceTimes for ${task.title}:`, task.recurrenceTimes);
         const parsedTimes = typeof task.recurrenceTimes === 'string' 
           ? JSON.parse(task.recurrenceTimes) 
           : task.recurrenceTimes;
@@ -653,6 +654,7 @@ export default function TaskCalendarScreen() {
               return hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60;
             })
           : [];
+        console.log(`  ⏰ Parsed times for ${task.title}:`, times);
       }
     } catch (error) {
       console.error('Error parsing recurrence data:', error, task);
@@ -662,6 +664,7 @@ export default function TaskCalendarScreen() {
     if (times.length === 0) {
       if (task.scheduledTime && typeof task.scheduledTime === 'string' && task.scheduledTime.includes(':')) {
         times = [task.scheduledTime];
+        console.log(`  ⏰ Using scheduledTime for ${task.title}:`, times);
     } else {
         console.warn(`[expandRecurringTask] No valid times found for task ${task.id}, skipping expansion`);
         return [];
@@ -720,20 +723,27 @@ export default function TaskCalendarScreen() {
     const result: any[] = [];
     const seenTaskIds = new Set<string>();
     
+    console.log(`[TaskCalendar] Expanding ${tasks.length} tasks for date ${selectedDate.toISOString().split('T')[0]}`);
+    
     tasks.forEach((task) => {
       if (seenTaskIds.has(task.id)) {
-      return;
-    }
+        console.log(`[TaskCalendar] Skipping duplicate task ID: ${task.id}`);
+        return;
+      }
       seenTaskIds.add(task.id);
       
       if (task.recurring) {
+        console.log(`[TaskCalendar] Expanding recurring task: ${task.title} (pattern: ${task.recurrencePattern}, times: ${task.recurrenceTimes})`);
         const occurrences = expandRecurringTask(task, selectedDate);
+        console.log(`[TaskCalendar] Created ${occurrences.length} occurrence(s) for ${task.title}`);
         result.push(...occurrences);
       } else {
+        console.log(`[TaskCalendar] Adding non-recurring task: ${task.title}`);
         result.push(task);
       }
     });
     
+    console.log(`[TaskCalendar] Total expanded tasks: ${result.length}`);
     return result;
   }, [tasks, selectedDate, skippedOccurrences]);
 
