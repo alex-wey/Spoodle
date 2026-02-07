@@ -610,10 +610,7 @@ export async function createTasksFromDischarge(
       if (value && typeof value === 'string' && value.trim()) {
         console.log(`✅ [DischargeTasks] Found feeding field "${field}"`);
         const feedingTime = new Date(dischargeDate);
-        const timeParts = firstEveningTime.split(':');
-        const hours = parseInt(timeParts[0] || '19', 10);
-        const minutes = parseInt(timeParts[1] || '0', 10);
-        feedingTime.setUTCHours(hours, minutes, 0, 0);
+        feedingTime.setUTCHours(20, 0, 0, 0); // 8:00 PM - after evening medication
 
         await prisma.task.create({
           data: {
@@ -622,14 +619,14 @@ export async function createTasksFromDischarge(
             title: `Feed ${petName} half meal with food`,
             description: value,
             scheduledDate: feedingTime,
-            scheduledTime: firstEveningTime,
+            scheduledTime: '20:00',
             recurring: false,
             completed: false,
           },
         });
         created++;
         hasFeedingTask = true;
-        console.log('✅ Created feeding task for first night');
+        console.log('✅ Created feeding task for first night (8:00 PM)');
         break;
       }
     }
@@ -641,10 +638,7 @@ export async function createTasksFromDischarge(
       if (value && typeof value === 'string' && value.trim()) {
         console.log(`✅ [DischargeTasks] Found water field "${field}"`);
         const waterTime = new Date(dischargeDate);
-        const timeParts = firstEveningTime.split(':');
-        const hours = parseInt(timeParts[0] || '19', 10);
-        const minutes = parseInt(timeParts[1] || '0', 10);
-        waterTime.setUTCHours(hours, minutes, 0, 0);
+        waterTime.setUTCHours(20, 30, 0, 0); // 8:30 PM - after feeding
 
         await prisma.task.create({
           data: {
@@ -653,13 +647,13 @@ export async function createTasksFromDischarge(
             title: `Offer ${petName} small amounts of water`,
             description: value,
             scheduledDate: waterTime,
-            scheduledTime: firstEveningTime,
+            scheduledTime: '20:30',
             recurring: false,
             completed: false,
           },
         });
         created++;
-        console.log('✅ Created water task for first night');
+        console.log('✅ Created water task for first night (8:30 PM)');
         break; // Only create one water task
       }
     }
@@ -746,10 +740,7 @@ export async function createTasksFromDischarge(
         // Check for e-collar instruction
         if (value.toLowerCase().includes('e-collar') || value.toLowerCase().includes('collar')) {
           const collarTime = new Date(dischargeDate);
-          const timeParts = firstEveningTime.split(':');
-          const hours = parseInt(timeParts[0] || '19', 10);
-          const minutes = parseInt(timeParts[1] || '0', 10);
-          collarTime.setUTCHours(hours, minutes, 0, 0);
+          collarTime.setUTCHours(21, 0, 0, 0); // 9:00 PM - evening reminder
 
           await prisma.task.create({
             data: {
@@ -758,13 +749,13 @@ export async function createTasksFromDischarge(
               title: `Check if ${petName} needs e-collar`,
               description: value,
               scheduledDate: collarTime,
-              scheduledTime: firstEveningTime,
+              scheduledTime: '21:00',
               recurring: false,
               completed: false,
             },
           });
           created++;
-        console.log('✅ Created e-collar reminder task');
+        console.log('✅ Created e-collar reminder task (9:00 PM)');
       }
     }
 
