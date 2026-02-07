@@ -140,6 +140,7 @@ function extractArrayBasedMedications(answers: any): ParsedMedication[] {
   }
   
   console.log(`   🔍 Found array-based medication data with ${names.length} medication(s)`);
+  console.log(`   📋 Names array:`, names);
   
   // Get all field arrays
   const strengths = answers['Strength/Dosage'] || answers['strength/dosage'] || [];
@@ -149,6 +150,8 @@ function extractArrayBasedMedications(answers: any): ParsedMedication[] {
   const frequencies = answers['Frequency'] || answers['frequency'] || [];
   const routes = answers['Route of administration'] || answers['route of administration'] || [];
   const prescriptionLabels = answers['Prescription label'] || answers['prescription label'] || [];
+  
+  console.log(`   📋 Arrays: strengths=${Array.isArray(strengths)}, quantities=${Array.isArray(quantities)}, doseAmounts=${Array.isArray(doseAmounts)}, doseUnits=${Array.isArray(doseUnits)}, frequencies=${Array.isArray(frequencies)}`);
   
   // Iterate through each medication
   for (let i = 0; i < names.length; i++) {
@@ -173,7 +176,14 @@ function extractArrayBasedMedications(answers: any): ParsedMedication[] {
       continue;
     }
     
-    console.log(`   ✅ Processing Medication ${i + 1}:`, { name, strength, quantityStr, doseAmountStr, doseUnit, frequencyStr });
+    console.log(`   ✅ Processing Medication ${i + 1}:`, { 
+      name, 
+      strength, 
+      quantityStr: `${quantityStr} (type: ${typeof quantityStr})`, 
+      doseAmountStr: `${doseAmountStr} (type: ${typeof doseAmountStr})`, 
+      doseUnit: `${doseUnit} (type: ${typeof doseUnit})`, 
+      frequencyStr: `${frequencyStr} (type: ${typeof frequencyStr})` 
+    });
     
     // Parse total quantity
     const totalQuantity = parseInt(String(quantityStr), 10);
@@ -181,6 +191,7 @@ function extractArrayBasedMedications(answers: any): ParsedMedication[] {
       console.log(`   ⚠️ Medication ${i + 1}: Invalid quantity: ${quantityStr}`);
       continue;
     }
+    console.log(`   ✓ Total quantity parsed: ${totalQuantity}`);
     
     // Parse dose amount (can be "1", "0.5", "1/2", etc.)
     let dosePerAdmin = 1;
@@ -510,10 +521,16 @@ export async function createTasksFromDischarge(
     }
 
     // Create medication tasks
+    console.log(`🔍 [DischargeTasks] Creating tasks for ${medications.length} medication(s)...`);
     for (const med of medications) {
       try {
+        console.log(`   🔄 Processing medication: ${med.name}`);
         const { totalDoses, durationDays } = calculateMedicationSchedule(med);
-        if (totalDoses === 0) continue;
+        console.log(`   📊 Schedule calculated: ${totalDoses} doses over ${durationDays} days`);
+        if (totalDoses === 0) {
+          console.log(`   ⚠️ Skipping ${med.name}: totalDoses is 0`);
+          continue;
+        }
 
         // Determine recurrence pattern
         let recurrencePattern: string | null = null;
