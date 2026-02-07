@@ -422,8 +422,29 @@ router.post('/tally', async (req: Request, res: Response) => {
                   console.log(`   🔽 Dropdown field "${key}": ${JSON.stringify(field.value)} → "${value}"`);
                 }
                 
-                fieldsMap[key] = value;
-                fieldsMap[key.toLowerCase()] = value;
+                // Handle duplicate keys (repeated sections) - create arrays
+                if (fieldsMap[key] !== undefined) {
+                  // Key already exists - convert to array or append to existing array
+                  if (Array.isArray(fieldsMap[key])) {
+                    fieldsMap[key].push(value);
+                  } else {
+                    fieldsMap[key] = [fieldsMap[key], value];
+                  }
+                } else {
+                  fieldsMap[key] = value;
+                }
+                
+                // Also store lowercase version
+                const lowerKey = key.toLowerCase();
+                if (fieldsMap[lowerKey] !== undefined) {
+                  if (Array.isArray(fieldsMap[lowerKey])) {
+                    fieldsMap[lowerKey].push(value);
+                  } else {
+                    fieldsMap[lowerKey] = [fieldsMap[lowerKey], value];
+                  }
+                } else {
+                  fieldsMap[lowerKey] = value;
+                }
               }
             }
             console.log('🔍 [Webhook] Converted fields to map. Keys:', Object.keys(fieldsMap).filter(k => !k.match(/^[a-z]/)));
