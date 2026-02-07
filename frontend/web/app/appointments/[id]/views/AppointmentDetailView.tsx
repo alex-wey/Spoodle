@@ -338,8 +338,8 @@ export default function AppointmentDetailView() {
     if (apiAppointment.petOwner?.user?.email) formUrl.searchParams.set('email', apiAppointment.petOwner.user.email);
     if (apiAppointment.petOwner?.user?.phone) formUrl.searchParams.set('phone', apiAppointment.petOwner.user.phone);
     // Use the appointment date, not today's date
-    const appointmentDate = apiAppointment.scheduledAt 
-      ? new Date(apiAppointment.scheduledAt).toISOString().slice(0, 10)
+    const appointmentDate = apiAppointment.startTime 
+      ? new Date(apiAppointment.startTime).toISOString().slice(0, 10)
       : new Date().toISOString().slice(0, 10);
     formUrl.searchParams.set('todayDate', appointmentDate);
     if (apiAppointment.staff?.user) {
