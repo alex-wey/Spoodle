@@ -15,6 +15,11 @@ import chatbotRoutes from './routes/chatbot.js';
 import settingsRoutes from './routes/settings.js';
 import clinicsRoutes from './routes/clinics.js';
 import tasksRoutes from './routes/tasks.js';
+import formsRoutes from './routes/forms.js';
+import webhookRoutes from './routes/webhooks.js';
+import appointmentsRoutes from './routes/appointments.js';
+import appointmentInvitesRoutes from './routes/appointment-invites.js';
+import formInvitesRoutes from './routes/form-invites.js';
 
 // Load environment variables
 dotenv.config();
@@ -80,6 +85,11 @@ app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/clinics', clinicsRoutes);
 app.use('/api/tasks', tasksRoutes);
+app.use('/api/forms', formsRoutes);
+app.use('/api/webhooks', webhookRoutes);
+app.use('/api/appointments', appointmentsRoutes);
+app.use('/api/appointment-invites', appointmentInvitesRoutes);
+app.use('/api/form-invites', formInvitesRoutes);
 
 // API documentation endpoint
 app.get('/api', (req: Request, res: Response) => {
@@ -94,7 +104,12 @@ app.get('/api', (req: Request, res: Response) => {
       chatbot: '/api/chatbot',
       settings: '/api/settings',
       clinics: '/api/clinics',
-      tasks: '/api/tasks'
+      tasks: '/api/tasks',
+      forms: '/api/forms',
+      webhooks: '/api/webhooks',
+      appointments: '/api/appointments',
+      appointmentInvites: '/api/appointment-invites',
+      formInvites: '/api/form-invites'
     },
     documentation: 'Mobile API for Spoodle pet management app'
   });
@@ -113,7 +128,12 @@ app.use('/api/*', (req: Request, res: Response) => {
       '/api/dashboard',
       '/api/bug-report',
       '/api/chatbot',
-      '/api/tasks'
+      '/api/tasks',
+      '/api/forms',
+      '/api/webhooks',
+      '/api/appointments',
+      '/api/appointment-invites',
+      '/api/form-invites'
     ]
   });
 });

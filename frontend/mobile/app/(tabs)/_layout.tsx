@@ -85,6 +85,14 @@ export default function TabLayout() {
         options={{ href: null }}
       />
       <Tabs.Screen
+        name="pets/[id]/appointments/index"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="pets/[id]/forms/index"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
         name="pets/add"
         options={{ href: null }}
       />

@@ -707,6 +707,221 @@ class ClerkApiClient {
       notes: data?.notes,
     });
   }
+
+  // Forms endpoints
+  async createForm(data: {
+    tallyFormId: string;
+    title: string;
+    description?: string;
+    clinicId?: string;
+  }) {
+    return this.request<{
+      success: boolean;
+      data: any;
+      message?: string;
+    }>('/forms', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getForms() {
+    return this.request<{
+      success: boolean;
+      data: any[];
+      count?: number;
+      message?: string;
+    }>('/forms', {
+      method: 'GET',
+    });
+  }
+
+  async getForm(formId: string) {
+    return this.request<{
+      success: boolean;
+      data: any;
+      message?: string;
+    }>(`/forms/${formId}`, {
+      method: 'GET',
+    });
+  }
+
+  async getFormSubmissions(formId: string) {
+    return this.request<{
+      success: boolean;
+      data: any[];
+      count?: number;
+      message?: string;
+    }>(`/forms/${formId}/submissions`, {
+      method: 'GET',
+    });
+  }
+
+  // Form invites endpoints
+  async getFormInvites(petId?: string) {
+    const url = petId 
+      ? `/form-invites?petId=${petId}`
+      : '/form-invites';
+    
+    return this.request<{
+      success: boolean;
+      data: Array<{
+        id: string;
+        formLink: string;
+        formName: string;
+        clinicId: string;
+        petId: string;
+        petOwnerId: string;
+        createdAt: string;
+        updatedAt: string;
+        clinic?: {
+          id: string;
+          name: string;
+          slug: string;
+        };
+        pet?: {
+          id: string;
+          name: string;
+          species: string;
+          breed?: string;
+          imageUrl?: string;
+        };
+        petOwner?: {
+          id: string;
+          user?: {
+            firstName: string;
+            lastName: string;
+            email?: string;
+            phone?: string;
+          };
+        };
+      }>;
+      message?: string;
+    }>(url, {
+      method: 'GET',
+    });
+  }
+
+  // Appointment endpoints
+  async getAppointments(filters?: {
+    petId?: string;
+    status?: 'CONFIRMED' | 'CANCELLED' | 'RESCHEDULED';
+    clinicId?: string;
+  }) {
+    const params = new URLSearchParams();
+    if (filters?.petId) params.append('petId', filters.petId);
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.clinicId) params.append('clinicId', filters.clinicId);
+    
+    const query = params.toString();
+    return this.request<{
+      success: boolean;
+      data: Array<{
+        id: string;
+        externalAppointmentId: string;
+        externalAppointmentUid: string;
+        eventTypeId: string;
+        eventTitle?: string | null;
+        eventDescription?: string | null;
+        clinicId: string;
+        staffId: string;
+        petId: string;
+        petOwnerId: string;
+        status: 'CONFIRMED' | 'CANCELLED' | 'RESCHEDULED';
+        startTime: string;
+        endTime: string;
+        createdAt: string;
+        updatedAt: string;
+        clinic?: {
+          id: string;
+          name: string;
+          slug: string;
+        };
+        staff?: {
+          id: string;
+          user: {
+            firstName: string;
+            lastName: string;
+            email: string;
+          };
+        };
+        pet?: {
+          id: string;
+          name: string;
+          species: string;
+          breed?: string | null;
+          imageUrl?: string | null;
+        };
+        petOwner?: {
+          id: string;
+          user: {
+            firstName: string;
+            lastName: string;
+            email: string;
+            phone?: string | null;
+          };
+        };
+        calcomData?: Record<string, unknown>;
+      }>;
+    }>(`/appointments${query ? `?${query}` : ''}`, {
+      method: 'GET',
+    });
+  }
+
+  async getAppointmentById(appointmentId: string) {
+    return this.request<{
+      success: boolean;
+      data: {
+        id: string;
+        externalAppointmentId: string;
+        externalAppointmentUid: string;
+        eventTypeId: string;
+        eventTitle?: string | null;
+        eventDescription?: string | null;
+        clinicId: string;
+        staffId: string;
+        petId: string;
+        petOwnerId: string;
+        status: 'CONFIRMED' | 'CANCELLED' | 'RESCHEDULED';
+        startTime: string;
+        endTime: string;
+        createdAt: string;
+        updatedAt: string;
+        clinic?: {
+          id: string;
+          name: string;
+          slug: string;
+        };
+        staff?: {
+          id: string;
+          user: {
+            firstName: string;
+            lastName: string;
+            email: string;
+          };
+        };
+        pet?: {
+          id: string;
+          name: string;
+          species: string;
+          breed?: string | null;
+          imageUrl?: string | null;
+        };
+        petOwner?: {
+          id: string;
+          user: {
+            firstName: string;
+            lastName: string;
+            email: string;
+            phone?: string | null;
+          };
+        };
+        calcomData?: Record<string, unknown>;
+      };
+    }>(`/appointments/${appointmentId}`, {
+      method: 'GET',
+    });
+  }
 }
 
 export const clerkApiClient = new ClerkApiClient(`${API_BASE_URL}/api`);

@@ -89,6 +89,16 @@ export function getClinicScopedPetWhere(req: Request) {
     return { id: { in: [] } };
   }
 
+  // If this request is acting as petOwner (e.g., mobile) prefer owner-only scope
+  if (req.petOwner && req.userType === 'petOwner') {
+    return {
+      ownerId: req.petOwner.id,
+      petOwner: {
+        clinicId: clinicId
+      }
+    };
+  }
+
   // If user is staff, show all pets in the specified clinic
   if (req.staff) {
     return {
@@ -239,6 +249,53 @@ export async function requireStaffClinic(req: Request, res: Response, next: Next
   // Set clinic on request for use in route handlers
   req.clinic = clinic;
   next();
+}
+
+/**
+ * Get clinic-scoped where clause for Appointment queries
+ * Ensures appointments belong to pets in the user's clinic
+ */
+export function getClinicScopedAppointmentWhere(req: Request) {
+  const clinicId = getClinicId(req);
+  
+  if (!clinicId) {
+    // If no clinic, only show appointments for pets owned by the user
+    if (req.petOwner) {
+      return {
+        pet: {
+          ownerId: req.petOwner.id
+        }
+      };
+    }
+    return { id: { in: [] } };
+  }
+
+  // If user is staff, show all appointments for pets in the specified clinic
+  if (req.staff) {
+    return {
+      clinicId: clinicId,
+      pet: {
+        petOwner: {
+          clinicId: clinicId
+        }
+      }
+    };
+  }
+
+  // If user is petOwner, show appointments for their pets in their clinic
+  if (req.petOwner) {
+    return {
+      clinicId: clinicId,
+      pet: {
+        ownerId: req.petOwner.id,
+        petOwner: {
+          clinicId: clinicId
+        }
+      }
+    };
+  }
+
+  return { id: { in: [] } };
 }
 
 /**

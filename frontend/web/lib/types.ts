@@ -67,3 +67,52 @@ export interface DownloadDocumentResponse {
   mimeType: string;
 }
 
+export interface Appointment {
+  id: string;
+  externalAppointmentId: string;
+  externalAppointmentUid: string; // Cal.com booking UID for confirmation link
+  eventTypeId: string;
+  eventTitle?: string | null;
+  eventDescription?: string | null;
+  clinicId: string;
+  staffId: string;
+  petId: string;
+  petOwnerId: string;
+  status: 'CONFIRMED' | 'CANCELLED' | 'RESCHEDULED';
+  startTime: string;
+  endTime: string;
+  createdAt: string;
+  updatedAt: string;
+  clinic?: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  staff?: {
+    id: string;
+    user: {
+      firstName: string;
+      lastName: string;
+      email: string;
+    };
+  };
+  pet?: {
+    id: string;
+    name: string;
+    species: string;
+    breed?: string | null;
+    imageUrl?: string | null;
+  };
+  petOwner?: {
+    id: string;
+    user: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      phone?: string | null;
+    };
+  };
+  calendlyData?: Record<string, unknown>; // Calendly event data if available (legacy)
+  calcomData?: Record<string, unknown>; // Cal.com event data if available
+}
+

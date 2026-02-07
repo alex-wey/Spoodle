@@ -2,8 +2,6 @@
 
 import { OrganizationSwitcher } from '@clerk/nextjs';
 import UserButton from "./clerk/UserButton";
-import { Button } from "./ui/button";
-import { Bell } from "lucide-react";
 import { useSessionContext } from "./SessionContext";
 
 export function Topbar() {
@@ -38,11 +36,6 @@ export function Topbar() {
             {currentDate}
           </p>
         </div>
-        {/* Notifications */}
-        <Button variant="outline" size="icon" className="relative bg-white hover:bg-white">
-          <Bell className="w-4 h-4" />
-          <div className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full" />
-        </Button>
         <UserButton showName={false} />
       </div>
     </div>

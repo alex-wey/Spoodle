@@ -31,6 +31,16 @@ export default function PetsScreen() {
     router.push(`/(tabs)/pets/${petId}/docs` as any);
   };
 
+  const handlePetAppointments = (petId: string) => {
+    // Navigate to pet-specific appointments page
+    router.push(`/(tabs)/pets/${petId}/appointments` as any);
+  };
+
+  const handlePetForms = (petId: string) => {
+    // Navigate to pet-specific forms page
+    router.push(`/(tabs)/pets/${petId}/forms` as any);
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView
@@ -85,6 +95,8 @@ export default function PetsScreen() {
                   pet={pet}
                   onPress={() => handlePetPress(pet.id)}
                   onPetDocuments={() => handlePetDocuments(pet.id)}
+                  onPetAppointments={() => handlePetAppointments(pet.id)}
+                  onPetForms={() => handlePetForms(pet.id)}
                 />
               ))}
 

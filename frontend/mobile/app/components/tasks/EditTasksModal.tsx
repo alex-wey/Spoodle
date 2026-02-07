@@ -72,9 +72,14 @@ export function EditTasksModal({ visible, loading, tasks, onClose, onEditTask }:
     let daysOfWeek: number[] = [];
     try {
       if (task.recurrenceDaysOfWeek) {
-        daysOfWeek = typeof task.recurrenceDaysOfWeek === 'string' 
+        const parsed = typeof task.recurrenceDaysOfWeek === 'string' 
           ? JSON.parse(task.recurrenceDaysOfWeek) 
           : task.recurrenceDaysOfWeek;
+        
+        // Ensure it's actually an array before assigning
+        if (Array.isArray(parsed)) {
+          daysOfWeek = parsed;
+        }
       }
     } catch (error) {
       console.error('Error parsing recurrence days:', error);

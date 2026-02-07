@@ -5,10 +5,11 @@ export default function AuthLayout() {
   const { isSignedIn } = useAuth()
   const segments = useSegments()
 
-  // Allow access to select-clinic even when signed in
+  // Allow access to select-clinic and accept-terms even when signed in
   const isSelectingClinic = (segments as string[]).includes('select-clinic')
+  const isAcceptingTerms = (segments as string[]).includes('accept-terms')
 
-  if (isSignedIn && !isSelectingClinic) {
+  if (isSignedIn && !isSelectingClinic && !isAcceptingTerms) {
     return <Redirect href={'/'} />
   }
 
@@ -19,6 +20,7 @@ export default function AuthLayout() {
       <Stack.Screen name="sign-up" />
       <Stack.Screen name="verify-contact" />
       <Stack.Screen name="reset-password" />
+      <Stack.Screen name="accept-terms" />
       <Stack.Screen name="select-clinic" />
     </Stack>
   )

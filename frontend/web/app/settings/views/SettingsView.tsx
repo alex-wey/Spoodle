@@ -3,11 +3,11 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
-import { CalendarIcon, Plus, Trash2, UserPlus, Shield, Phone, MapPin, Clock, AlertCircle } from 'lucide-react';
+import { CalendarIcon, Plus, Trash2, UserPlus, Shield, Phone, Clock, AlertCircle } from 'lucide-react';
 
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '../../../components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../../components/ui/form';
 import { Input } from '../../../components/ui/input';
 import { Textarea } from '../../../components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
@@ -26,15 +26,6 @@ interface PersonalInfoForm {
   email: string;
   phone: string;
   address: string;
-}
-
-interface VetDetailsForm {
-  vetName: string;
-  clinicName: string;
-  tenureYears: number;
-  tenureMonths: number;
-  biography: string;
-  specialty: string;
 }
 
 interface InviteUserForm {
@@ -68,20 +59,6 @@ const validatePhone = (phone: string) => {
   return true;
 };
 
-const validateTenureYears = (years: number) => {
-  if (years < 0) return 'Tenure cannot be negative';
-  return true;
-};
-
-const validateTenureMonths = (months: number) => {
-  if (months < 0 || months > 11) return 'Months must be between 0-11';
-  return true;
-};
-
-const validateBiography = (bio: string) => {
-  if (bio && bio.length > 500) return 'Biography cannot exceed 500 characters';
-  return true;
-};
 
 const validateTimeRange = (startTime: string, endTime: string) => {
   if (!startTime) return 'Start time is required';
@@ -141,18 +118,18 @@ export default function SettingsView() {
     },
   });
 
-  // Vet Details Form
-  const vetDetailsForm = useForm<VetDetailsForm>({
-    mode: 'onChange',
-    defaultValues: {
-      vetName: 'Dr. Sarah Wilson',
-      clinicName: 'Happy Paws Veterinary Clinic',
-      tenureYears: 5,
-      tenureMonths: 8,
-      biography: 'Experienced veterinarian with a passion for animal care and specialized training in small animal medicine.',
-      specialty: 'Small Animal Medicine',
-    },
-  });
+  // Vet Details Form (unused but kept for future use)
+  // const vetDetailsForm = useForm<VetDetailsForm>({
+  //   mode: 'onChange',
+  //   defaultValues: {
+  //     vetName: 'Dr. Sarah Wilson',
+  //     clinicName: 'Happy Paws Veterinary Clinic',
+  //     tenureYears: 5,
+  //     tenureMonths: 8,
+  //     biography: 'Experienced veterinarian with a passion for animal care and specialized training in small animal medicine.',
+  //     specialty: 'Small Animal Medicine',
+  //   },
+  // });
 
   // Invite User Form
   const inviteUserForm = useForm<InviteUserForm>({
@@ -181,13 +158,13 @@ export default function SettingsView() {
     });
   };
 
-  const onVetDetailsSubmit = (values: VetDetailsForm) => {
-    console.log('Vet details:', values);
-    toast({
-      title: "Veterinarian details updated",
-      description: "Your professional details have been successfully updated.",
-    });
-  };
+  // const onVetDetailsSubmit = (values: VetDetailsForm) => {
+  //   console.log('Vet details:', values);
+  //   toast({
+  //     title: "Veterinarian details updated",
+  //     description: "Your professional details have been successfully updated.",
+  //   });
+  // };
 
   const onInviteUserSubmit = (values: InviteUserForm) => {
     console.log('Invite user:', values);
@@ -258,7 +235,7 @@ export default function SettingsView() {
   };
 
   return (
-    <div className="flex-1 space-y-6 p-12">
+    <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Settings</h2>

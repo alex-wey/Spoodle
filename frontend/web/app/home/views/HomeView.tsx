@@ -79,7 +79,7 @@ const mockAppointments: Appointment[] = [
 
 export default function HomeView() {
   const router = useRouter();
-  const { user, organization, isLoading } = useSessionContext();
+  const { isLoading } = useSessionContext();
 
   const [appointments] = useState<Appointment[]>(mockAppointments);
   const [viewType, setViewType] = useState<"clinic" | "personal">("clinic");

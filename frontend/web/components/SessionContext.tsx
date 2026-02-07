@@ -50,7 +50,7 @@ interface SessionProviderProps {
 export function SessionProvider({ children }: SessionProviderProps) {
   const { user, isLoaded: userLoaded } = useUser();
   const { isSignedIn, signOut: clerkSignOut, getToken } = useAuth();
-  const { organization, membership, isLoaded: orgLoaded } = useOrganization();
+  const { organization, isLoaded: orgLoaded } = useOrganization();
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
   const [sessionOrganization, setSessionOrganization] = useState<SessionOrganization | null>(null);
   const [clinic, setClinic] = useState<Clinic | null>(null);
@@ -141,6 +141,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
     };
 
     fetchUserProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isSignedIn, userLoaded, orgLoaded, getToken]);
 
   // Fetch clinic information based on active organization from Clerk

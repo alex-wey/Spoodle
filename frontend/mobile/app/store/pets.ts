@@ -276,3 +276,8 @@ export const usePetStore = create<PetState>((set, get) => ({
     );
   },
 }));
+
+// Default export to satisfy Expo Router route scanner (not used as a component)
+export default function PetsStorePlaceholder() {
+  return null;
+}
