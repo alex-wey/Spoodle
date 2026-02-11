@@ -1,6 +1,6 @@
 import AppLayout from "../../components/AppLayout";
 
-export default function AnalyticsLayout({
+export default function BusinessLayout({
   children,
 }: {
   children: React.ReactNode;

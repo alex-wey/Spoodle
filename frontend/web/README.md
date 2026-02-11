@@ -46,13 +46,13 @@ npm run start
 
 ```
 app/
-├── analytics/                # Analytics dashboard
-│   └── views/
 ├── appointments/             # Appointment management
 │   ├── [id]/
 │   │   └── views/            # Appointment detail view
 │   ├── components/           # AppointmentCard, CalendarGrid, WeekNavigation, etc.
 │   └── views/                # AppointmentsView (week calendar)
+├── business/                 # Business dashboard
+│   └── views/
 ├── home/                     # Main dashboard
 │   └── views/
 ├── messages/                 # Messaging system
@@ -97,7 +97,7 @@ hooks/
 - `/appointments` - Week-view calendar of appointments with week navigation
 - `/appointments/[id]` - Appointment details with questionnaire and booking information
 - `/messages` - Messaging interface
-- `/analytics` - Business analytics and reports
+- `/business` - Business analytics and reports
 - `/settings` - User and clinic settings (personal info, clinic hours, user management)
 
 ## API Integration
@@ -167,7 +167,7 @@ The web app connects to the backend API at `NEXT_PUBLIC_API_BASE_URL`. All reque
 - **Appointment Calendar**: Week-view calendar with appointment scheduling via Cal.com integration
 - **Appointment Invites**: Send appointment invitation links to pet owners, track pending invites
 - **Forms Integration**: View and manage Tally form submissions linked to pets
-- **Analytics**: Revenue tracking and business metrics
+- **Business**: Revenue tracking and business metrics
 - **Messaging**: Integrated communication system
 - **Document Management**: Upload and view pet medical records
 - **Theme Support**: Dark/light mode with next-themes

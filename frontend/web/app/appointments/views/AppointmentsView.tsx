@@ -15,6 +15,7 @@ import { CalendarGrid } from "../components/CalendarGrid";
 import { getWeekStart, getWeekDays } from "../utils/dateUtils";
 import { transformAppointment, filterAppointmentsForWeek } from "../utils/appointmentTransform";
 import type { AppointmentCardData } from "../components/AppointmentCard";
+import PageLayout from "@/components/primitives/PageLayout";
 
 export default function AppointmentsView() {
   const router = useRouter();
@@ -100,16 +101,11 @@ export default function AppointmentsView() {
   };
 
   return (
-    <div className="flex-1 space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Appointments</h2>
-          <p className="text-muted-foreground">
-            View and manage all appointments
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+    <PageLayout
+      title="Appointments"
+      description="View and manage all appointments"
+      actions={
+        <>
           {/* <Button variant="outline" onClick={() => setInvitesModalOpen(true)}>
             <Mail className="h-4 w-4 mr-2" />
             Invites
@@ -118,9 +114,9 @@ export default function AppointmentsView() {
             <Plus className="h-4 w-4" />
             New Appointment
           </Button>
-        </div>
-      </div>
-
+        </>
+      }
+    >
       {/* Week Navigation and Calendar Grid - Connected */}
       <div className="space-y-0">
         <WeekNavigation
@@ -157,6 +153,6 @@ export default function AppointmentsView() {
         open={invitesModalOpen}
         onOpenChange={setInvitesModalOpen}
       />
-    </div>
+    </PageLayout>
   );
 }

@@ -29,6 +29,7 @@ import {
 } from "../../../components/ui/table";
 import { getForms, getFormSubmissions, type Form, type FormSubmission } from "@/lib/api";
 import { useSessionContext } from "@/components/SessionContext";
+import PageLayout from "@/components/primitives/PageLayout";
 
 export default function FormsView() {
   const router = useRouter();
@@ -186,16 +187,11 @@ export default function FormsView() {
   }
 
   return (
-    <div className="flex-1 space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Forms</h2>
-          <p className="text-muted-foreground">
-            Select a form to view submissions
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+    <PageLayout
+      title="Forms"
+      description="Select a form to view submissions"
+      actions={
+        <>
           <Select
             value={selectedForm?.id || undefined}
             onValueChange={(val) => {
@@ -215,9 +211,9 @@ export default function FormsView() {
             </SelectContent>
           </Select>
           <Badge variant="default">{forms.length} form{forms.length !== 1 ? "s" : ""}</Badge>
-        </div>
-      </div>
-
+        </>
+      }
+    >
       {!selectedForm ? (
         <Card className="p-6 text-center">
           <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-40" />
@@ -280,7 +276,7 @@ export default function FormsView() {
           </div>
         </Card>
       )}
-    </div>
+    </PageLayout>
   );
 }
 

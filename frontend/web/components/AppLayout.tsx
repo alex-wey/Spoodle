@@ -1,8 +1,8 @@
 'use client';
 
 import { SidebarProvider } from "./ui/sidebar";
-import { Sidebar } from "./Sidebar";
-import { Topbar } from "./Topbar";
+import { Sidebar } from "./primitives/Sidebar";
+import { Topbar } from "./primitives/Topbar";
 
 export default function AppLayout({
   children,

@@ -20,7 +20,7 @@ export default function UserButton({
         showName={showName}
         appearance={{
           elements: {
-            avatarBox: 'w-8 h-8 rounded-full border-2 border-gray-200 hover:border-blue-300 transition-colors',
+            avatarBox: 'w-10 h-10 rounded-full border-2 border-gray-200 hover:border-blue-300 transition-colors',
             userButtonPopoverCard: 'shadow-lg border border-gray-200 rounded-lg bg-white',
             userButtonPopoverActionButton: 'hover:bg-gray-50 text-gray-700',
             userButtonPopoverActionButtonText: 'text-sm font-medium',
