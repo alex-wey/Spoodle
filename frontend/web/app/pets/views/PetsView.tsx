@@ -21,6 +21,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getClinicPets } from "@/lib/api";
 import { useSessionContext } from "@/components/SessionContext";
 import type { Pet as ApiPet } from "@/lib/types";
+import PageLayout from "@/components/primitives/PageLayout";
 
 interface Pet {
   id: string;
@@ -112,16 +113,10 @@ export default function Records() {
   });
 
   return (
-    <div className="flex-1 space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Pets</h2>
-          <p className="text-muted-foreground">
-            View all pets and their medical records
-          </p>
-        </div>
-      </div>
-
+    <PageLayout
+      title="Pets"
+      description="View all pets and their medical records"
+    >
       {/* Pets Table */}
       <Card>
         <CardHeader>
@@ -230,6 +225,6 @@ export default function Records() {
           ) : null}
         </CardContent>
       </Card>
-    </div>
+    </PageLayout>
   );
 }

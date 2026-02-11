@@ -13,6 +13,7 @@ import { downloadDocument, getAppointmentById, getPetDocuments, uploadDocument }
 import { useSessionContext } from "../../../../components/SessionContext";
 import { Alert, AlertDescription } from "../../../../components/ui/alert";
 import type { Appointment as ApiAppointment, Document as ApiDocument } from "../../../../lib/types";
+import PageLayout from "@/components/primitives/PageLayout";
 
 interface QuestionnaireAnswer {
   question: string;
@@ -366,29 +367,20 @@ export default function AppointmentDetailView() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Main Content */}
-      <div className="container mx-auto px-6 py-8">
-        {/* Header Section */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => router.push("/appointments")}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight">Appointment Details</h2>
-              <p className="text-muted-foreground">
-                View and manage appointment information
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <PageLayout
+      title="Appointment Details"
+      description="View and manage appointment information"
+      actions={
+        <Button 
+          variant="ghost" 
+          size="icon"
+          onClick={() => router.push("/appointments")}
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+      }
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Appointment Info & Questionnaire */}
           <div className="lg:col-span-2 space-y-6">
             {/* Appointment Hero Section */}
@@ -618,8 +610,6 @@ export default function AppointmentDetailView() {
             </Card>
           </div>
         </div>
-      </div>
-
-    </div>
+    </PageLayout>
   );
 }

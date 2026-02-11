@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { 
   Dog,
@@ -9,7 +10,7 @@ import {
   Home,
   Calendar,
   MessageSquare,
-  BarChart3,
+  BriefcaseBusiness,
   FileText,
 } from "lucide-react";
 import {
@@ -19,7 +20,7 @@ import {
   SidebarGroupContent,
   SidebarMenu,
   SidebarMenuItem,
-} from "./ui/sidebar";
+} from "../ui/sidebar";
 
 // TODO: Uncomment these pages when we have the functionality
 const navigationItems = [
@@ -49,9 +50,9 @@ const navigationItems = [
     icon: MessageSquare,
   },
   {
-    title: "Analytics",
-    url: "/analytics",
-    icon: BarChart3,
+    title: "Business",
+    url: "/business",
+    icon: BriefcaseBusiness,
   },
   {
     title: "Settings",
@@ -67,12 +68,16 @@ export function Sidebar() {
     <SidebarComponent collapsible="none" style={{ "--sidebar-width": "11rem" } as React.CSSProperties}>
       <SidebarContent className="bg-primary">
         {/* Clinic Branding */}
-        <div className="p-2 py-[18px] border-b border-white/20">
-          <div className="flex items-center justify-center gap-2">
-            <div className="p-2 bg-white/20 rounded-lg">
-              <Dog className="h-6 w-6 text-white" />
+        <div className="py-[9px] border-b border-white/20">
+          <div className="flex items-center justify-center">
+            <div className="p-1 bg-white rounded-md">
+              <Image 
+                src="/icon.png" 
+                alt="Spoodle" 
+                width={38} 
+                height={38}
+              />
             </div>
-            <h2 className="font-semibold text-white">Spoodle</h2>
           </div>
         </div>
 
