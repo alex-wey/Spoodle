@@ -526,9 +526,6 @@ export default function AppointmentDetailView() {
                       className="hidden"
                       onChange={handleUpload}
                     />
-                    <Button onClick={handleSelectFile} disabled={uploading}>
-                      {uploading ? 'Uploading...' : 'Upload Discharge Report'}
-                    </Button>
                     <Button variant="outline" onClick={handleOpenDischargeForm} className="flex items-center gap-2">
                       <ExternalLink className="h-4 w-4" />
                       Open Discharge Form (Tally)
