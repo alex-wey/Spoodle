@@ -133,7 +133,55 @@ async function generateDischargePdf({
     doc.fontSize(13).fillColor('#1f3a93').text('Form Responses', { underline: true });
     doc.moveDown(0.6);
 
+    // Group medication fields together for consolidated display
+    const medicationFieldLabels = [
+      'Name', 'Medication Name', 'Strength/Dosage', 'Total quantity dispensed',
+      'Dose amount', 'Dose unit', 'Frequency', 'Route of administration', 'Prescription label'
+    ];
+    const medicationFieldLabelsLower = medicationFieldLabels.map(l => l.toLowerCase());
+    
+    // Collect medication data by index - array of objects where each object is one medication's fields
+    const medicationData: Array<Record<string, string>> = [];
+    const nonMedicationFields: TallyField[] = [];
+    
+    // First pass: identify and group medication fields
     fields.forEach((field) => {
+      const label = field.label || field.key || '';
+      const labelLower = label.toLowerCase();
+      
+      // Check if this is a medication-related field
+      const isMedicationField = medicationFieldLabelsLower.some(mfl => 
+        labelLower === mfl || 
+        labelLower.includes('medication') ||
+        (labelLower.startsWith('medication ') && /\d/.test(labelLower))
+      );
+      
+      if (isMedicationField) {
+        const value = field.value;
+        
+        // Handle array values (multiple medications with same field name)
+        if (Array.isArray(value)) {
+          value.forEach((v, idx) => {
+            if (!medicationData[idx]) medicationData[idx] = {};
+            medicationData[idx][label] = formatFieldValue(v, field.options);
+          });
+        } else {
+          // Single value - determine which medication index it belongs to
+          // Check for numbered suffix like "Medication 2 Name"
+          const numMatch = label.match(/(\d+)/);
+          const medIndex = numMatch && numMatch[1] ? parseInt(numMatch[1], 10) - 1 : 0;
+          if (!medicationData[medIndex]) medicationData[medIndex] = {};
+          // Normalize the key by removing the number
+          const normalizedLabel = label.replace(/\s*\d+\s*/g, ' ').trim();
+          medicationData[medIndex][normalizedLabel] = formatFieldValue(value, field.options);
+        }
+      } else {
+        nonMedicationFields.push(field);
+      }
+    });
+    
+    // Render non-medication fields first
+    nonMedicationFields.forEach((field) => {
       const label = field.label || field.key || 'Question';
       const value = formatFieldValue(field.value, field.options);
       doc.fontSize(11).fillColor('#000').text(label, { continued: false, underline: false });
@@ -141,6 +189,63 @@ async function generateDischargePdf({
       doc.fontSize(10).fillColor('#444').text(value);
       doc.moveDown(0.6);
     });
+    
+    // Render medications section if we have any
+    if (medicationData.length > 0) {
+      doc.moveDown(0.3);
+      doc.fontSize(12).fillColor('#1f3a93').text('Medications', { underline: true });
+      doc.moveDown(0.4);
+      
+      medicationData.forEach((med, idx) => {
+        if (!med || Object.keys(med).length === 0) return;
+        
+        // Build a single consolidated line for each medication
+        const name = med['Name'] || med['Medication Name'] || med['name'] || `Medication ${idx + 1}`;
+        const strength = med['Strength/Dosage'] || med['strength/dosage'] || '';
+        const quantity = med['Total quantity dispensed'] || med['total quantity dispensed'] || '';
+        const doseAmount = med['Dose amount'] || med['dose amount'] || '';
+        const doseUnit = med['Dose unit'] || med['dose unit'] || '';
+        const frequency = med['Frequency'] || med['frequency'] || '';
+        const route = med['Route of administration'] || med['route of administration'] || '';
+        const instructions = med['Prescription label'] || med['prescription label'] || '';
+        
+        // Format: "Name (Strength) - Qty: X, Dose: Y unit, Frequency, Route"
+        const parts: string[] = [];
+        
+        // Name and strength
+        let nameStr = name;
+        if (strength) nameStr += ` (${strength})`;
+        parts.push(nameStr);
+        
+        // Quantity
+        if (quantity) parts.push(`Qty: ${quantity}`);
+        
+        // Dose
+        if (doseAmount) {
+          let doseStr = `Dose: ${doseAmount}`;
+          if (doseUnit) doseStr += ` ${doseUnit}`;
+          parts.push(doseStr);
+        }
+        
+        // Frequency
+        if (frequency) parts.push(frequency);
+        
+        // Route
+        if (route) parts.push(route);
+        
+        // Build the consolidated line
+        const consolidatedLine = parts.join(' — ');
+        
+        doc.fontSize(10).fillColor('#000').text(`${idx + 1}. ${consolidatedLine}`);
+        
+        // Add prescription label/instructions on a second line if present
+        if (instructions && instructions !== 'Not answered') {
+          doc.fontSize(9).fillColor('#666').text(`   Instructions: ${instructions}`);
+        }
+        
+        doc.moveDown(0.4);
+      });
+    }
 
     // Raw submission (for debugging) in smaller font
     doc.moveDown(0.5);
