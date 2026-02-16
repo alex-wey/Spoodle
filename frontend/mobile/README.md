@@ -179,17 +179,12 @@ eas login
 ### Build & Submit
 
 ```bash
-# iOS
-eas build --platform ios --profile production
-eas submit --platform ios --latest
-
+# Build both platforms
 # Android (first submission requires manual upload in Play Console)
-eas build --platform android --profile production
-eas submit --platform android --latest
-
-# Both platforms
 eas build --platform all --profile production
-eas submit --platform all --latest
+
+# iOS
+eas submit --platform ios --latest
 
 # Check build status
 eas build:list --platform ios --limit 3
