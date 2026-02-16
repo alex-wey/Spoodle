@@ -66,7 +66,7 @@ router.post('/',
       // Send email notification
       try {
         console.log('📧 Attempting to send email for bug report:', title);
-        const reporterEmail = req.userProfile?.email || 'unknown@spoodle.co';
+        const reporterEmail = req.userProfile?.email || 'unknown@spoodle.ai';
         const reporterName = `${req.userProfile?.firstName || 'Unknown'} ${req.userProfile?.lastName || 'User'}`.trim();
 
         const emailSent = await emailService.sendBugReport({
@@ -121,7 +121,7 @@ router.post('/test-email', async (req: Request, res: Response) => {
     if (emailSent) {
       res.status(200).json({
         success: true,
-        message: 'Test email sent successfully! Check seher@spoodle.co'
+        message: 'Test email sent successfully! Check seher@spoodle.ai'
       });
     } else {
       res.status(500).json({

@@ -50,7 +50,7 @@ class EmailService {
 
     try {
       console.log('📧 Attempting to send bug report email...');
-      console.log('📧 Recipient: seher@spoodle.co');
+      console.log('📧 Recipient: seher@spoodle.ai');
       console.log('📧 Subject:', data.title);
       
       const severityEmojis = {
@@ -69,7 +69,7 @@ class EmailService {
 
       const emailData = {
         from: 'Spoodle Bug Reports <onboarding@resend.dev>',
-        to: ['seher@spoodle.co'],
+        to: ['seher@spoodle.ai'],
         subject: `[${severityLabels[data.severity as keyof typeof severityLabels]}] Bug Report: ${data.title}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -156,7 +156,7 @@ This bug report was submitted through the Spoodle mobile application.
       // Test Resend connection by sending a simple test email
       const result = await this.resend.emails.send({
         from: 'Spoodle Bug Reports <onboarding@resend.dev>',
-        to: ['seher@spoodle.co'],
+        to: ['seher@spoodle.ai'],
         subject: 'Test Email from Spoodle',
         html: '<p>This is a test email to verify Resend connection.</p>',
       });

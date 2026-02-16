@@ -163,7 +163,7 @@
 
 **Friend Request Received**
 - **Trigger:** Another pet owner sends a friend request to access a pet profile
-- "You have a new friend request from Emily (emily@spoodle.co) to join Max's care team."
+- "You have a new friend request from Emily (emily@spoodle.ai) to join Max's care team."
 
 **Friend Request Accepted**
 - **Trigger:** A pending friend request is accepted by the recipient
