@@ -18,22 +18,26 @@ declare global {
       // Backward-compat: historically used in routes for ownership checks
       user?: {
         id: string;
-        clerkUserId: string;
+        clerkUserId: string | null;
         createdAt: Date;
         updatedAt: Date;
       } | undefined;
       // Explicit DB owner used for authorization/ownership checks (pet owners)
       petOwner?: {
         id: string;
-        clerkUserId: string;
+        clerkUserId: string | null;
         clinicId: string | null;
         createdAt: Date;
         updatedAt: Date;
+        ownerFirstName?: string | null;
+        ownerLastName?: string | null;
+        ownerEmail?: string | null;
+        ownerPhone?: string | null;
       } | undefined;
       // Staff member record (clinic staff)
       staff?: {
         id: string;
-        clerkUserId: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
       } | undefined;
@@ -99,7 +103,7 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
     };
 
     // Fetch full user data from Clerk
-    const { id, firstName, lastName, primaryEmailAddress, primaryPhoneNumber } = await clerk.users.getUser(userId);
+    const { id, firstName, lastName, primaryEmailAddress, primaryPhoneNumber, imageUrl } = await clerk.users.getUser(userId);
 
     // Sync user to database
     try {
@@ -120,6 +124,7 @@ export const authenticateClerk = async (req: Request, res: Response, next: NextF
         firstName: firstNameValue,
         lastName: lastNameValue,
         phone: primaryPhoneNumber?.phoneNumber ?? null,
+        imageUrl: imageUrl ?? null,
       };
 
       // Determine user type by checking existing database records first

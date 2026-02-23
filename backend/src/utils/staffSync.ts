@@ -27,19 +27,19 @@ export async function getOrCreateStaff(clerkUserData: ClerkUserData) {
       return user.staff;
     }
 
-    // If user exists but no Staff, create Staff
+    // If user exists but no Staff, create Staff linked by userId
     if (user) {
       const staff = await tx.staff.create({
-        data: { clerkUserId: clerkUserData.clerkUserId }
+        data: { userId: user.id }
       });
       return staff;
     }
 
     // User doesn't exist, try to create both User and Staff
     try {
-      await tx.user.create({ data: clerkUserData });
+      const newUser = await tx.user.create({ data: clerkUserData });
       const staff = await tx.staff.create({
-        data: { clerkUserId: clerkUserData.clerkUserId }
+        data: { userId: newUser.id }
       });
       return staff;
     } catch (error: any) {
@@ -59,7 +59,7 @@ export async function getOrCreateStaff(clerkUserData: ClerkUserData) {
         if (existingUser && !existingUser.staff) {
           // User exists but no Staff - create it
           const staff = await tx.staff.create({
-            data: { clerkUserId: existingUser.clerkUserId }
+            data: { userId: existingUser.id }
           });
           return staff;
         }
@@ -77,7 +77,7 @@ export async function getOrCreateStaff(clerkUserData: ClerkUserData) {
         if (userByEmail && !userByEmail.staff) {
           // User exists by email but no Staff - create it
           const staff = await tx.staff.create({
-            data: { clerkUserId: userByEmail.clerkUserId }
+            data: { userId: userByEmail.id }
           });
           return staff;
         }
@@ -93,14 +93,13 @@ export async function getOrCreateStaff(clerkUserData: ClerkUserData) {
 }
 
 /**
- * Get staff by Clerk user ID
+ * Get staff by User ID
  */
-export async function getStaffByClerkUserId(clerkUserId: string) {
+export async function getStaffByUserId(userId: string) {
   return await prisma.staff.findUnique({
-    where: { clerkUserId },
+    where: { userId },
     include: {
       user: true
     }
   });
 }
-
