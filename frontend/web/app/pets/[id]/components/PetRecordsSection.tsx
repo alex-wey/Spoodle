@@ -36,7 +36,8 @@ const getPetRecordTypeColors = (category: string) => {
     "veterinary_notes": "bg-indigo-100 text-indigo-800",
     "diagnostic_reports": "bg-blue-100 text-blue-800",
     "lab_results": "bg-purple-100 text-purple-800",
-    "vaccination_records": "bg-green-100 text-green-800"
+    "vaccination_records": "bg-green-100 text-green-800",
+    "discharge_reports": "bg-amber-100 text-amber-800"
   };
   return colors[category] || "bg-gray-100 text-gray-800";
 };
@@ -47,7 +48,8 @@ const formatCategoryName = (category: string) => {
     "veterinary_notes": "Veterinary Notes",
     "diagnostic_reports": "Diagnostic Reports",
     "lab_results": "Lab Results",
-    "vaccination_records": "Vaccination Records"
+    "vaccination_records": "Vaccination Records",
+    "discharge_reports": "Discharge Reports"
   };
   return names[category] || category;
 };

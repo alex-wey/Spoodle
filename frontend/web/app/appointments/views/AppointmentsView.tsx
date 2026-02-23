@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { Button } from "../../../components/ui/button";
 import { Plus, AlertCircle } from "lucide-react";
-import { getAppointments } from "../../../lib/api";
+import { getAppointments, getAppointmentByUid } from "../../../lib/api";
 import { useSessionContext } from "../../../components/SessionContext";
 import { Alert, AlertDescription } from "../../../components/ui/alert";
 import { CreateAppointmentDialog } from "../components/CreateAppointmentDialog";
@@ -100,6 +100,47 @@ export default function AppointmentsView() {
     }
   };
 
+  const handleBookingSuccess = async (bookingUid?: string) => {
+    if (!bookingUid || !isSignedIn) {
+      refetchAppointments();
+      return;
+    }
+
+    try {
+      const token = await getToken();
+      if (!token) {
+        refetchAppointments();
+        return;
+      }
+
+      // Poll for the appointment to be created by the webhook
+      const maxAttempts = 10;
+      const delayMs = 1000;
+
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const result = await getAppointmentByUid(bookingUid, token, clinicId || undefined);
+        
+        if (result.success && result.data) {
+          // Appointment found, navigate to it
+          router.push(`/appointments/${result.data.id}`);
+          return;
+        }
+
+        // Wait before next attempt
+        if (attempt < maxAttempts - 1) {
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+      }
+
+      // If we couldn't find the appointment after polling, just refresh the list
+      console.warn('Could not find appointment by UID after polling, refreshing list');
+      refetchAppointments();
+    } catch (err) {
+      console.error('Error finding appointment by UID:', err);
+      refetchAppointments();
+    }
+  };
+
   return (
     <PageLayout
       title="Appointments"
@@ -146,7 +187,7 @@ export default function AppointmentsView() {
       <CreateAppointmentDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
-        onSuccess={refetchAppointments}
+        onSuccess={handleBookingSuccess}
       />
 
       <AppointmentInvitesModal

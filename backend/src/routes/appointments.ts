@@ -212,6 +212,121 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/appointments/by-uid/:uid
+ * Get an appointment by its external Cal.com booking UID
+ * IMPORTANT: This route must come BEFORE /:id to avoid route conflicts
+ */
+router.get('/by-uid/:uid', async (req: Request, res: Response) => {
+  try {
+    const { uid } = req.params;
+
+    if (!uid) {
+      return res.status(400).json({
+        success: false,
+        error: 'Booking UID is required',
+      });
+    }
+
+    // Allow both pet owners and staff
+    if (!req.petOwner && !req.staff) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required',
+        message: 'Please log in to view appointments',
+      });
+    }
+
+    // Find appointment by external UID
+    const appointment = await prisma.appointment.findUnique({
+      where: { externalAppointmentUid: uid },
+      include: {
+        clinic: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        staff: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+          },
+        },
+        pet: {
+          select: {
+            id: true,
+            name: true,
+            species: true,
+            breed: true,
+            imageUrl: true,
+          },
+        },
+        petOwner: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        error: 'Appointment not found',
+        message: 'No appointment found with this booking UID. It may still be processing.',
+      });
+    }
+
+    // For pet owners, verify they own the pet associated with this appointment
+    if (req.petOwner) {
+      if (appointment.petOwnerId !== req.petOwner.id) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied',
+          message: 'You do not have permission to view this appointment',
+        });
+      }
+    }
+
+    // For staff, verify clinic access
+    if (req.staff) {
+      const clinicId = (req.query?.clinicId as string) || req.clinic?.id || null;
+      if (clinicId && appointment.clinicId !== clinicId) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied',
+          message: 'You do not have permission to view this appointment',
+        });
+      }
+    }
+
+    return res.json({
+      success: true,
+      data: appointment,
+    });
+  } catch (error: any) {
+    console.error('Error fetching appointment by UID:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch appointment',
+    });
+  }
+});
+
+/**
  * GET /api/appointments/scheduling-link
  * Generate a Cal.com scheduling link for booking an appointment
  * Note: Appointments are created via Cal.com webhooks when users book through these links

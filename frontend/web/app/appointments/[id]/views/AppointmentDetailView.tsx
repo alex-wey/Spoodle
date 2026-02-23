@@ -8,11 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../../../components
 import { Badge } from "../../../../components/ui/badge";
 import { Label } from "../../../../components/ui/label";
 import { Textarea } from "../../../../components/ui/textarea";
-import { ArrowLeft, Calendar, User, FileText, ExternalLink, AlertCircle, Clock, Stethoscope, Dog, Dna, Save, Loader2, StickyNote } from "lucide-react";
-import { getAppointmentById, updateAppointmentNotes, getFormInvites } from "../../../../lib/api";
+import { ArrowLeft, Calendar, User, FileText, ExternalLink, AlertCircle, Clock, Stethoscope, Dog, Dna, Save, Loader2, StickyNote, ClipboardList } from "lucide-react";
+import { getAppointmentById, updateAppointmentNotes, getFormInvites, getDocumentsByPetAndCategory, downloadDocument } from "../../../../lib/api";
 import { useSessionContext } from "../../../../components/SessionContext";
 import { Alert, AlertDescription } from "../../../../components/ui/alert";
-import type { Appointment as ApiAppointment } from "../../../../lib/types";
+import type { Appointment as ApiAppointment, Document } from "../../../../lib/types";
 import PageLayout from "@/components/primitives/PageLayout";
 
 interface QuestionnaireAnswer {
@@ -64,6 +64,8 @@ export default function AppointmentDetailView() {
   const [notesSaved, setNotesSaved] = useState(false);
   const [formInvites, setFormInvites] = useState<FormInvite[]>([]);
   const [formInvitesLoading, setFormInvitesLoading] = useState(false);
+  const [dischargeReports, setDischargeReports] = useState<Document[]>([]);
+  const [dischargeReportsLoading, setDischargeReportsLoading] = useState(false);
 
   // Helper to format time
   const formatTime = (date: Date): string => {
@@ -194,6 +196,36 @@ export default function AppointmentDetailView() {
     fetchFormInvites();
   }, [apiAppointment, isSignedIn, getToken, clinicId]);
 
+  // Fetch discharge reports for this pet
+  useEffect(() => {
+    const fetchDischargeReports = async () => {
+      if (!apiAppointment || !isSignedIn) return;
+      setDischargeReportsLoading(true);
+      try {
+        const token = await getToken();
+        if (!token) {
+          setDischargeReportsLoading(false);
+          return;
+        }
+        const result = await getDocumentsByPetAndCategory(
+          apiAppointment.petId,
+          'discharge_reports',
+          token,
+          clinicId || undefined
+        );
+        if (result?.success && result?.data) {
+          setDischargeReports(result.data);
+        }
+      } catch (err) {
+        console.error('Error fetching discharge reports', err);
+      } finally {
+        setDischargeReportsLoading(false);
+      }
+    };
+
+    fetchDischargeReports();
+  }, [apiAppointment, isSignedIn, getToken, clinicId]);
+
   const handleSaveNotes = async () => {
     if (!apiAppointment) return;
     
@@ -299,6 +331,20 @@ export default function AppointmentDetailView() {
     }
     // Open in a new tab (reliable for Tally)
     window.open(formUrl.toString(), '_blank', 'noopener,noreferrer');
+  };
+
+  const handleViewDischargeReport = async (document: Document) => {
+    try {
+      const token = await getToken();
+      if (!token) return;
+      
+      const result = await downloadDocument(document.id, token, clinicId || undefined);
+      if (result?.success && result?.data?.url) {
+        window.open(result.data.url, '_blank', 'noopener,noreferrer');
+      }
+    } catch (err) {
+      console.error('Error downloading discharge report', err);
+    }
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -509,7 +555,7 @@ export default function AppointmentDetailView() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
+                  <ClipboardList className="h-5 w-5" />
                   Pre-visit Forms
                 </CardTitle>
               </CardHeader>
@@ -526,7 +572,7 @@ export default function AppointmentDetailView() {
                           className="w-full justify-start h-auto py-2 whitespace-normal text-left"
                           onClick={() => window.open(invite.formLink, '_blank', 'noopener,noreferrer')}
                         >
-                          <ExternalLink className="h-4 w-4 shrink-0" />
+                          <ClipboardList className="h-4 w-4 shrink-0" />
                           <span className="flex-1 text-left">{invite.formName}</span>
                         </Button>
                       ))}
@@ -570,14 +616,38 @@ export default function AppointmentDetailView() {
                   <Button 
                     variant="outline" 
                     onClick={handleOpenDischargeForm}
-                    className="w-full justify-start"
+                    className="w-full justify-start h-auto py-2 whitespace-normal text-left"
                   >
-                    <ExternalLink className="h-4 w-4" />
-                    Create Discharge Report
+                    <ExternalLink className="h-4 w-4 shrink-0" />
+                    <span className="flex-1 text-left">Create Discharge Report</span>
                   </Button>
-                  <p className="text-xs text-muted-foreground">
-                    Discharge reports are automatically saved to the pet&apos;s profile when submitted.
-                  </p>
+                  
+                  {/* Submitted Discharge Reports */}
+                  {dischargeReportsLoading ? (
+                    <p className="text-sm text-muted-foreground">Loading reports...</p>
+                  ) : dischargeReports.length > 0 ? (
+                    <div className="space-y-2 pt-2 border-t">
+                      <p className="text-sm font-medium">Submitted Reports</p>
+                      {dischargeReports.map((report) => (
+                        <Button
+                          key={report.id}
+                          variant="outline"
+                          className="w-full justify-start h-auto py-2 whitespace-normal text-left"
+                          onClick={() => handleViewDischargeReport(report)}
+                        >
+                          <FileText className="h-4 w-4 shrink-0" />
+                          <span className="flex-1 text-left">{report.fileName}</span>
+                        </Button>
+                      ))}
+                      <p className="text-xs text-muted-foreground">
+                        Submitted {new Date(dischargeReports[0].createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      No discharge reports submitted yet. Reports are automatically saved to the pet&apos;s profile when submitted.
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>

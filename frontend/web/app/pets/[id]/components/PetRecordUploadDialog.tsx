@@ -36,6 +36,7 @@ const categories = [
   { id: 'diagnostic_reports', title: 'Diagnostic Reports' },
   { id: 'lab_results', title: 'Lab Results' },
   { id: 'vaccination_records', title: 'Vaccination Records' },
+  { id: 'discharge_reports', title: 'Discharge Reports' },
 ];
 
 export function PetRecordUploadDialog({ open, onOpenChange, petId, onSuccess }: PetRecordUploadDialogProps) {

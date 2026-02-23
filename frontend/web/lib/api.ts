@@ -265,6 +265,22 @@ export async function getDocumentsByCategory(category: string, sessionToken: str
 }
 
 /**
+ * Get documents by pet ID and category
+ * @param petId - Pet ID to fetch documents for
+ * @param category - Document category
+ * @param sessionToken - Clerk session token
+ * @param clinicId - Clinic ID to filter documents (required for staff)
+ */
+export async function getDocumentsByPetAndCategory(petId: string, category: string, sessionToken: string, clinicId?: string | null) {
+  const url = clinicId 
+    ? `/api/documents/pet/${petId}/category/${category}?clinicId=${clinicId}` 
+    : `/api/documents/pet/${petId}/category/${category}`;
+  return apiRequest<Document[]>(url, {
+    method: 'GET',
+  }, sessionToken);
+}
+
+/**
  * Download a document
  * @param documentId - Document ID to download
  * @param sessionToken - Clerk session token
@@ -469,6 +485,23 @@ export async function getAppointmentById(
   clinicId?: string | null
 ) {
   const url = clinicId ? `/api/appointments/${appointmentId}?clinicId=${clinicId}` : `/api/appointments/${appointmentId}`;
+  return apiRequest<Appointment>(url, {
+    method: 'GET',
+  }, sessionToken);
+}
+
+/**
+ * Get a specific appointment by its Cal.com booking UID
+ * @param bookingUid - Cal.com booking UID
+ * @param sessionToken - Clerk session token
+ * @param clinicId - Clinic ID (required for staff)
+ */
+export async function getAppointmentByUid(
+  bookingUid: string,
+  sessionToken: string,
+  clinicId?: string | null
+) {
+  const url = clinicId ? `/api/appointments/by-uid/${bookingUid}?clinicId=${clinicId}` : `/api/appointments/by-uid/${bookingUid}`;
   return apiRequest<Appointment>(url, {
     method: 'GET',
   }, sessionToken);

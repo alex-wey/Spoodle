@@ -621,7 +621,7 @@ router.post('/tally', async (req: Request, res: Response) => {
             await prisma.document.create({
               data: {
                 petId: petIdForDoc,
-                category: 'veterinary_notes',
+                category: 'discharge_reports',
                 fileName: displayName,
                 filePath: filePathStored,
                 fileSize,

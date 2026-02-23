@@ -43,7 +43,7 @@ interface EventType {
 interface CreateAppointmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
+  onSuccess?: (bookingUid?: string) => void;
 }
 
 export function CreateAppointmentDialog({
@@ -226,24 +226,14 @@ export function CreateAppointmentDialog({
     setShowAddPetDialog(false);
   };
 
-  const handleBookingSuccess = () => {
-    console.log('Booking successful, refreshing appointments');
+  const handleBookingSuccess = (data?: { uid?: string }) => {
+    console.log('Booking successful with data:', data);
     // Close dialog first
     handleClose();
     
-    // Trigger refresh with retry logic since webhook may take a moment
+    // Trigger success callback with booking UID
     if (onSuccess) {
-      // Immediate refresh
-      onSuccess();
-      
-      // Retry refresh after delays to catch webhook-created appointment
-      setTimeout(() => {
-        onSuccess();
-      }, 2000);
-      
-      setTimeout(() => {
-        onSuccess();
-      }, 5000);
+      onSuccess(data?.uid);
     }
   };
 

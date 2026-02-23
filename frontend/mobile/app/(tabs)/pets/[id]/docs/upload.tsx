@@ -103,6 +103,7 @@ export default function UploadDocumentScreen() {
     { id: 'diagnostic_reports', title: 'Diagnostic Report', color: '#4559A7' },
     { id: 'lab_results', title: 'Lab Result', color: '#4559A7' },
     { id: 'vaccination_records', title: 'Vaccination Record', color: '#4559A7' },
+    { id: 'discharge_reports', title: 'Discharge Report', color: '#4559A7' },
   ];
 
   React.useEffect(() => {

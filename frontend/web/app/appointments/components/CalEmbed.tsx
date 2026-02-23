@@ -3,9 +3,16 @@
 import { useEffect, useMemo } from 'react';
 import Cal, { getCalApi } from '@calcom/embed-react';
 
+interface BookingSuccessData {
+  uid?: string;
+  title?: string;
+  startTime?: string;
+  endTime?: string;
+}
+
 interface CalEmbedProps {
   schedulingUrl: string;
-  onBookingSuccess?: () => void;
+  onBookingSuccess?: (data?: BookingSuccessData) => void;
 }
 
 /**
@@ -78,15 +85,15 @@ export function CalEmbed({ schedulingUrl, onBookingSuccess }: CalEmbedProps) {
         layout: 'month_view',
       });
 
-      // Listen for booking success
+      // Listen for booking success using V2 event which provides booking data
       if (onBookingSuccess) {
         cal('on', {
-          action: 'bookingSuccessful',
-          callback: () => {
-            console.log('Cal.com booking successful, triggering refresh');
+          action: 'bookingSuccessfulV2',
+          callback: (e: { detail: { data: BookingSuccessData } }) => {
+            console.log('Cal.com booking successful, triggering refresh with data:', e.detail.data);
             // Add a small delay to ensure Cal.com has processed the booking
             setTimeout(() => {
-              onBookingSuccess();
+              onBookingSuccess(e.detail.data);
             }, 500);
           },
         });

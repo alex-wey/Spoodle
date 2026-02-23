@@ -17,7 +17,8 @@ import {
   TestTubeDiagonal,
   Syringe,
   ArrowLeft,
-  Bug
+  Bug,
+  FileText
 } from 'lucide-react-native';
 import { useDocumentStore } from '../../../../store/documents';
 import { usePetStore } from '../../../../store/pets';
@@ -29,6 +30,7 @@ const DOCUMENT_CATEGORIES = [
   { id: 'diagnostic_reports', title: 'Diagnostic Reports', color: '#4559A7' },
   { id: 'lab_results', title: 'Lab Results', color: '#4559A7' },
   { id: 'vaccination_records', title: 'Vaccination Records', color: '#4559A7' },
+  { id: 'discharge_reports', title: 'Discharge Reports', color: '#4559A7' },
 ];
 
 const CATEGORY_ICONS: Record<string, any> = {
@@ -36,6 +38,7 @@ const CATEGORY_ICONS: Record<string, any> = {
   'diagnostic_reports': Stethoscope,
   'lab_results': TestTubeDiagonal,
   'vaccination_records': Syringe,
+  'discharge_reports': FileText,
 };
 
 export default function DocsScreen() {
