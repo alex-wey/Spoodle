@@ -14,82 +14,83 @@ export interface ClerkUserData {
  * It handles race conditions and ensures both User and Staff exist.
  */
 export async function getOrCreateStaff(clerkUserData: ClerkUserData) {
-  // Use a transaction to ensure atomicity and handle race conditions
-  return await prisma.$transaction(async (tx) => {
-    // Try to find existing user by clerkUserId (primary lookup)
-    let user = await tx.user.findUnique({
-      where: { clerkUserId: clerkUserData.clerkUserId },
-      include: { staff: true }
-    });
+  // First, try to find existing user (outside transaction for read)
+  const existingUser = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { clerkUserId: clerkUserData.clerkUserId },
+        { email: clerkUserData.email }
+      ]
+    },
+    include: { staff: true }
+  });
 
-    // If user exists and has Staff, return it
-    if (user?.staff) {
-      return user.staff;
-    }
-
-    // If user exists but no Staff, create Staff linked by userId
-    if (user) {
-      const staff = await tx.staff.create({
-        data: { userId: user.id }
+  // If user exists with staff, return it
+  if (existingUser?.staff) {
+    // If found by email but clerkUserId doesn't match, update it
+    if (existingUser.clerkUserId !== clerkUserData.clerkUserId) {
+      await prisma.user.update({
+        where: { id: existingUser.id },
+        data: { clerkUserId: clerkUserData.clerkUserId }
       });
-      return staff;
     }
+    return existingUser.staff;
+  }
 
-    // User doesn't exist, try to create both User and Staff
-    try {
+  // If user exists but no staff, create staff
+  if (existingUser && !existingUser.staff) {
+    // Update clerkUserId if needed
+    if (existingUser.clerkUserId !== clerkUserData.clerkUserId) {
+      await prisma.user.update({
+        where: { id: existingUser.id },
+        data: { clerkUserId: clerkUserData.clerkUserId }
+      });
+    }
+    const staff = await prisma.staff.create({
+      data: { userId: existingUser.id }
+    });
+    return staff;
+  }
+
+  // User doesn't exist, try to create both User and Staff
+  try {
+    return await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({ data: clerkUserData });
       const staff = await tx.staff.create({
         data: { userId: newUser.id }
       });
       return staff;
-    } catch (error: any) {
-      // If creation fails due to unique constraint (race condition),
-      // find the existing user that was created by another request
-      if (error.code === 'P2002') {
-        // Try finding by clerkUserId first
-        const existingUser = await tx.user.findUnique({
-          where: { clerkUserId: clerkUserData.clerkUserId },
-          include: { staff: true }
-        });
+    });
+  } catch (error: any) {
+    // If creation fails due to unique constraint (race condition),
+    // retry the lookup - another request created the user
+    if (error.code === 'P2002') {
+      const user = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { clerkUserId: clerkUserData.clerkUserId },
+            { email: clerkUserData.email }
+          ]
+        },
+        include: { staff: true }
+      });
 
-        if (existingUser?.staff) {
-          return existingUser.staff;
-        }
-
-        if (existingUser && !existingUser.staff) {
-          // User exists but no Staff - create it
-          const staff = await tx.staff.create({
-            data: { userId: existingUser.id }
-          });
-          return staff;
-        }
-
-        // If not found by clerkUserId, try by email (in case email was the conflict)
-        const userByEmail = await tx.user.findUnique({
-          where: { email: clerkUserData.email },
-          include: { staff: true }
-        });
-
-        if (userByEmail?.staff) {
-          return userByEmail.staff;
-        }
-
-        if (userByEmail && !userByEmail.staff) {
-          // User exists by email but no Staff - create it
-          const staff = await tx.staff.create({
-            data: { userId: userByEmail.id }
-          });
-          return staff;
-        }
-
-        // If we get here, something unexpected happened
-        throw new Error(`Failed to create or find staff: ${error.message}`);
+      if (user?.staff) {
+        return user.staff;
       }
 
-      // Re-throw non-constraint errors
-      throw error;
+      if (user && !user.staff) {
+        const staff = await prisma.staff.create({
+          data: { userId: user.id }
+        });
+        return staff;
+      }
+
+      throw new Error(`Failed to create or find staff after constraint violation: ${error.message}`);
     }
-  });
+
+    throw error;
+  }
 }
 
 /**
