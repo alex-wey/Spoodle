@@ -7,6 +7,8 @@ export interface PetData {
   biologicalSex?: string | null;
   weight?: number | null;
   spayedNeutered: boolean;
+  allergies?: string[];
+  dietaryRestrictions?: string[];
   imageUrl?: string | null;
   owner?: {
     id: string;
@@ -14,6 +16,7 @@ export interface PetData {
     email?: string;
     phone?: string | null;
     address?: string | null;
+    imageUrl?: string | null;
   } | null;
 }
 

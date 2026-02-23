@@ -40,6 +40,7 @@ export interface Pet {
     email?: string;
     phone?: string | null;
     address?: string | null;
+    imageUrl?: string | null;
   };
 }
 

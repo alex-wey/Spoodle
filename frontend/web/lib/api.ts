@@ -71,6 +71,147 @@ export async function getClinicPets(sessionToken: string, clinicId?: string | nu
 }
 
 /**
+ * Create a new pet
+ * @param petData - Pet data to create
+ * @param sessionToken - Clerk session token
+ */
+export interface CreatePetData {
+  name: string;
+  species: string;
+  breed?: string | null;
+  dateOfBirth?: string | null;
+  biologicalSex?: string | null;
+  spayedNeutered?: boolean;
+  weight?: number | null;
+  allergies?: string[];
+  dietaryRestrictions?: string[];
+  imageUrl?: string | null;
+  ownerId?: string; // Required when staff creates a pet
+}
+
+export async function createPet(petData: CreatePetData, sessionToken: string) {
+  return apiRequest<Pet>('/api/pets', {
+    method: 'POST',
+    body: JSON.stringify(petData),
+  }, sessionToken);
+}
+
+/**
+ * Update an existing pet
+ * @param petId - Pet ID to update
+ * @param petData - Pet data to update
+ * @param sessionToken - Clerk session token
+ * @param clinicId - Clinic ID (required for staff)
+ */
+export interface UpdatePetData {
+  name?: string;
+  species?: string;
+  breed?: string | null;
+  dateOfBirth?: string | null;
+  biologicalSex?: string | null;
+  spayedNeutered?: boolean;
+  weight?: number | null;
+  allergies?: string[];
+  dietaryRestrictions?: string[];
+  imageUrl?: string | null;
+}
+
+export async function updatePet(petId: string, petData: UpdatePetData, sessionToken: string, clinicId?: string | null) {
+  const url = clinicId ? `/api/pets/${petId}?clinicId=${clinicId}` : `/api/pets/${petId}`;
+  return apiRequest<Pet>(url, {
+    method: 'PUT',
+    body: JSON.stringify(petData),
+  }, sessionToken);
+}
+
+/**
+ * Pet Owner types and functions
+ */
+export interface PetOwner {
+  id: string;
+  clerkUserId: string | null;
+  clinicId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  name: string;
+  petCount?: number;
+  hasClerkAccount: boolean;
+}
+
+export interface CreatePetOwnerData {
+  firstName: string;
+  lastName: string;
+  email?: string | null;
+  phone?: string | null;
+}
+
+/**
+ * Get all pet owners for the clinic (staff only)
+ * @param sessionToken - Clerk session token
+ * @param clinicId - Clinic ID to filter pet owners (required for staff)
+ */
+export async function getPetOwners(sessionToken: string, clinicId?: string | null) {
+  const url = clinicId ? `/api/pet-owners?clinicId=${clinicId}` : '/api/pet-owners';
+  return apiRequest<PetOwner[]>(url, {
+    method: 'GET',
+  }, sessionToken);
+}
+
+/**
+ * Create a new pet owner (staff only)
+ * @param ownerData - Pet owner data to create
+ * @param sessionToken - Clerk session token
+ * @param clinicId - Clinic ID for the new pet owner (required for staff)
+ */
+export async function createPetOwner(ownerData: CreatePetOwnerData, sessionToken: string, clinicId?: string | null) {
+  return apiRequest<PetOwner>('/api/pet-owners', {
+    method: 'POST',
+    body: JSON.stringify({ ...ownerData, clinicId }),
+  }, sessionToken);
+}
+
+/**
+ * Get a specific pet owner by ID (staff only)
+ * @param ownerId - Pet owner ID
+ * @param sessionToken - Clerk session token
+ * @param clinicId - Clinic ID to verify access (required for staff)
+ */
+export async function getPetOwnerById(ownerId: string, sessionToken: string, clinicId?: string | null) {
+  const url = clinicId ? `/api/pet-owners/${ownerId}?clinicId=${clinicId}` : `/api/pet-owners/${ownerId}`;
+  return apiRequest<PetOwner>(url, {
+    method: 'GET',
+  }, sessionToken);
+}
+
+export interface UpdatePetOwnerData {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string | null;
+  address?: string | null;
+}
+
+/**
+ * Update a pet owner (staff only, for owners without Clerk accounts)
+ * @param ownerId - Pet owner ID
+ * @param ownerData - Updated pet owner data
+ * @param sessionToken - Clerk session token
+ * @param clinicId - Clinic ID to verify access (required for staff)
+ */
+export async function updatePetOwner(ownerId: string, ownerData: UpdatePetOwnerData, sessionToken: string, clinicId?: string | null) {
+  const url = clinicId ? `/api/pet-owners/${ownerId}?clinicId=${clinicId}` : `/api/pet-owners/${ownerId}`;
+  return apiRequest<PetOwner>(url, {
+    method: 'PUT',
+    body: JSON.stringify(ownerData),
+  }, sessionToken);
+}
+
+/**
  * Get a specific pet by ID
  * The backend automatically verifies clinic access
  * @param petId - Pet ID to fetch

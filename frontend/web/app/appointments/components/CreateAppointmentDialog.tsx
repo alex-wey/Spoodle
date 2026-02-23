@@ -20,11 +20,12 @@ import {
   SelectValue,
 } from '../../../components/ui/select';
 import { Alert, AlertDescription } from '../../../components/ui/alert';
-import { AlertCircle, Loader2, ChevronRight } from 'lucide-react';
+import { AlertCircle, Loader2, ChevronRight, Plus } from 'lucide-react';
 import { getClinicPets, getEventTypes, getSchedulingLink, createFormInvite } from '../../../lib/api';
 import { useSessionContext } from '../../../components/SessionContext';
 import type { Pet } from '../../../lib/types';
 import { CalEmbed } from './CalEmbed';
+import { AddEditPetDialog } from '@/components/primitives/AddEditPetDialog';
 
 interface EventType {
   id: number;
@@ -50,7 +51,7 @@ export function CreateAppointmentDialog({
   onSuccess,
 }: CreateAppointmentDialogProps) {
   const { getToken, isSignedIn } = useAuth();
-  const { clinicId } = useSessionContext();
+  const { clinicId, userType } = useSessionContext();
   
   const [pets, setPets] = useState<Pet[]>([]);
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
@@ -62,6 +63,7 @@ export function CreateAppointmentDialog({
   const [selectedPetId, setSelectedPetId] = useState<string>('');
   const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>('');
   const [selectedFormUrl, setSelectedFormUrl] = useState<string>('none');
+  const [showAddPetDialog, setShowAddPetDialog] = useState(false);
 
   const formOptions = [
     {
@@ -213,6 +215,12 @@ export function CreateAppointmentDialog({
     }
   };
 
+  const handlePetAdded = (newPet: Pet) => {
+    setPets((prevPets) => [newPet, ...prevPets]);
+    setSelectedPetId(newPet.id);
+    setShowAddPetDialog(false);
+  };
+
   const handleBookingSuccess = () => {
     console.log('Booking successful, refreshing appointments');
     // Close dialog first
@@ -273,7 +281,19 @@ export function CreateAppointmentDialog({
         ) : (
           <form onSubmit={handleOpenSchedulingLink} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="pet">Pet *</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="pet">Pet *</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto py-1 px-2 text-xs"
+                  onClick={() => setShowAddPetDialog(true)}
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add New Pet
+                </Button>
+              </div>
               <Select value={selectedPetId} onValueChange={setSelectedPetId} required>
                 <SelectTrigger id="pet">
                   <SelectValue placeholder="Select a pet" />
@@ -350,6 +370,14 @@ export function CreateAppointmentDialog({
             </DialogFooter>
           </form>
         )}
+
+        <AddEditPetDialog
+          open={showAddPetDialog}
+          onOpenChange={setShowAddPetDialog}
+          onSuccess={handlePetAdded}
+          isStaff={userType === 'staff'}
+          clinicId={clinicId}
+        />
       </DialogContent>
     </Dialog>
   );

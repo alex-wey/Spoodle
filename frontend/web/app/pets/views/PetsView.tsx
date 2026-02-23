@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { 
   Table, 
@@ -16,12 +16,13 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { FileText, Search, AlertCircle } from "lucide-react";
+import { FileText, Search, AlertCircle, Plus } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getClinicPets } from "@/lib/api";
 import { useSessionContext } from "@/components/SessionContext";
 import type { Pet as ApiPet } from "@/lib/types";
 import PageLayout from "@/components/primitives/PageLayout";
+import { AddEditPetDialog } from "@/components/primitives/AddEditPetDialog";
 
 interface Pet {
   id: string;
@@ -42,11 +43,12 @@ interface Pet {
 export default function Records() {
   const router = useRouter();
   const { getToken, isSignedIn } = useAuth();
-  const { clinicId } = useSessionContext();
+  const { clinicId, userType } = useSessionContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [allPets, setAllPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAddPetDialog, setShowAddPetDialog] = useState(false);
 
   useEffect(() => {
     const fetchPets = async () => {
@@ -83,7 +85,6 @@ export default function Records() {
             breed: pet.breed || 'Unknown',
             dateOfBirth: pet.dateOfBirth,
             weight: pet.weight,
-            // Backend now includes owner data directly
             owner: pet.owner || null
           }));
           
@@ -112,6 +113,21 @@ export default function Records() {
     return matchesSearch;
   });
 
+  const handlePetAdded = (newPet: ApiPet) => {
+    const transformedPet: Pet = {
+      id: newPet.id,
+      name: newPet.name,
+      imageUrl: newPet.imageUrl,
+      species: newPet.species,
+      breed: newPet.breed || 'Unknown',
+      dateOfBirth: newPet.dateOfBirth,
+      weight: newPet.weight,
+      owner: newPet.owner || null
+    };
+    setAllPets((prevPets) => [transformedPet, ...prevPets]);
+    setShowAddPetDialog(false);
+  };
+
   return (
     <PageLayout
       title="Pets"
@@ -121,9 +137,15 @@ export default function Records() {
       <Card>
         <CardHeader>
           <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2">
-              <CardTitle>All Pets</CardTitle>
-              <Badge variant="default">{loading ? '...' : filteredPets.length}</Badge>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CardTitle>All Pets</CardTitle>
+                <Badge variant="default">{loading ? '...' : filteredPets.length}</Badge>
+              </div>
+              <Button onClick={() => setShowAddPetDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Pet
+              </Button>
             </div>
             {/* Search */}
             <div className="flex flex-col md:flex-row gap-4">
@@ -225,6 +247,14 @@ export default function Records() {
           ) : null}
         </CardContent>
       </Card>
+
+      <AddEditPetDialog
+        open={showAddPetDialog}
+        onOpenChange={setShowAddPetDialog}
+        onSuccess={handlePetAdded}
+        isStaff={userType === 'staff'}
+        clinicId={clinicId}
+      />
     </PageLayout>
   );
 }

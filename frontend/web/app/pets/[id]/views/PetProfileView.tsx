@@ -9,6 +9,8 @@ import { useState, useEffect } from "react";
 import { getPetById, getPetDocuments } from "@/lib/api";
 import type { Document } from "@/lib/types";
 import { Hero } from "../components/Hero";
+import { AddEditPetDialog, type PetDialogPet } from "@/components/primitives/AddEditPetDialog";
+import { EditOwnerDialog, type OwnerData } from "@/components/primitives/EditOwnerDialog";
 import { PetRecordsSection } from "../components/PetRecordsSection";
 import type { PetData, MedicalRecord } from "../components/types";
 import { useSessionContext } from "@/components/SessionContext";
@@ -24,6 +26,8 @@ export default function PetProfileView() {
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [recordsLoading, setRecordsLoading] = useState(true);
   const [recordsError, setRecordsError] = useState<string | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showEditOwnerDialog, setShowEditOwnerDialog] = useState(false);
 
   useEffect(() => {
     const fetchPetDetails = async () => {
@@ -69,6 +73,8 @@ export default function PetProfileView() {
             biologicalSex: result.data.biologicalSex,
             weight: result.data.weight,
             spayedNeutered: result.data.spayedNeutered || false,
+            allergies: result.data.allergies || [],
+            dietaryRestrictions: result.data.dietaryRestrictions || [],
             imageUrl: result.data.imageUrl,
             owner: ownerData
           };
@@ -150,6 +156,34 @@ export default function PetProfileView() {
     }
   }, [petId, isSignedIn, getToken, clinicId]);
 
+  const handlePetUpdated = (updatedPet: PetDialogPet) => {
+    setPet(prev => prev ? {
+      ...prev,
+      name: updatedPet.name,
+      species: updatedPet.species,
+      breed: updatedPet.breed,
+      biologicalSex: updatedPet.biologicalSex,
+      dateOfBirth: updatedPet.dateOfBirth,
+      weight: updatedPet.weight,
+      spayedNeutered: updatedPet.spayedNeutered ?? false,
+      allergies: updatedPet.allergies || [],
+      dietaryRestrictions: updatedPet.dietaryRestrictions || [],
+    } : null);
+  };
+
+  const handleOwnerUpdated = (updatedOwner: OwnerData) => {
+    setPet(prev => prev ? {
+      ...prev,
+      owner: {
+        id: updatedOwner.id,
+        name: updatedOwner.name,
+        email: updatedOwner.email,
+        phone: updatedOwner.phone,
+        address: updatedOwner.address,
+        imageUrl: updatedOwner.imageUrl,
+      }
+    } : null);
+  };
 
   if (loading) {
     return (
@@ -203,7 +237,11 @@ export default function PetProfileView() {
         </div>
       </div>
 
-      <Hero pet={pet} />
+      <Hero 
+        pet={pet} 
+        onEdit={() => setShowEditDialog(true)} 
+        onEditOwner={() => setShowEditOwnerDialog(true)}
+      />
 
       <PetRecordsSection 
         petRecords={medicalRecords}
@@ -241,6 +279,29 @@ export default function PetProfileView() {
             fetchRecords();
           }
         }}
+      />
+
+      <AddEditPetDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        pet={pet}
+        onEditSuccess={handlePetUpdated}
+        clinicId={clinicId}
+      />
+
+      <EditOwnerDialog
+        open={showEditOwnerDialog}
+        onOpenChange={setShowEditOwnerDialog}
+        owner={pet.owner ? {
+          id: pet.owner.id,
+          name: pet.owner.name,
+          email: pet.owner.email,
+          phone: pet.owner.phone,
+          address: pet.owner.address,
+          imageUrl: pet.owner.imageUrl,
+        } : null}
+        onSuccess={handleOwnerUpdated}
+        clinicId={clinicId}
       />
     </div>
   );

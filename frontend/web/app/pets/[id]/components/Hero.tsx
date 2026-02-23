@@ -1,12 +1,15 @@
-import { Calendar, Weight, Heart, Dog, Cat, Circle, Dna, Phone, Mail, MapPin, Mars, Venus } from "lucide-react";
+import { Calendar, Weight, Heart, Dog, Cat, Circle, Dna, Phone, Mail, MapPin, Mars, Venus, AlertTriangle, Utensils, Pencil } from "lucide-react";
 import { Card } from "../../../../components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "../../../../components/ui/avatar";
 import { Badge } from "../../../../components/ui/badge";
+import { Button } from "../../../../components/ui/button";
 import { Separator } from "../../../../components/ui/separator";
 import type { PetData } from "./types";
 
 interface HeroProps {
   pet: PetData;
+  onEdit?: () => void;
+  onEditOwner?: () => void;
 }
 
 // Calculate age from date of birth
@@ -61,16 +64,16 @@ const getSpeciesLabel = (species: string | null | undefined) => {
   return normalizedSpecies.charAt(0).toUpperCase() + normalizedSpecies.slice(1);
 };
 
-export function Hero({ pet }: HeroProps) {
+export function Hero({ pet, onEdit, onEditOwner }: HeroProps) {
   const SpeciesIcon = getSpeciesIcon(pet.species);
   const SexIcon = getSexIcon(pet.biologicalSex);
   
   return (
-    <Card className="overflow-hidden relative">
+    <Card className="overflow-hidden">
       <div className="p-8">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Pet Section */}
-          <div className="flex-1 lg:flex-[2]">
+          <div className="flex-1 lg:flex-[2] flex flex-col">
             <div className="flex flex-col lg:flex-row items-center lg:items-start gap-6">
               {/* Avatar */}
               <Avatar className="h-32 w-32 border-4 border-background shadow-xl flex-shrink-0">
@@ -82,8 +85,14 @@ export function Hero({ pet }: HeroProps) {
               
               {/* Basic Info */}
               <div className="flex-1 text-center lg:text-left min-w-0">
-                <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
                   <h1 className="text-4xl font-bold text-primary">{pet.name}</h1>
+                  {onEdit && (
+                    <Button variant="outline" size="sm" onClick={onEdit} className="hidden lg:flex">
+                      <Pencil className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                  )}
                 </div>
                 <p className="text-lg text-muted-foreground mb-4">
                   {calculateAge(pet.dateOfBirth)} old{pet.biologicalSex ? ` • ${pet.biologicalSex.charAt(0).toUpperCase() + pet.biologicalSex.slice(1)}` : ''}
@@ -161,9 +170,60 @@ export function Hero({ pet }: HeroProps) {
                     </div>
                   </div>
                 </div>
+                
+                {/* Allergies & Dietary Restrictions */}
+                {((pet.allergies && pet.allergies.length > 0) || (pet.dietaryRestrictions && pet.dietaryRestrictions.length > 0)) && (
+                  <div className="mt-6 space-y-4">
+                    {pet.allergies && pet.allergies.length > 0 && (
+                      <div className="flex items-start gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-1">Allergies</p>
+                          <div className="flex flex-wrap gap-1">
+                            {pet.allergies.map((allergy) => (
+                              <Badge key={allergy} variant="destructive" className="text-xs">
+                                {allergy}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {pet.dietaryRestrictions && pet.dietaryRestrictions.length > 0 && (
+                      <div className="flex items-start gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                          <Utensils className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-1">Dietary Restrictions</p>
+                          <div className="flex flex-wrap gap-1">
+                            {pet.dietaryRestrictions.map((restriction) => (
+                              <Badge key={restriction} variant="secondary" className="text-xs bg-amber-100 text-amber-800">
+                                {restriction}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
+          
+          {/* Mobile Edit Button */}
+          {onEdit && (
+            <div className="flex lg:hidden justify-end">
+              <Button variant="outline" size="sm" onClick={onEdit}>
+                <Pencil className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
+            </div>
+          )}
           
           {/* Divider */}
           {pet.owner && (
@@ -174,16 +234,27 @@ export function Hero({ pet }: HeroProps) {
           {pet.owner && (
             <div className="w-full lg:flex-1 lg:max-w-md">
               <div className="space-y-3">
-                <div className="flex items-center gap-3 mb-3">
-                  <Avatar className="h-12 w-12">
-                    <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                      {pet.owner.name.split(' ').map(n => n.charAt(0)).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-xl font-semibold">{pet.owner.name}</h4>
-                    <Badge>Owner</Badge>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12">
+                      {pet.owner.imageUrl && (
+                        <AvatarImage src={pet.owner.imageUrl} alt={pet.owner.name} />
+                      )}
+                      <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                        {pet.owner.name.split(' ').map(n => n.charAt(0)).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xl font-semibold">{pet.owner.name}</h4>
+                      <Badge>Owner</Badge>
+                    </div>
                   </div>
+                  {onEditOwner && (
+                    <Button variant="outline" size="sm" onClick={onEditOwner}>
+                      <Pencil className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                  )}
                 </div>
                 
                 <Separator />
