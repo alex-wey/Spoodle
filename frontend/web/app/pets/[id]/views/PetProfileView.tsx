@@ -14,6 +14,7 @@ import { EditOwnerDialog, type OwnerData } from "@/components/primitives/EditOwn
 import { PetRecordsSection } from "../components/PetRecordsSection";
 import type { PetData, MedicalRecord } from "../components/types";
 import { useSessionContext } from "@/components/SessionContext";
+import PageLayout from "@/components/primitives/PageLayout";
 
 export default function PetProfileView() {
   const { id: petId } = useParams();
@@ -218,25 +219,19 @@ export default function PetProfileView() {
   }
 
   return (
-    <div className="flex-1 space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => router.push('/pets')}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">Pet Profile</h2>
-            <p className="text-muted-foreground">
-              View and manage pet information and records
-            </p>
-          </div>
-        </div>
-      </div>
-
+    <PageLayout
+      title="Pet Profile"
+      description="View and manage pet information and records"
+      backAction={
+        <Button 
+          variant="ghost" 
+          size="icon"
+          onClick={() => router.push('/pets')}
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+      }
+    >
       <Hero 
         pet={pet} 
         onEdit={() => setShowEditDialog(true)} 
@@ -303,6 +298,6 @@ export default function PetProfileView() {
         onSuccess={handleOwnerUpdated}
         clinicId={clinicId}
       />
-    </div>
+    </PageLayout>
   );
 }

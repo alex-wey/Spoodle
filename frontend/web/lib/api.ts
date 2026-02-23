@@ -548,6 +548,23 @@ export async function cancelAppointment(
 }
 
 /**
+ * Update appointment notes
+ * @param appointmentId - Appointment ID
+ * @param notes - Notes content (string or null to clear)
+ * @param sessionToken - Clerk session token
+ */
+export async function updateAppointmentNotes(
+  appointmentId: string,
+  notes: string | null,
+  sessionToken: string
+) {
+  return apiRequest<Appointment>(`/api/appointments/${appointmentId}/notes`, {
+    method: 'PATCH',
+    body: JSON.stringify({ notes }),
+  }, sessionToken);
+}
+
+/**
  * Get all event types for the Cal.com organization/team
  * @param sessionToken - Clerk session token
  */

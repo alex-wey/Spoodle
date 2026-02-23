@@ -1,18 +1,18 @@
 'use client';
 
-import { useState, useEffect, useRef } from "react";
-import type { ChangeEvent } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { Button } from "../../../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../../components/ui/card";
 import { Badge } from "../../../../components/ui/badge";
 import { Label } from "../../../../components/ui/label";
-import { ArrowLeft, Calendar, User, FileText, Upload, ExternalLink, AlertCircle, Clock, UserCheck, Dog, Dna } from "lucide-react";
-import { downloadDocument, getAppointmentById, getPetDocuments, uploadDocument } from "../../../../lib/api";
+import { Textarea } from "../../../../components/ui/textarea";
+import { ArrowLeft, Calendar, User, FileText, ExternalLink, AlertCircle, Clock, Stethoscope, Dog, Dna, Save, Loader2, StickyNote } from "lucide-react";
+import { getAppointmentById, updateAppointmentNotes, getFormInvites } from "../../../../lib/api";
 import { useSessionContext } from "../../../../components/SessionContext";
 import { Alert, AlertDescription } from "../../../../components/ui/alert";
-import type { Appointment as ApiAppointment, Document as ApiDocument } from "../../../../lib/types";
+import type { Appointment as ApiAppointment } from "../../../../lib/types";
 import PageLayout from "@/components/primitives/PageLayout";
 
 interface QuestionnaireAnswer {
@@ -20,12 +20,15 @@ interface QuestionnaireAnswer {
   answer: string;
 }
 
-interface UploadedFile {
+interface FormInvite {
   id: string;
-  name: string;
-  type: string;
-  uploadDate: string;
-  size: string;
+  formLink: string;
+  formName: string;
+  clinicId: string;
+  petId: string;
+  petOwnerId: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface Appointment {
@@ -54,11 +57,22 @@ export default function AppointmentDetailView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [questionnaire] = useState<QuestionnaireAnswer[]>([]);
-  const [documents, setDocuments] = useState<ApiDocument[]>([]);
-  const [documentsLoading, setDocumentsLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [notes, setNotes] = useState<string>('');
+  const [originalNotes, setOriginalNotes] = useState<string>('');
+  const [savingNotes, setSavingNotes] = useState(false);
+  const [notesError, setNotesError] = useState<string | null>(null);
+  const [notesSaved, setNotesSaved] = useState(false);
+  const [formInvites, setFormInvites] = useState<FormInvite[]>([]);
+  const [formInvitesLoading, setFormInvitesLoading] = useState(false);
+
+  // Helper to format time
+  const formatTime = (date: Date): string => {
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+  };
 
   // Transform API appointment to component format
   const transformAppointment = (apiAppointment: ApiAppointment): Appointment => {
@@ -66,23 +80,25 @@ export default function AppointmentDetailView() {
     let time = '09:00 AM';
     
     // Try to get time from startTime field first, then Cal.com data
-    if (apiAppointment.startTime) {
+    if (apiAppointment.startTime && apiAppointment.endTime) {
       const start = new Date(apiAppointment.startTime);
-      const hours = start.getHours();
-      const minutes = start.getMinutes();
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      const displayHours = hours % 12 || 12;
-      time = `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+      const end = new Date(apiAppointment.endTime);
+      time = `${formatTime(start)} - ${formatTime(end)}`;
+    } else if (apiAppointment.startTime) {
+      const start = new Date(apiAppointment.startTime);
+      time = formatTime(start);
     } else if (apiAppointment.calcomData?.startTime) {
       const calcomStartTime = apiAppointment.calcomData.startTime;
+      const calcomEndTime = apiAppointment.calcomData?.endTime;
       // Type guard: ensure startTime is a string or number
       if (typeof calcomStartTime === 'string' || typeof calcomStartTime === 'number') {
         const start = new Date(calcomStartTime);
-        const hours = start.getHours();
-        const minutes = start.getMinutes();
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-        const displayHours = hours % 12 || 12;
-        time = `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+        if (calcomEndTime && (typeof calcomEndTime === 'string' || typeof calcomEndTime === 'number')) {
+          const end = new Date(calcomEndTime);
+          time = `${formatTime(start)} - ${formatTime(end)}`;
+        } else {
+          time = formatTime(start);
+        }
       }
     }
 
@@ -135,6 +151,8 @@ export default function AppointmentDetailView() {
         
         if (result.success && result.data) {
           setApiAppointment(result.data);
+          setNotes(result.data.notes || '');
+          setOriginalNotes(result.data.notes || '');
           const transformedAppointment = transformAppointment(result.data);
           setAppointment(transformedAppointment);
         } else {
@@ -151,116 +169,60 @@ export default function AppointmentDetailView() {
     fetchAppointment();
   }, [appointmentId, isSignedIn, getToken, clinicId]);
 
-  // Fetch documents for this pet (veterinary_notes only)
+  // Fetch form invites for this pet
   useEffect(() => {
-    const fetchDocuments = async () => {
+    const fetchFormInvites = async () => {
       if (!apiAppointment || !isSignedIn) return;
-      setDocumentsLoading(true);
+      setFormInvitesLoading(true);
       try {
         const token = await getToken();
         if (!token) {
-          setDocumentsLoading(false);
+          setFormInvitesLoading(false);
           return;
         }
-        const result = await getPetDocuments(apiAppointment.petId, token, clinicId || undefined);
-        if ((result as any)?.success && (result as any)?.data) {
-          const docs = (result as any).data as ApiDocument[];
-          setDocuments(docs.filter((d) => d.category === 'veterinary_notes'));
+        const result = await getFormInvites(token, clinicId || undefined, apiAppointment.petId);
+        if (result?.success && result?.data) {
+          setFormInvites(result.data);
         }
       } catch (err) {
-        console.error('Error fetching documents', err);
+        console.error('Error fetching form invites', err);
       } finally {
-        setDocumentsLoading(false);
+        setFormInvitesLoading(false);
       }
     };
 
-    fetchDocuments();
+    fetchFormInvites();
   }, [apiAppointment, isSignedIn, getToken, clinicId]);
 
-  const formatDate = (dateString: string) => {
-    const d = new Date(dateString);
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (!bytes && bytes !== 0) return '';
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), sizes.length - 1);
-    const value = bytes / Math.pow(1024, i);
-    return `${value.toFixed(value >= 10 || i === 0 ? 0 : 1)} ${sizes[i]}`;
-  };
-
-  const handleSelectFile = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !apiAppointment) return;
-    setUploadError(null);
-    setUploading(true);
+  const handleSaveNotes = async () => {
+    if (!apiAppointment) return;
+    
+    setSavingNotes(true);
+    setNotesError(null);
+    setNotesSaved(false);
+    
     try {
       const token = await getToken();
       if (!token) {
-        setUploadError('Unable to authenticate. Please sign in again.');
-        setUploading(false);
+        setNotesError('Unable to authenticate. Please sign in again.');
         return;
       }
-
-      const now = new Date();
-      const displayDate = now.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-      const displayName = `Discharge Report ${displayDate}`;
-
-      const formData = new FormData();
-      formData.append('petId', apiAppointment.petId);
-      formData.append('category', 'veterinary_notes');
-      formData.append('fileName', displayName);
-      formData.append('hospitalName', apiAppointment.clinic?.name || 'Clinic');
-      formData.append('date', now.toISOString());
-      formData.append('document', file);
-      if (clinicId) {
-        formData.append('clinicId', clinicId);
-      }
-
-      const result = await uploadDocument(formData, token);
+      
+      const result = await updateAppointmentNotes(apiAppointment.id, notes || null, token);
+      
       if (result.success) {
-        const docsResult = await getPetDocuments(apiAppointment.petId, token, clinicId || undefined);
-        if ((docsResult as any)?.success && (docsResult as any)?.data) {
-          const docs = (docsResult as any).data as ApiDocument[];
-          setDocuments(docs.filter((d) => d.category === 'veterinary_notes'));
-        }
-        setUploadError(null);
+        setOriginalNotes(notes);
+        setNotesSaved(true);
+        // Clear the saved message after 3 seconds
+        setTimeout(() => setNotesSaved(false), 3000);
       } else {
-        setUploadError(result.error || result.message || 'Upload failed');
+        setNotesError(result.error || 'Failed to save notes');
       }
     } catch (err) {
-      console.error('Upload error', err);
-      setUploadError(err instanceof Error ? err.message : 'Upload failed');
+      console.error('Save notes error', err);
+      setNotesError(err instanceof Error ? err.message : 'Failed to save notes');
     } finally {
-      setUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const handleViewDocument = async (doc: ApiDocument) => {
-    try {
-      const token = await getToken();
-      if (!token) {
-        setUploadError('Unable to authenticate. Please sign in again.');
-        return;
-      }
-      const resp = await downloadDocument(doc.id, token, clinicId || undefined);
-      const url = (resp as any)?.data?.url || (resp as any)?.url;
-      if (url) {
-        window.open(url, '_blank', 'noopener,noreferrer');
-      } else {
-        setUploadError('Unable to open document');
-      }
-    } catch (err) {
-      console.error('View document error', err);
-      setUploadError(err instanceof Error ? err.message : 'Unable to open document');
+      setSavingNotes(false);
     }
   };
 
@@ -318,18 +280,6 @@ export default function AppointmentDetailView() {
     }
   };
 
-  const handleOpenQuestionnaire = () => {
-    if (!apiAppointment) return;
-    const formUrl = new URL('https://tally.so/r/Y50xYz');
-    // Pass identifiers so submissions can be linked to pet and owner
-    formUrl.searchParams.set('petId', apiAppointment.petId);
-    formUrl.searchParams.set('petOwnerId', apiAppointment.petOwnerId);
-    if (apiAppointment.pet?.name) formUrl.searchParams.set('petName', apiAppointment.pet.name);
-    if (apiAppointment.petOwner?.user?.email) formUrl.searchParams.set('email', apiAppointment.petOwner.user.email);
-    if (apiAppointment.petOwner?.user?.phone) formUrl.searchParams.set('phone', apiAppointment.petOwner.user.phone);
-    window.open(formUrl.toString(), '_blank', 'noopener,noreferrer');
-  };
-
   const handleOpenDischargeForm = () => {
     if (!apiAppointment) return;
     const formUrl = new URL('https://tally.so/r/pbDM2q');
@@ -370,7 +320,7 @@ export default function AppointmentDetailView() {
     <PageLayout
       title="Appointment Details"
       description="View and manage appointment information"
-      actions={
+      backAction={
         <Button 
           variant="ghost" 
           size="icon"
@@ -380,11 +330,11 @@ export default function AppointmentDetailView() {
         </Button>
       }
     >
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Appointment Info & Questionnaire */}
-          <div className="lg:col-span-2 space-y-6">
+      <div className="space-y-6">
+          {/* First Row - Appointment Details + Quick Actions */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Appointment Hero Section */}
-            <Card className="overflow-hidden relative">
+            <Card className="lg:col-span-2 overflow-hidden relative">
               <div className="p-8">
                 <div className="flex flex-col lg:flex-row gap-6">
                   {/* Appointment Section */}
@@ -396,7 +346,7 @@ export default function AppointmentDetailView() {
                           <h1 className="text-4xl font-bold text-primary">{appointment.petName}&apos;s Appointment</h1>
                         </div>
                         <p className="text-lg text-muted-foreground mb-4">
-                          {appointment.appointmentType} • {appointment.time}
+                          {appointment.appointmentType}
                         </p>
                         
                         {/* Quick Stats */}
@@ -407,7 +357,13 @@ export default function AppointmentDetailView() {
                             </div>
                             <div>
                               <p className="text-sm text-muted-foreground">Pet Name</p>
-                              <p className="font-medium text-base">{appointment.petName}</p>
+                              <Button
+                                variant="link"
+                                onClick={handleViewPetProfile}
+                                className="h-auto p-0 font-medium text-base text-primary hover:text-primary/80 underline underline-offset-2"
+                              >
+                                {appointment.petName}
+                              </Button>
                             </div>
                           </div>
                           
@@ -426,14 +382,14 @@ export default function AppointmentDetailView() {
                               <User className="h-5 w-5 text-primary" />
                             </div>
                             <div>
-                              <p className="text-sm text-muted-foreground">Owner</p>
+                              <p className="text-sm text-muted-foreground">Pet Owner</p>
                               <p className="font-medium text-base">{appointment.ownerName}</p>
                             </div>
                           </div>
                           
                           <div className="flex items-center gap-3 text-base">
                             <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <UserCheck className="h-5 w-5 text-primary" />
+                              <Stethoscope className="h-5 w-5 text-primary" />
                             </div>
                             <div>
                               <p className="text-sm text-muted-foreground">Veterinarian</p>
@@ -470,139 +426,159 @@ export default function AppointmentDetailView() {
               </div>
             </Card>
 
+            {/* Quick Actions */}
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {apiAppointment?.externalAppointmentUid && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Reschedule or Cancel</h4>
+                    <Button 
+                      className="w-full justify-start" 
+                      variant="outline"
+                      onClick={handleViewBookingConfirmation}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      View Booking Link
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      To reschedule or cancel this appointment, use the booking link above.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Second Row - Other Cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Appointment Notes */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <StickyNote className="h-5 w-5" />
+                  Appointment Notes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <Textarea
+                    placeholder="Add notes about this appointment..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={6}
+                    className="resize-none"
+                  />
+                  {notesError && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{notesError}</AlertDescription>
+                    </Alert>
+                  )}
+                  {notesSaved && (
+                    <Alert>
+                      <AlertDescription className="text-green-600">Notes saved successfully</AlertDescription>
+                    </Alert>
+                  )}
+                  <div className="flex justify-center">
+                    <Button
+                      onClick={handleSaveNotes}
+                      disabled={savingNotes || notes === originalNotes}
+                      className="flex items-center gap-2"
+                    >
+                      {savingNotes ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4" />
+                          Save Notes
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Pre-visit Questionnaire */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  Pre-visit Questionnaire
+                  Pre-visit Forms
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {questionnaire.length > 0 ? (
-                    questionnaire.map((item, index) => (
-                      <div key={index} className="space-y-1">
-                        <Label className="text-sm font-medium">{item.question}</Label>
-                        <p className="text-sm text-muted-foreground bg-muted/50 p-2 rounded-md">
-                          {item.answer}
-                        </p>
-                      </div>
-                    ))
+                  {formInvitesLoading ? (
+                    <p className="text-sm text-muted-foreground">Loading forms...</p>
+                  ) : formInvites.length > 0 ? (
+                    <div className="space-y-2">
+                      {formInvites.map((invite) => (
+                        <Button
+                          key={invite.id}
+                          variant="outline"
+                          className="w-full justify-start h-auto py-2 whitespace-normal text-left"
+                          onClick={() => window.open(invite.formLink, '_blank', 'noopener,noreferrer')}
+                        >
+                          <ExternalLink className="h-4 w-4 shrink-0" />
+                          <span className="flex-1 text-left">{invite.formName}</span>
+                        </Button>
+                      ))}
+                      <p className="text-xs text-muted-foreground">
+                        Sent {new Date(formInvites[0].createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      Please have the pet owner complete the pre-visit questionnaire.
+                      No forms assigned to this pet. Forms can be added when creating an appointment.
                     </p>
                   )}
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleOpenQuestionnaire}
-                    className="flex items-center gap-2"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Open Morning of Surgery Questionnaire
-                  </Button>
+                  {questionnaire.length > 0 && (
+                    <div className="pt-4 border-t">
+                      <Label className="text-sm font-medium mb-2 block">Submitted Responses</Label>
+                      {questionnaire.map((item, index) => (
+                        <div key={index} className="space-y-1 mb-2">
+                          <Label className="text-sm font-medium">{item.question}</Label>
+                          <p className="text-sm text-muted-foreground bg-muted/50 p-2 rounded-md">
+                            {item.answer}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Uploaded Materials */}
+            {/* Discharge Reports */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Upload className="h-5 w-5" />
-                  Uploaded Materials
+                  <FileText className="h-5 w-5" />
+                  Discharge Reports
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                      className="hidden"
-                      onChange={handleUpload}
-                    />
-                    <Button variant="outline" onClick={handleOpenDischargeForm} className="flex items-center gap-2">
-                      <ExternalLink className="h-4 w-4" />
-                      Open Discharge Form (Tally)
-                    </Button>
-                    <p className="text-xs text-muted-foreground">
-                      Saved as "Discharge Report &lt;Date&gt;" in veterinary_notes
-                    </p>
-                  </div>
-                  {uploadError && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{uploadError}</AlertDescription>
-                    </Alert>
-                  )}
-                  <div className="space-y-2">
-                    {documentsLoading ? (
-                      <p className="text-sm text-muted-foreground">Loading materials...</p>
-                    ) : documents.length > 0 ? (
-                      documents.map((doc) => (
-                        <div key={doc.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-md">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4" />
-                            <div>
-                              <p className="text-sm font-medium">{doc.fileName}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {doc.mimeType} • {formatFileSize(doc.fileSize)} • {formatDate(doc.createdAt)}
-                              </p>
-                            </div>
-                          </div>
-                          <Button variant="ghost" size="sm" onClick={() => handleViewDocument(doc)}>
-                            View
-                          </Button>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No uploaded materials</p>
-                    )}
-                  </div>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleOpenDischargeForm}
+                    className="w-full justify-start"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Create Discharge Report
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Discharge reports are automatically saved to the pet&apos;s profile when submitted.
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column - Actions & Links */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button 
-                  className="w-full justify-start" 
-                  variant="outline"
-                  onClick={handleViewPetProfile}
-                >
-                  <User className="h-4 w-4" />
-                  View Pet Profile
-                </Button>
-                {apiAppointment?.externalAppointmentUid && (
-                  <>
-                    <div className="pt-2 border-t">
-                      <h4 className="text-sm font-medium mb-2">Reschedule or Cancel</h4>
-                      <Button 
-                        className="w-full justify-start" 
-                        variant="outline"
-                        onClick={handleViewBookingConfirmation}
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                        View Booking Link
-                      </Button>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        To reschedule or cancel this appointment, use the booking link above.
-                      </p>
-                    </div>
-                  </>
-                )}
               </CardContent>
             </Card>
           </div>

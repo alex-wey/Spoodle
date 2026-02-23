@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '../../../components/ui/select';
 import { Alert, AlertDescription } from '../../../components/ui/alert';
+import { Checkbox } from '../../../components/ui/checkbox';
 import { AlertCircle, Loader2, ChevronRight, Plus } from 'lucide-react';
 import { getClinicPets, getEventTypes, getSchedulingLink, createFormInvite } from '../../../lib/api';
 import { useSessionContext } from '../../../components/SessionContext';
@@ -62,14 +63,10 @@ export function CreateAppointmentDialog({
   
   const [selectedPetId, setSelectedPetId] = useState<string>('');
   const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>('');
-  const [selectedFormUrl, setSelectedFormUrl] = useState<string>('none');
+  const [selectedFormUrls, setSelectedFormUrls] = useState<string[]>([]);
   const [showAddPetDialog, setShowAddPetDialog] = useState(false);
 
   const formOptions = [
-    {
-      label: 'None',
-      url: 'none',
-    },
     {
       label: 'Morning of Surgery Questionnaire',
       url: 'https://tally.so/r/Y50xYz',
@@ -83,6 +80,14 @@ export function CreateAppointmentDialog({
       url: 'https://tally.so/r/xXJ4y5',
     },
   ];
+
+  const handleFormToggle = (url: string, checked: boolean) => {
+    if (checked) {
+      setSelectedFormUrls(prev => [...prev, url]);
+    } else {
+      setSelectedFormUrls(prev => prev.filter(u => u !== url));
+    }
+  };
 
   // Fetch pets and event types when dialog opens
   useEffect(() => {
@@ -166,27 +171,27 @@ export function CreateAppointmentDialog({
       if (result.success && result.data) {
         const url = result.data.schedulingUrl;
         
-        // Create form invite if a form is selected (not "none")
-        if (selectedFormUrl && selectedFormUrl !== 'none') {
-          try {
-            // Find the form name from formOptions
-            const selectedForm = formOptions.find(form => form.url === selectedFormUrl);
-            const formName = selectedForm?.label || 'Form';
-            
-            const formInviteResult = await createFormInvite(
-              selectedFormUrl,
-              formName,
-              selectedPetId,
-              token
-            );
-            
-            if (!formInviteResult.success) {
-              console.warn('Failed to create form invite:', formInviteResult.error || formInviteResult.message);
-              // Don't fail the whole operation if form invite creation fails
+        // Create form invites for all selected forms
+        if (selectedFormUrls.length > 0) {
+          for (const formUrl of selectedFormUrls) {
+            try {
+              // Find the form name from formOptions
+              const selectedForm = formOptions.find(form => form.url === formUrl);
+              const formName = selectedForm?.label || 'Form';
+              
+              const formInviteResult = await createFormInvite(
+                formUrl,
+                formName,
+                selectedPetId,
+                token
+              );
+              
+              if (!formInviteResult.success) {
+                console.warn('Failed to create form invite:', formInviteResult.error || formInviteResult.message);
+              }
+            } catch (formError) {
+              console.error('Error creating form invite:', formError);
             }
-          } catch (formError) {
-            console.error('Error creating form invite:', formError);
-            // Don't fail the whole operation if form invite creation fails
           }
         }
         
@@ -208,7 +213,7 @@ export function CreateAppointmentDialog({
     if (!generating) {
       setSelectedPetId('');
       setSelectedEventTypeId('');
-      setSelectedFormUrl('none');
+      setSelectedFormUrls([]);
       setError(null);
       setSchedulingUrl(null);
       onOpenChange(false);
@@ -335,23 +340,25 @@ export function CreateAppointmentDialog({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="form">Form (Optional)</Label>
-              <Select
-                value={selectedFormUrl}
-                onValueChange={(value) => setSelectedFormUrl(value)}
-              >
-                <SelectTrigger id="form">
-                  <SelectValue placeholder="Select a form" />
-                </SelectTrigger>
-                <SelectContent>
-                  {formOptions.map((form) => (
-                    <SelectItem key={form.url} value={form.url}>
+            <div className="space-y-3">
+              <Label>Forms</Label>
+              <div className="space-y-2">
+                {formOptions.map((form) => (
+                  <div key={form.url} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`form-${form.url}`}
+                      checked={selectedFormUrls.includes(form.url)}
+                      onCheckedChange={(checked) => handleFormToggle(form.url, checked === true)}
+                    />
+                    <Label
+                      htmlFor={`form-${form.url}`}
+                      className="text-sm font-normal cursor-pointer"
+                    >
                       {form.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <DialogFooter>

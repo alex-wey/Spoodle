@@ -598,6 +598,120 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 /**
+ * PATCH /api/appointments/:id/notes
+ * Update appointment notes (staff only)
+ */
+router.patch('/:id/notes', async (req: Request, res: Response) => {
+  try {
+    // Only staff members can update notes
+    if (!req.staff) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required',
+        message: 'Only staff members can update appointment notes',
+      });
+    }
+
+    const { id } = req.params;
+    const { notes } = req.body;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing appointment ID',
+        message: 'Appointment ID is required',
+      });
+    }
+
+    if (typeof notes !== 'string' && notes !== null) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid notes',
+        message: 'Notes must be a string or null',
+      });
+    }
+
+    // Get clinic-scoped where clause to ensure staff can only update their clinic's appointments
+    const clinicScopedWhere = getClinicScopedAppointmentWhere(req);
+
+    // Find the appointment first to verify it exists and belongs to the clinic
+    const existingAppointment = await prisma.appointment.findFirst({
+      where: {
+        id: id,
+        ...clinicScopedWhere,
+      },
+    });
+
+    if (!existingAppointment) {
+      return res.status(404).json({
+        success: false,
+        error: 'Appointment not found',
+        message: 'Appointment not found or you do not have permission to update it',
+      });
+    }
+
+    // Update the appointment notes
+    const updatedAppointment = await prisma.appointment.update({
+      where: { id: id },
+      data: { notes },
+      include: {
+        clinic: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        staff: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+          },
+        },
+        pet: {
+          select: {
+            id: true,
+            name: true,
+            species: true,
+            breed: true,
+            imageUrl: true,
+          },
+        },
+        petOwner: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return res.json({
+      success: true,
+      data: updatedAppointment,
+      message: 'Appointment notes updated successfully',
+    });
+  } catch (error: any) {
+    console.error('Error updating appointment notes:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to update appointment notes',
+    });
+  }
+});
+
+/**
  * Note: Cal.com webhooks are configured through the Cal.com dashboard
  * (Settings > Developer > Webhooks), not via API endpoints.
  * Webhook events will be sent to /api/webhooks/calcom

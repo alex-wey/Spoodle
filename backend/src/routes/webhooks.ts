@@ -857,6 +857,9 @@ async function handleBookingCreated(payload: any, res: Response) {
     
     const eventTitle = payload.eventTitle || booking.eventTitle || null;
     const eventDescription = payload.eventDescription || booking.eventDescription || null;
+    
+    // Extract notes from Cal.com payload (additionalNotes field)
+    const notes = payload.additionalNotes || booking.additionalNotes || null;
 
     // Create appointment record
     const appointment = await prisma.appointment.create({
@@ -866,6 +869,7 @@ async function handleBookingCreated(payload: any, res: Response) {
         eventTypeId: String(eventTypeId),
         eventTitle,
         eventDescription,
+        notes,
         clinicId,
         staffId,
         petId,

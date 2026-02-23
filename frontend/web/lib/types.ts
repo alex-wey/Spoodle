@@ -75,6 +75,7 @@ export interface Appointment {
   eventTypeId: string;
   eventTitle?: string | null;
   eventDescription?: string | null;
+  notes?: string | null;
   clinicId: string;
   staffId: string;
   petId: string;
