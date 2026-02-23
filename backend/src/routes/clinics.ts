@@ -221,17 +221,17 @@ router.post('/select', authenticateClerk, async (req: Request, res: Response) =>
     }
 
     // Check if user already has a clinic assigned
-    if (petOwner.clinicId) {
+    if (petOwner!.clinicId) {
       return res.status(400).json({
         success: false,
         error: 'Clinic already assigned',
         message: 'You have already selected a clinic',
-        currentClinic: await getClinicById(petOwner.clinicId)
+        currentClinic: await getClinicById(petOwner!.clinicId)
       });
     }
 
     // Assign clinic to pet owner
-    const updatedPetOwner = await assignClinicToPetOwner(petOwner.id, clinicId);
+    const updatedPetOwner = await assignClinicToPetOwner(petOwner!.id, clinicId);
 
     // Add user to Clerk organization
     try {

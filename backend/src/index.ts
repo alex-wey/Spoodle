@@ -8,6 +8,7 @@ import { PrismaClient } from '@prisma/client';
 // Import route modules
 import authRoutes from './routes/auth.js';
 import petsRoutes from './routes/pets.js';
+import petOwnersRoutes from './routes/pet-owners.js';
 import documentsRoutes from './routes/documents.js';
 import setupRoutes from './routes/setup.js';
 import bugReportRoutes from './routes/bug-report.js';
@@ -78,6 +79,7 @@ app.get('/health', (req: Request, res: Response) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/pets', petsRoutes);
+app.use('/api/pet-owners', petOwnersRoutes);
 app.use('/api/documents', documentsRoutes);
 app.use('/api/setup', setupRoutes);
 app.use('/api/bug-report', bugReportRoutes);

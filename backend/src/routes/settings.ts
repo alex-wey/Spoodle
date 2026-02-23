@@ -10,7 +10,7 @@ router.use(authenticateClerk);
 // Get user settings
 router.get('/', async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
+    if (!req.user || !req.user.clerkUserId) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -18,9 +18,9 @@ router.get('/', async (req: Request, res: Response) => {
       });
     }
 
-    // Get the PetOwner for this user
-    const petOwner = await prisma.petOwner.findUnique({
-      where: { clerkUserId: req.user.clerkUserId },
+    // Get the PetOwner for this user via User's clerkUserId
+    const petOwner = await prisma.petOwner.findFirst({
+      where: { user: { clerkUserId: req.user.clerkUserId } },
       include: { settings: true }
     });
 
@@ -69,7 +69,7 @@ router.get('/', async (req: Request, res: Response) => {
 // Update user settings
 router.put('/', async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
+    if (!req.user || !req.user.clerkUserId) {
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -79,9 +79,9 @@ router.put('/', async (req: Request, res: Response) => {
 
     const { theme, language, notifications, biometricAuth, profileImageUrl } = req.body;
 
-    // Get the PetOwner for this user
-    const petOwner = await prisma.petOwner.findUnique({
-      where: { clerkUserId: req.user.clerkUserId },
+    // Get the PetOwner for this user via User's clerkUserId
+    const petOwner = await prisma.petOwner.findFirst({
+      where: { user: { clerkUserId: req.user.clerkUserId } },
       include: { settings: true }
     });
 

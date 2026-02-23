@@ -367,7 +367,8 @@ router.get('/scheduling-link', async (req: Request, res: Response) => {
       : 'https://cal.com';
     const schedulingUrl = `${baseUrl}/${username}/${eventSlug}`;
 
-    const ownerName = `${pet.petOwner.user.firstName} ${pet.petOwner.user.lastName}`;
+    // Get owner details from linked user
+    const ownerName = `${pet.petOwner.user.firstName} ${pet.petOwner.user.lastName}`.trim() || 'Pet Owner';
     const ownerEmail = pet.petOwner.user.email;
 
     if (!ownerEmail) {

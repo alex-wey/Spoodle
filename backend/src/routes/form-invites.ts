@@ -271,8 +271,11 @@ router.post('/', async (req: Request, res: Response) => {
     formUrl.searchParams.set('clinicId', clinicId);
     
     if (pet.name) formUrl.searchParams.set('petName', pet.name);
-    if (pet.petOwner.user.email) formUrl.searchParams.set('email', pet.petOwner.user.email);
-    if (pet.petOwner.user.phone) formUrl.searchParams.set('phone', pet.petOwner.user.phone || '');
+    // Get owner email/phone from linked user
+    const ownerEmail = pet.petOwner.user.email;
+    const ownerPhone = pet.petOwner.user.phone;
+    if (ownerEmail) formUrl.searchParams.set('email', ownerEmail);
+    if (ownerPhone) formUrl.searchParams.set('phone', ownerPhone);
 
     const formLinkString = formUrl.toString();
 

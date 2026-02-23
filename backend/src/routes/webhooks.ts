@@ -432,7 +432,11 @@ router.post('/tally', async (req: Request, res: Response) => {
           petOwner: {
             select: {
               id: true,
-              clerkUserId: true
+              user: {
+                select: {
+                  clerkUserId: true
+                }
+              }
             }
           },
           pet: {
@@ -446,11 +450,15 @@ router.post('/tally', async (req: Request, res: Response) => {
       });
 
       console.log('✅ Form submission saved:', submission.id);
-      if (submission.petOwner) {
-        console.log(`   Linked to PetOwner: ${submission.petOwner.id}`);
+      const submissionWithRelations = submission as typeof submission & {
+        petOwner?: { id: string; user: { clerkUserId: string | null } } | null;
+        pet?: { id: string; name: string; species: string } | null;
+      };
+      if (submissionWithRelations.petOwner) {
+        console.log(`   Linked to PetOwner: ${submissionWithRelations.petOwner.id}`);
       }
-      if (submission.pet) {
-        console.log(`   Linked to Pet: ${submission.pet.name} (${submission.pet.species})`);
+      if (submissionWithRelations.pet) {
+        console.log(`   Linked to Pet: ${submissionWithRelations.pet.name} (${submissionWithRelations.pet.species})`);
       }
 
       // Prepare discharge metadata

@@ -17,7 +17,8 @@ router.get('/me', authenticateClerk, async (req: Request, res: Response) => {
     }
 
     // Fetch the User record from the database to get the address
-    const dbUser = await prisma.user.findUnique({
+    // For authenticated users, clerkUserId is always present
+    const dbUser = req.user.clerkUserId ? await prisma.user.findUnique({
       where: { clerkUserId: req.user.clerkUserId },
       select: {
         id: true,
@@ -30,7 +31,7 @@ router.get('/me', authenticateClerk, async (req: Request, res: Response) => {
         createdAt: true,
         updatedAt: true
       }
-    });
+    }) : null;
 
     // Merge DB user with Clerk profile fields for display
     const merged = {
@@ -79,7 +80,15 @@ router.put('/profile', authenticateClerk, async (req: Request, res: Response) =>
 
     const { firstName, lastName, phone, address } = req.body;
 
-    const updatedUser = await updateUserProfile(req.user!.clerkUserId, {
+    if (!req.user?.clerkUserId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required',
+        message: 'User not authenticated'
+      });
+    }
+
+    const updatedUser = await updateUserProfile(req.user.clerkUserId, {
       firstName,
       lastName,
       phone,
@@ -109,6 +118,14 @@ router.delete('/account', authenticateClerk, async (req: Request, res: Response)
         success: false,
         error: 'Authentication required',
         message: 'Please log in to delete your account'
+      });
+    }
+
+    if (!req.user.clerkUserId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required',
+        message: 'User not authenticated'
       });
     }
 

@@ -30,9 +30,9 @@ router.post('/',
       let bugReportId = null;
       try {
         if (req.auth?.userId) {
-          // Find petOwner by clerkUserId
-          let petOwner = await prisma.petOwner.findUnique({
-            where: { clerkUserId: req.auth.userId }
+          // Find petOwner by user's clerkUserId
+          let petOwner = await prisma.petOwner.findFirst({
+            where: { user: { clerkUserId: req.auth.userId } }
           });
           
           if (!petOwner) {

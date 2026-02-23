@@ -53,11 +53,13 @@ router.get('/', async (req: Request, res: Response) => {
             user: {
               select: {
                 id: true,
+                clerkUserId: true,
                 firstName: true,
                 lastName: true,
                 email: true,
                 phone: true,
-                address: true
+                address: true,
+                imageUrl: true
               }
             }
           }
@@ -69,12 +71,13 @@ router.get('/', async (req: Request, res: Response) => {
     // Transform pets to include owner information
     const petsWithOwners = pets.map(pet => ({
       ...pet,
-      owner: pet.petOwner?.user ? {
-        id: pet.petOwner.user.id,
+      owner: pet.petOwner ? {
+        id: pet.petOwner.id,
         name: `${pet.petOwner.user.firstName} ${pet.petOwner.user.lastName}`.trim(),
         email: pet.petOwner.user.email,
         phone: pet.petOwner.user.phone,
-        address: pet.petOwner.user.address
+        address: pet.petOwner.user.address,
+        imageUrl: pet.petOwner.user.imageUrl
       } : null
     }));
     
@@ -134,7 +137,8 @@ router.get('/:id',
                   lastName: true,
                   email: true,
                   phone: true,
-                  address: true
+                  address: true,
+                  imageUrl: true
                 }
               }
             }
@@ -153,12 +157,13 @@ router.get('/:id',
       // Transform pet to include owner information
       const petWithOwner = {
         ...pet,
-        owner: pet.petOwner?.user ? {
-          id: pet.petOwner.user.id,
+        owner: pet.petOwner ? {
+          id: pet.petOwner.id,
           name: `${pet.petOwner.user.firstName} ${pet.petOwner.user.lastName}`.trim(),
           email: pet.petOwner.user.email,
           phone: pet.petOwner.user.phone,
-          address: pet.petOwner.user.address
+          address: pet.petOwner.user.address,
+          imageUrl: pet.petOwner.user.imageUrl
         } : null
       };
       
@@ -179,53 +184,138 @@ router.get('/:id',
 );
 
 // Create a new pet
+// Both petOwners and staff can create pets
+// - petOwners create pets for themselves
+// - staff must provide an ownerId to assign the pet to a pet owner
 router.post('/',
   // validateRequest({ body: validationSchemas.createPet }), // TEMPORARILY DISABLED FOR DEBUGGING
   async (req: Request, res: Response) => {
     try {
-      if (!req.petOwner) {
+      if (!req.petOwner && !req.staff) {
         return res.status(401).json({
           success: false,
           error: 'Authentication required',
-          message: 'Please log in to create pets. Only pet owners can create pets.'
+          message: 'Please log in to create pets.'
         });
       }
 
       const petData = req.body;
+      
+      // Determine the owner ID
+      let ownerId: string;
+      
+      if (req.petOwner) {
+        // Pet owners create pets for themselves
+        ownerId = req.petOwner.id;
+      } else if (req.staff) {
+        // Staff must provide an ownerId
+        if (!petData.ownerId) {
+          return res.status(400).json({
+            success: false,
+            error: 'Missing owner',
+            message: 'Staff must provide an ownerId when creating a pet.'
+          });
+        }
+        
+        // Verify the owner exists and belongs to the same clinic
+        const owner = await prisma.petOwner.findUnique({
+          where: { id: petData.ownerId }
+        });
+        
+        if (!owner) {
+          return res.status(404).json({
+            success: false,
+            error: 'Owner not found',
+            message: 'The specified pet owner does not exist.'
+          });
+        }
+        
+        // Verify owner belongs to the same clinic as staff
+        if (req.clinic && owner.clinicId !== req.clinic.id) {
+          return res.status(403).json({
+            success: false,
+            error: 'Access denied',
+            message: 'The specified pet owner does not belong to your clinic.'
+          });
+        }
+        
+        ownerId = petData.ownerId;
+      } else {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          message: 'Unable to determine pet owner.'
+        });
+      }
       
       // Validate and clean image URL
       const cleanImageUrl = validateImageUrl(petData.imageUrl);
 
       // DEBUG: Log what we're trying to create
       console.log('🐕 Attempting to create pet:');
-      console.log('   PetOwner ID:', req.petOwner.id);
-      console.log('   Clinic ID:', req.petOwner.clinicId);
+      console.log('   Owner ID:', ownerId);
+      console.log('   Created by:', req.petOwner ? 'PetOwner' : 'Staff');
       console.log('   Pet Name:', petData.name);
       console.log('   Species:', petData.species);
       console.log('   Image URL:', cleanImageUrl ? 'Valid image URL provided' : 'No valid image URL');
       
+      // Convert date string to ISO DateTime if provided
+      const dateOfBirth = petData.dateOfBirth 
+        ? new Date(petData.dateOfBirth).toISOString() 
+        : null;
+
       // Create pet using Prisma
       const newPet = await prisma.pet.create({
         data: {
           name: petData.name,
           species: petData.species || 'Dog',
           breed: petData.breed || null,
-          dateOfBirth: petData.dateOfBirth || null,
+          dateOfBirth: dateOfBirth,
           biologicalSex: petData.biologicalSex || null,
           spayedNeutered: petData.spayedNeutered || false,
           weight: petData.weight || null,
           allergies: petData.allergies || [],
           dietaryRestrictions: petData.dietaryRestrictions || [],
           imageUrl: cleanImageUrl,
-          ownerId: req.petOwner.id
+          ownerId: ownerId
+        },
+        include: {
+          petOwner: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                  phone: true,
+                  address: true,
+                  imageUrl: true
+                }
+              }
+            }
+          }
         }
       });
       
       console.log('✅ Pet created successfully:', newPet.id);
       
+      // Transform to include owner information
+      const petWithOwner = {
+        ...newPet,
+        owner: newPet.petOwner ? {
+          id: newPet.petOwner.id,
+          name: `${newPet.petOwner.user.firstName} ${newPet.petOwner.user.lastName}`.trim(),
+          email: newPet.petOwner.user.email,
+          phone: newPet.petOwner.user.phone,
+          address: newPet.petOwner.user.address,
+          imageUrl: newPet.petOwner.user.imageUrl
+        } : null
+      };
+      
       return res.status(201).json({
         success: true,
-        data: newPet,
+        data: petWithOwner,
         message: 'Pet created successfully'
       });
     } catch (error) {
@@ -295,7 +385,7 @@ router.put('/:id',
       }
       
       if (updateData.dateOfBirth) {
-        updateData.dateOfBirth = new Date(updateData.dateOfBirth);
+        updateData.dateOfBirth = new Date(updateData.dateOfBirth).toISOString();
       }
 
       const updatedPet = await prisma.pet.update({
@@ -411,11 +501,13 @@ router.get('/clinic', authenticateClerk, async (req: Request, res: Response) => 
             user: {
               select: {
                 id: true,
+                clerkUserId: true,
                 firstName: true,
                 lastName: true,
                 email: true,
                 phone: true,
-                address: true
+                address: true,
+                imageUrl: true
               }
             }
           }
@@ -427,12 +519,13 @@ router.get('/clinic', authenticateClerk, async (req: Request, res: Response) => 
     // Transform pets to include owner information
     const petsWithOwners = pets.map(pet => ({
       ...pet,
-      owner: pet.petOwner.user ? {
-        id: pet.petOwner.user.id,
+      owner: pet.petOwner ? {
+        id: pet.petOwner.id,
         name: `${pet.petOwner.user.firstName} ${pet.petOwner.user.lastName}`.trim(),
         email: pet.petOwner.user.email,
         phone: pet.petOwner.user.phone,
-        address: pet.petOwner.user.address
+        address: pet.petOwner.user.address,
+        imageUrl: pet.petOwner.user.imageUrl
       } : null
     }));
 

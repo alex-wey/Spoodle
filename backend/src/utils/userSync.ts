@@ -7,47 +7,126 @@ export interface ClerkUserData {
   lastName: string;
   email: string;
   phone: string | null;
+  imageUrl?: string | null;
+}
+
+/**
+ * Find a placeholder User (created by staff via PetOwner flow) that matches the new user's email.
+ * Returns the matching User with their PetOwner if found, null otherwise.
+ */
+async function findPlaceholderUser(tx: any, email: string, phone: string | null) {
+  // Match by email (most reliable) - find User without clerkUserId
+  if (email) {
+    const byEmail = await tx.user.findFirst({
+      where: {
+        clerkUserId: null, // Only match placeholder users (not yet linked to Clerk)
+        email: email
+      },
+      include: { petOwner: true }
+    });
+    if (byEmail) {
+      console.log(`🔗 Found placeholder user by email: ${email}`);
+      return byEmail;
+    }
+  }
+
+  // Fallback: match by phone
+  if (phone) {
+    const byPhone = await tx.user.findFirst({
+      where: {
+        clerkUserId: null,
+        phone: phone
+      },
+      include: { petOwner: true }
+    });
+    if (byPhone) {
+      console.log(`🔗 Found placeholder user by phone: ${phone}`);
+      return byPhone;
+    }
+  }
+
+  return null;
 }
 
 /**
  * Get or create a user and their PetOwner record.
  * This function is idempotent and works consistently across all environments.
  * It handles race conditions and ensures both User and PetOwner exist.
+ * 
+ * IMPORTANT: If a placeholder User exists (created by staff) that matches
+ * the user's email or phone, we link that existing User to Clerk instead of creating new.
  */
 export async function getOrCreateUser(clerkUserData: ClerkUserData) {
-  // Use a transaction to ensure atomicity and handle race conditions
   return await prisma.$transaction(async (tx) => {
-    // Try to find existing user by clerkUserId (primary lookup)
+    // 1. Check if user already exists by clerkUserId
     let user = await tx.user.findUnique({
       where: { clerkUserId: clerkUserData.clerkUserId },
       include: { petOwner: true }
     });
 
-    // If user exists and has PetOwner, return it
     if (user?.petOwner) {
+      // Update imageUrl if it changed
+      if (clerkUserData.imageUrl && user.imageUrl !== clerkUserData.imageUrl) {
+        await tx.user.update({
+          where: { id: user.id },
+          data: { imageUrl: clerkUserData.imageUrl }
+        });
+      }
       return user.petOwner;
     }
 
-    // If user exists but no PetOwner, create PetOwner
-    if (user) {
+    // 2. Check for a placeholder User that matches this user's email/phone
+    const placeholderUser = await findPlaceholderUser(tx, clerkUserData.email, clerkUserData.phone);
+
+    if (placeholderUser) {
+      // Link the placeholder user to Clerk by setting clerkUserId and updating profile
+      await tx.user.update({
+        where: { id: placeholderUser.id },
+        data: {
+          clerkUserId: clerkUserData.clerkUserId,
+          firstName: clerkUserData.firstName,
+          lastName: clerkUserData.lastName,
+          imageUrl: clerkUserData.imageUrl ?? null,
+          phone: clerkUserData.phone || placeholderUser.phone
+        }
+      });
+
+      console.log(`🔗 Linked placeholder user ${placeholderUser.id} to Clerk user ${clerkUserData.clerkUserId}`);
+      console.log(`   User ${placeholderUser.email} is now linked to Clerk`);
+
+      // If they already have a PetOwner, return it
+      if (placeholderUser.petOwner) {
+        return placeholderUser.petOwner;
+      }
+
+      // Otherwise create a PetOwner for them
       const petOwner = await tx.petOwner.create({
-        data: { clerkUserId: clerkUserData.clerkUserId }
+        data: { userId: placeholderUser.id }
+      });
+      console.log(`✅ Created PetOwner for linked user ${placeholderUser.email}`);
+      return petOwner;
+    }
+
+    // 3. No placeholder found - create new User and PetOwner
+    if (user) {
+      // User exists (by clerkUserId) but no PetOwner
+      const petOwner = await tx.petOwner.create({
+        data: { userId: user.id }
       });
       return petOwner;
     }
 
-    // User doesn't exist, try to create both User and PetOwner
+    // Create both User and PetOwner
     try {
-      await tx.user.create({ data: clerkUserData });
+      const newUser = await tx.user.create({ data: clerkUserData });
       const petOwner = await tx.petOwner.create({
-        data: { clerkUserId: clerkUserData.clerkUserId }
+        data: { userId: newUser.id }
       });
+      console.log(`✅ Created new User and PetOwner for ${clerkUserData.email}`);
       return petOwner;
     } catch (error: any) {
-      // If creation fails due to unique constraint (race condition),
-      // find the existing user that was created by another request
+      // Handle race condition - another request may have created the user
       if (error.code === 'P2002') {
-        // Try finding by clerkUserId first
         const existingUser = await tx.user.findUnique({
           where: { clerkUserId: clerkUserData.clerkUserId },
           include: { petOwner: true }
@@ -58,14 +137,13 @@ export async function getOrCreateUser(clerkUserData: ClerkUserData) {
         }
 
         if (existingUser && !existingUser.petOwner) {
-          // User exists but no PetOwner - create it
           const petOwner = await tx.petOwner.create({
-            data: { clerkUserId: existingUser.clerkUserId }
+            data: { userId: existingUser.id }
           });
           return petOwner;
         }
 
-        // If not found by clerkUserId, try by email (in case email was the conflict)
+        // Try by email
         const userByEmail = await tx.user.findUnique({
           where: { email: clerkUserData.email },
           include: { petOwner: true }
@@ -76,18 +154,15 @@ export async function getOrCreateUser(clerkUserData: ClerkUserData) {
         }
 
         if (userByEmail && !userByEmail.petOwner) {
-          // User exists by email but no PetOwner - create it
           const petOwner = await tx.petOwner.create({
-            data: { clerkUserId: userByEmail.clerkUserId }
+            data: { userId: userByEmail.id }
           });
           return petOwner;
         }
 
-        // If we get here, something unexpected happened
         throw new Error(`Failed to create or find user: ${error.message}`);
       }
 
-      // Re-throw non-constraint errors
       throw error;
     }
   });
