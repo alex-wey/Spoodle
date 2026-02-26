@@ -301,7 +301,7 @@ export default function AppointmentDetailView() {
 
   const handleViewPetProfile = () => {
     if (apiAppointment?.petId) {
-      router.push(`/pets/${apiAppointment.petId}`);
+      router.push(`/patients/${apiAppointment.petId}`);
     }
   };
 

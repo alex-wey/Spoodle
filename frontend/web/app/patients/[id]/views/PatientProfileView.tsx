@@ -204,7 +204,7 @@ export default function PatientProfileView() {
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
-        <Button onClick={() => router.push('/pets')}>Back to Patients</Button>
+        <Button onClick={() => router.push('/patients')}>Back to Patients</Button>
       </div>
     );
   }
@@ -213,7 +213,7 @@ export default function PatientProfileView() {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <h1 className="text-2xl font-bold text-muted-foreground mb-4">Patient Not Found</h1>
-        <Button onClick={() => router.push('/pets')}>Back to Patients</Button>
+        <Button onClick={() => router.push('/patients')}>Back to Patients</Button>
       </div>
     );
   }
@@ -226,7 +226,7 @@ export default function PatientProfileView() {
         <Button 
           variant="ghost" 
           size="icon"
-          onClick={() => router.push('/pets')}
+          onClick={() => router.push('/patients')}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
