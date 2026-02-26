@@ -282,17 +282,17 @@ export function Hero({ patient, onEdit, onEditClient }: HeroProps) {
                     </div>
                   )}
                   
-                  {patient.client.address && (
-                    <div className="flex items-center gap-3 text-sm">
-                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <MapPin className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs text-muted-foreground">Address</p>
-                        <p className="font-medium">{patient.client.address}</p>
-                      </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <MapPin className="h-4 w-4 text-primary" />
                     </div>
-                  )}
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Address</p>
+                      <p className={`font-medium ${!patient.client.address ? 'text-muted-foreground' : ''}`}>
+                        {patient.client.address || 'Not provided'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
