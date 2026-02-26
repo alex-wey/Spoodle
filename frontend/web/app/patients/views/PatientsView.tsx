@@ -194,7 +194,7 @@ export default function PatientsView() {
                     <TableRow 
                       key={patient.id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => router.push(`/pets/${patient.id}`)}
+                      onClick={() => router.push(`/patients/${patient.id}`)}
                     >
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -220,7 +220,7 @@ export default function PatientsView() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => router.push(`/pets/${patient.id}?tab=records`)}
+                          onClick={() => router.push(`/patients/${patient.id}?tab=records`)}
                         >
                           <FileText className="h-4 w-4 mr-2" />
                           View Records

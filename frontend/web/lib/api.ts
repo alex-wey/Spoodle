@@ -444,6 +444,20 @@ export async function getFormSubmissions(
 }
 
 /**
+ * Get all form submissions for a specific pet
+ * @param petId - Pet ID
+ * @param sessionToken - Clerk session token
+ */
+export async function getFormSubmissionsByPet(
+  petId: string,
+  sessionToken: string
+) {
+  return apiRequest<FormSubmission[]>(`/api/forms/submissions/by-pet/${petId}`, {
+    method: 'GET',
+  }, sessionToken);
+}
+
+/**
  * Appointments API endpoints
  */
 

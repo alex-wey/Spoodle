@@ -57,7 +57,7 @@ app/
 │   └── views/
 ├── messages/                 # Messaging system
 │   └── views/
-├── pets/                     # Patient management
+├── patients/                     # Patient management
 │   ├── [id]/
 │   │   ├── components/       # Hero, PatientRecordsSection
 │   │   └── views/            # PatientProfileView
@@ -92,8 +92,8 @@ hooks/
 - `/` - Entry point (redirects to `/home` or `/sign-in`)
 - `/sign-in` - Authentication page
 - `/home` - Main dashboard with appointment kanban board
-- `/pets` - Patient list and search
-- `/pets/[id]` - Individual patient profile and medical records
+- `/patients` - Patient list and search
+- `/patients/[id]` - Individual patient profile and medical records
 - `/appointments` - Week-view calendar of appointments with week navigation
 - `/appointments/[id]` - Appointment details with questionnaire and booking information
 - `/messages` - Messaging interface

@@ -179,7 +179,7 @@ export function PatientRecordsSection({ patientRecords, loading, error, onError,
                         size="sm"
                         onClick={() => handleDownload(patientRecord.id)}
                       >
-                        <Download className="h-4 w-4 mr-2" />
+                        <Download className="h-4 w-4" />
                         Download
                       </Button>
                     </TableCell>
@@ -188,13 +188,12 @@ export function PatientRecordsSection({ patientRecords, loading, error, onError,
               </TableBody>
             </Table>
           ) : !error ? (
-            <div className="text-center py-8">
-              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-lg font-medium">No patient records found</p>
-              <p className="text-muted-foreground">
+            <div className="text-center py-6">
+              <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-40" />
+              <p className="text-sm text-muted-foreground">
                 {searchQuery || filterType !== "all"
                   ? "Try adjusting your search criteria or filters"
-                  : "No patient records have been added yet"
+                  : "No patient records yet. Click the + button to upload records."
                 }
               </p>
             </div>

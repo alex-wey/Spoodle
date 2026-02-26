@@ -71,6 +71,104 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/forms/submissions/by-pet/:petId
+ * Get all form submissions for a specific pet
+ */
+router.get('/submissions/by-pet/:petId',
+  validateRequest({ params: z.object({ petId: commonSchemas.id }) }),
+  async (req: Request, res: Response) => {
+    try {
+      if (!req.petOwner && !req.staff) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          message: 'Please log in to view form submissions'
+        });
+      }
+
+      const { petId } = req.params;
+
+      // Verify pet exists and user has access
+      const pet = await prisma.pet.findUnique({
+        where: { id: petId as string },
+        include: {
+          petOwner: true
+        }
+      });
+
+      if (!pet) {
+        return res.status(404).json({
+          success: false,
+          error: 'Pet not found',
+          message: 'The requested pet does not exist'
+        });
+      }
+
+      // Check access - staff can view any pet in their clinic, pet owners can only view their own pets
+      if (req.petOwner && pet.petOwner.id !== req.petOwner.id) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied',
+          message: 'You do not have permission to view submissions for this pet'
+        });
+      }
+
+      const submissions = await prisma.formSubmission.findMany({
+        where: {
+          petId: petId as string
+        },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          form: {
+            select: {
+              id: true,
+              title: true,
+              clinicId: true
+            }
+          },
+          petOwner: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                  phone: true
+                }
+              }
+            }
+          },
+          pet: {
+            select: {
+              id: true,
+              name: true,
+              species: true,
+              breed: true,
+              imageUrl: true
+            }
+          }
+        }
+      });
+
+      return res.json({
+        success: true,
+        data: submissions,
+        count: submissions.length,
+        message: 'Form submissions retrieved successfully'
+      });
+    } catch (error) {
+      console.error('Get form submissions by pet error:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Server error',
+        message: 'Unable to retrieve form submissions'
+      });
+    }
+  }
+);
+
+/**
  * GET /api/forms/:id
  * Get a specific form by ID
  */

@@ -51,7 +51,7 @@ export default function HomeView() {
           {/* Quick Actions Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Patient Management Card */}
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/pets')}>
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/patients')}>
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
@@ -71,7 +71,7 @@ export default function HomeView() {
                   <Button 
                     onClick={(e) => {
                       e.stopPropagation();
-                      router.push('/pets');
+                      router.push('/patients');
                     }}
                   >
                     View Patients
