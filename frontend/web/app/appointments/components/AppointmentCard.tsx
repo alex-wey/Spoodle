@@ -6,14 +6,14 @@ import { formatTimeCompact } from "../utils/dateUtils";
 
 export interface AppointmentCardData {
   id: string;
-  petName: string;
-  petImage?: string;
+  patientName: string;
+  patientImage?: string;
   startTime: Date;
   endTime: Date;
   veterinarian: string;
   status: "CONFIRMED" | "CANCELLED" | "RESCHEDULED";
   eventTitle?: string | null;
-  ownerName?: string;
+  clientName?: string;
 }
 
 interface AppointmentCardProps {
@@ -43,9 +43,9 @@ export function AppointmentCard({ appointment, onClick }: AppointmentCardProps) 
       <CardContent className="p-2 h-full flex flex-col min-h-0">
         <div className="flex items-center gap-1.5 min-w-0">
           <Avatar className="h-5 w-5 flex-shrink-0">
-            <AvatarImage src={appointment.petImage} alt={appointment.petName} />
+            <AvatarImage src={appointment.patientImage} alt={appointment.patientName} />
             <AvatarFallback className="text-[9px] font-medium bg-muted">
-              {appointment.petName.charAt(0).toUpperCase()}
+              {appointment.patientName.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <span className="text-xs text-muted-foreground flex-shrink-0">

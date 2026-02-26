@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Spoodle - Veterinary Practice Management",
-  description: "Modern veterinary practice management platform for clinics and pet owners",
+  description: "Modern veterinary practice management platform for clinics and clients",
 };
 
 export default function RootLayout({

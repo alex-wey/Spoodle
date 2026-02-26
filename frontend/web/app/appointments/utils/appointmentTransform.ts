@@ -37,14 +37,14 @@ export function transformAppointment(apt: Appointment): AppointmentCardData {
     }
   }
 
-  const ownerName = apt.petOwner?.user
+  const clientName = apt.petOwner?.user
     ? `${apt.petOwner.user.firstName} ${apt.petOwner.user.lastName}`.trim()
     : undefined;
 
   return {
     id: apt.id,
-    petName: apt.pet?.name || 'Unknown Pet',
-    petImage: apt.pet?.imageUrl || undefined,
+    patientName: apt.pet?.name || 'Unknown Patient',
+    patientImage: apt.pet?.imageUrl || undefined,
     startTime,
     endTime,
     veterinarian: apt.staff?.user 
@@ -52,7 +52,7 @@ export function transformAppointment(apt: Appointment): AppointmentCardData {
       : 'Unknown',
     status: apt.status,
     eventTitle: apt.eventTitle || undefined,
-    ownerName,
+    clientName,
   };
 }
 

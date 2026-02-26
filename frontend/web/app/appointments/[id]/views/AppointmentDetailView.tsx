@@ -33,18 +33,18 @@ interface FormInvite {
 
 interface Appointment {
   id: string;
-  petName: string;
-  petImage?: string;
-  petBreed: string;
-  ownerName: string;
+  patientName: string;
+  patientImage?: string;
+  patientBreed: string;
+  clientName: string;
   appointmentType: string;
   time: string;
   isNewClient: boolean;
   hasNewMessage: boolean;
   veterinarian: string;
   status: "confirmed" | "pending" | "cancelled" | "rescheduled";
-  petId: string;
-  petOwnerId: string;
+  patientId: string;
+  clientId: string;
 }
 
 export default function AppointmentDetailView() {
@@ -113,12 +113,12 @@ export default function AppointmentDetailView() {
 
     return {
       id: apiAppointment.id,
-      petName: apiAppointment.pet?.name || 'Unknown Pet',
-      petImage: apiAppointment.pet?.imageUrl || undefined,
-      petBreed: apiAppointment.pet?.breed || 'Unknown',
-      ownerName: apiAppointment.petOwner?.user 
-        ? `${apiAppointment.petOwner.user.firstName} ${apiAppointment.petOwner.user.lastName}`.trim() || 'Unknown Owner'
-        : 'Unknown Owner',
+      patientName: apiAppointment.pet?.name || 'Unknown Patient',
+      patientImage: apiAppointment.pet?.imageUrl || undefined,
+      patientBreed: apiAppointment.pet?.breed || 'Unknown',
+      clientName: apiAppointment.petOwner?.user 
+        ? `${apiAppointment.petOwner.user.firstName} ${apiAppointment.petOwner.user.lastName}`.trim() || 'Unknown Client'
+        : 'Unknown Client',
       appointmentType: apiAppointment.eventTitle || 'Appointment',
       time,
       isNewClient: false,
@@ -127,8 +127,8 @@ export default function AppointmentDetailView() {
         ? `${apiAppointment.staff.user.firstName} ${apiAppointment.staff.user.lastName}`.trim()
         : 'Unknown Veterinarian',
       status: statusMap[apiAppointment.status] || 'pending',
-      petId: apiAppointment.petId,
-      petOwnerId: apiAppointment.petOwnerId,
+      patientId: apiAppointment.petId,
+      clientId: apiAppointment.petOwnerId,
     };
   };
 
@@ -389,7 +389,7 @@ export default function AppointmentDetailView() {
                       {/* Basic Info */}
                       <div className="flex-1 text-center lg:text-left min-w-0 w-full">
                         <div className="mb-2">
-                          <h1 className="text-4xl font-bold text-primary">{appointment.petName}&apos;s Appointment</h1>
+                          <h1 className="text-4xl font-bold text-primary">{appointment.patientName}&apos;s Appointment</h1>
                         </div>
                         <p className="text-lg text-muted-foreground mb-4">
                           {appointment.appointmentType}
@@ -402,13 +402,13 @@ export default function AppointmentDetailView() {
                               <Dog className="h-5 w-5 text-primary" />
                             </div>
                             <div>
-                              <p className="text-sm text-muted-foreground">Pet Name</p>
+                              <p className="text-sm text-muted-foreground">Patient Name</p>
                               <Button
                                 variant="link"
                                 onClick={handleViewPetProfile}
                                 className="h-auto p-0 font-medium text-base text-primary hover:text-primary/80 underline underline-offset-2"
                               >
-                                {appointment.petName}
+                                {appointment.patientName}
                               </Button>
                             </div>
                           </div>
@@ -419,7 +419,7 @@ export default function AppointmentDetailView() {
                             </div>
                             <div>
                               <p className="text-sm text-muted-foreground">Breed</p>
-                              <p className="font-medium text-base">{appointment.petBreed}</p>
+                              <p className="font-medium text-base">{appointment.patientBreed}</p>
                             </div>
                           </div>
                           
@@ -428,8 +428,8 @@ export default function AppointmentDetailView() {
                               <User className="h-5 w-5 text-primary" />
                             </div>
                             <div>
-                              <p className="text-sm text-muted-foreground">Pet Owner</p>
-                              <p className="font-medium text-base">{appointment.ownerName}</p>
+                              <p className="text-sm text-muted-foreground">Client</p>
+                              <p className="font-medium text-base">{appointment.clientName}</p>
                             </div>
                           </div>
                           
@@ -582,7 +582,7 @@ export default function AppointmentDetailView() {
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      No forms assigned to this pet. Forms can be added when creating an appointment.
+                      No forms assigned to this patient. Forms can be added when creating an appointment.
                     </p>
                   )}
 
@@ -645,7 +645,7 @@ export default function AppointmentDetailView() {
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground">
-                      No discharge reports submitted yet. Reports are automatically saved to the pet&apos;s profile when submitted.
+                      No discharge reports submitted yet. Reports are automatically saved to the patient&apos;s profile when submitted.
                     </p>
                   )}
                 </div>

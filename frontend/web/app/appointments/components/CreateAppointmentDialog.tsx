@@ -26,7 +26,7 @@ import { getClinicPets, getEventTypes, getSchedulingLink, createFormInvite } fro
 import { useSessionContext } from '../../../components/SessionContext';
 import type { Pet } from '../../../lib/types';
 import { CalEmbed } from './CalEmbed';
-import { AddEditPetDialog } from '@/components/primitives/AddEditPetDialog';
+import { AddEditPatientDialog } from '@/components/primitives/AddEditPatientDialog';
 
 interface EventType {
   id: number;
@@ -54,17 +54,17 @@ export function CreateAppointmentDialog({
   const { getToken, isSignedIn } = useAuth();
   const { clinicId, userType } = useSessionContext();
   
-  const [pets, setPets] = useState<Pet[]>([]);
+  const [patients, setPatients] = useState<Pet[]>([]);
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [schedulingUrl, setSchedulingUrl] = useState<string | null>(null);
   
-  const [selectedPetId, setSelectedPetId] = useState<string>('');
+  const [selectedPatientId, setSelectedPatientId] = useState<string>('');
   const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>('');
   const [selectedFormUrls, setSelectedFormUrls] = useState<string[]>([]);
-  const [showAddPetDialog, setShowAddPetDialog] = useState(false);
+  const [showAddPatientDialog, setShowAddPatientDialog] = useState(false);
 
   const formOptions = [
     {
@@ -89,7 +89,7 @@ export function CreateAppointmentDialog({
     }
   };
 
-  // Fetch pets and event types when dialog opens
+  // Fetch patients and event types when dialog opens
   useEffect(() => {
     if (open && isSignedIn && clinicId) {
       fetchData();
@@ -109,16 +109,16 @@ export function CreateAppointmentDialog({
         return;
       }
 
-      // Fetch pets and event types in parallel
-      const [petsResult, eventTypesResult] = await Promise.all([
+      // Fetch patients and event types in parallel
+      const [patientsResult, eventTypesResult] = await Promise.all([
         getClinicPets(token, clinicId),
         getEventTypes(token),
       ]);
 
-      if (petsResult.success && petsResult.data) {
-        setPets(petsResult.data);
+      if (patientsResult.success && patientsResult.data) {
+        setPatients(patientsResult.data);
       } else {
-        setError(petsResult.error || petsResult.message || 'Failed to fetch pets');
+        setError(patientsResult.error || patientsResult.message || 'Failed to fetch patients');
       }
 
       if (eventTypesResult.success && eventTypesResult.data) {
@@ -139,8 +139,8 @@ export function CreateAppointmentDialog({
   const handleOpenSchedulingLink = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedPetId || !selectedEventTypeId) {
-      setError('Please select a pet and event type');
+    if (!selectedPatientId || !selectedEventTypeId) {
+      setError('Please select a patient and event type');
       return;
     }
 
@@ -163,7 +163,7 @@ export function CreateAppointmentDialog({
       // Get scheduling link
       const result = await getSchedulingLink(
         selectedEventTypeId,
-        selectedPetId,
+        selectedPatientId,
         clinicId,
         token
       );
@@ -182,7 +182,7 @@ export function CreateAppointmentDialog({
               const formInviteResult = await createFormInvite(
                 formUrl,
                 formName,
-                selectedPetId,
+                selectedPatientId,
                 token
               );
               
@@ -211,7 +211,7 @@ export function CreateAppointmentDialog({
 
   const handleClose = () => {
     if (!generating) {
-      setSelectedPetId('');
+      setSelectedPatientId('');
       setSelectedEventTypeId('');
       setSelectedFormUrls([]);
       setError(null);
@@ -220,10 +220,10 @@ export function CreateAppointmentDialog({
     }
   };
 
-  const handlePetAdded = (newPet: Pet) => {
-    setPets((prevPets) => [newPet, ...prevPets]);
-    setSelectedPetId(newPet.id);
-    setShowAddPetDialog(false);
+  const handlePatientAdded = (newPatient: Pet) => {
+    setPatients((prevPatients) => [newPatient, ...prevPatients]);
+    setSelectedPatientId(newPatient.id);
+    setShowAddPatientDialog(false);
   };
 
   const handleBookingSuccess = (data?: { uid?: string }) => {
@@ -243,7 +243,7 @@ export function CreateAppointmentDialog({
         <DialogHeader>
           <DialogTitle>Create Appointment</DialogTitle>
           <DialogDescription>
-            Select a pet and event type to open the Cal.com booking page.
+            Select a patient and event type to open the Cal.com booking page.
           </DialogDescription>
         </DialogHeader>
 
@@ -277,30 +277,30 @@ export function CreateAppointmentDialog({
           <form onSubmit={handleOpenSchedulingLink} className="space-y-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="pet">Pet *</Label>
+                <Label htmlFor="patient">Patient *</Label>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   className="h-auto py-1 px-2 text-xs"
-                  onClick={() => setShowAddPetDialog(true)}
+                  onClick={() => setShowAddPatientDialog(true)}
                 >
                   <Plus className="h-3 w-3 mr-1" />
-                  Add New Pet
+                  Add New Patient
                 </Button>
               </div>
-              <Select value={selectedPetId} onValueChange={setSelectedPetId} required>
-                <SelectTrigger id="pet">
-                  <SelectValue placeholder="Select a pet" />
+              <Select value={selectedPatientId} onValueChange={setSelectedPatientId} required>
+                <SelectTrigger id="patient">
+                  <SelectValue placeholder="Select a patient" />
                 </SelectTrigger>
                 <SelectContent>
-                  {pets.map((pet) => (
-                    <SelectItem key={pet.id} value={pet.id}>
-                      {pet.name} ({pet.species}
-                      {pet.breed ? ` - ${pet.breed}` : ''})
-                      {pet.petOwner?.user && (
+                  {patients.map((patient) => (
+                    <SelectItem key={patient.id} value={patient.id}>
+                      {patient.name} ({patient.species}
+                      {patient.breed ? ` - ${patient.breed}` : ''})
+                      {patient.petOwner?.user && (
                         <span className="text-muted-foreground ml-2">
-                          - {pet.petOwner.user.firstName} {pet.petOwner.user.lastName}
+                          - {patient.petOwner.user.firstName} {patient.petOwner.user.lastName}
                         </span>
                       )}
                     </SelectItem>
@@ -368,10 +368,10 @@ export function CreateAppointmentDialog({
           </form>
         )}
 
-        <AddEditPetDialog
-          open={showAddPetDialog}
-          onOpenChange={setShowAddPetDialog}
-          onSuccess={handlePetAdded}
+        <AddEditPatientDialog
+          open={showAddPatientDialog}
+          onOpenChange={setShowAddPatientDialog}
+          onSuccess={handlePatientAdded}
           isStaff={userType === 'staff'}
           clinicId={clinicId}
         />

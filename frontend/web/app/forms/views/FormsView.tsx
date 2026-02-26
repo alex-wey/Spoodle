@@ -123,7 +123,7 @@ export default function FormsView() {
     value?: unknown;
   };
 
-  const petNameForRow = (submission: FormSubmission) => {
+  const patientNameForRow = (submission: FormSubmission) => {
     if (submission.pet?.name) return submission.pet.name;
     const rawData = submission.submissionData?.rawData as { data?: { fields?: unknown } } | undefined;
     const rawFields = rawData?.data?.fields;
@@ -140,16 +140,16 @@ export default function FormsView() {
     if (hiddenPetName?.value != null) {
       return String(hiddenPetName.value);
     }
-    return "Unknown pet";
+    return "Unknown patient";
   };
 
-  const ownerNameForRow = (submission: FormSubmission) => {
+  const clientNameForRow = (submission: FormSubmission) => {
     if (submission.petOwner?.user) {
       const { firstName, lastName } = submission.petOwner.user;
       const full = `${firstName || ""} ${lastName || ""}`.trim();
       if (full) return full;
     }
-    return submission.respondentEmail || "Unknown owner";
+    return submission.respondentEmail || "Unknown client";
   };
 
   const submissionLink = (submission: FormSubmission) => {
@@ -159,8 +159,8 @@ export default function FormsView() {
 
   const rows = submissions.map((s) => ({
     id: s.id,
-    pet: petNameForRow(s),
-    owner: ownerNameForRow(s),
+    patient: patientNameForRow(s),
+    client: clientNameForRow(s),
     href: submissionLink(s),
   }));
 
@@ -232,7 +232,7 @@ export default function FormsView() {
           <FileText className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-40" />
           <h2 className="text-lg font-semibold mb-1">No submissions yet</h2>
           <p className="text-sm text-muted-foreground">
-            Form submissions will appear here when pet owners complete this form.
+            Form submissions will appear here when clients complete this form.
           </p>
         </Card>
       ) : (
@@ -249,16 +249,16 @@ export default function FormsView() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-1/3">Pet</TableHead>
-                  <TableHead className="w-1/3">Pet Owner</TableHead>
+                  <TableHead className="w-1/3">Patient</TableHead>
+                  <TableHead className="w-1/3">Client</TableHead>
                   <TableHead className="w-1/3 text-right">Form Submission</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {rows.map((row) => (
                   <TableRow key={row.id}>
-                    <TableCell>{row.pet}</TableCell>
-                    <TableCell>{row.owner}</TableCell>
+                    <TableCell>{row.patient}</TableCell>
+                    <TableCell>{row.client}</TableCell>
                     <TableCell className="text-right">
                       <Button
                         variant="outline"

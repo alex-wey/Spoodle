@@ -57,11 +57,11 @@ app/
 │   └── views/
 ├── messages/                 # Messaging system
 │   └── views/
-├── pets/                     # Pet management
+├── pets/                     # Patient management
 │   ├── [id]/
-│   │   ├── components/       # Hero, PetRecordsSection
-│   │   └── views/            # PetProfileView
-│   └── views/                # PetsView (pet list/table)
+│   │   ├── components/       # Hero, PatientRecordsSection
+│   │   └── views/            # PatientProfileView
+│   └── views/                # PatientsView (patient list/table)
 ├── settings/                 # Settings
 │   └── views/                # SettingsView (tabs: personal, calendar, users)
 ├── sign-in/                  # Sign-in page
@@ -92,8 +92,8 @@ hooks/
 - `/` - Entry point (redirects to `/home` or `/sign-in`)
 - `/sign-in` - Authentication page
 - `/home` - Main dashboard with appointment kanban board
-- `/pets` - Pet list and search
-- `/pets/[id]` - Individual pet profile and medical records
+- `/pets` - Patient list and search
+- `/pets/[id]` - Individual patient profile and medical records
 - `/appointments` - Week-view calendar of appointments with week navigation
 - `/appointments/[id]` - Appointment details with questionnaire and booking information
 - `/messages` - Messaging interface
@@ -106,14 +106,14 @@ The web app connects to the backend API at `NEXT_PUBLIC_API_BASE_URL`. All reque
 
 ### Key API Endpoints
 
-**Pets**
-- `GET /api/pets` - Get all clinic pets
-- `GET /api/pets/:id` - Get pet details
-- `GET /api/pets/:id?clinicId=:clinicId` - Get pet (staff)
+**Patients (API uses "pets" for backend compatibility)**
+- `GET /api/pets` - Get all clinic patients
+- `GET /api/pets/:id` - Get patient details
+- `GET /api/pets/:id?clinicId=:clinicId` - Get patient (staff)
 
 **Documents**
 - `GET /api/documents` - Get all documents
-- `GET /api/documents/pet/:petId` - Get pet documents
+- `GET /api/documents/pet/:petId` - Get patient documents
 - `GET /api/documents/category/:category` - Get by category
 - `GET /api/documents/download/:id` - Download document
 - `POST /api/documents` - Upload document
@@ -163,13 +163,13 @@ The web app connects to the backend API at `NEXT_PUBLIC_API_BASE_URL`. All reque
 ## Features
 
 - **Dashboard**: Kanban-style appointment management
-- **Pet Management**: Complete pet profiles with medical records
+- **Patient Management**: Complete patient profiles with medical records
 - **Appointment Calendar**: Week-view calendar with appointment scheduling via Cal.com integration
-- **Appointment Invites**: Send appointment invitation links to pet owners, track pending invites
-- **Forms Integration**: View and manage Tally form submissions linked to pets
+- **Appointment Invites**: Send appointment invitation links to clients, track pending invites
+- **Forms Integration**: View and manage Tally form submissions linked to patients
 - **Business**: Revenue tracking and business metrics
 - **Messaging**: Integrated communication system
-- **Document Management**: Upload and view pet medical records
+- **Document Management**: Upload and view patient medical records
 - **Theme Support**: Dark/light mode with next-themes
 - **Responsive Design**: Optimized for desktop and tablet
 

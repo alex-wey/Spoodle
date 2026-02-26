@@ -17,7 +17,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { updatePetOwner, type UpdatePetOwnerData } from '@/lib/api';
 
-export interface OwnerData {
+export interface ClientData {
   id: string;
   name: string;
   email?: string;
@@ -27,21 +27,21 @@ export interface OwnerData {
   hasClerkAccount?: boolean;
 }
 
-export interface EditOwnerDialogProps {
+export interface EditClientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  owner: OwnerData | null;
-  onSuccess?: (updatedOwner: OwnerData) => void;
+  client: ClientData | null;
+  onSuccess?: (updatedClient: ClientData) => void;
   clinicId?: string | null;
 }
 
-export function EditOwnerDialog({
+export function EditClientDialog({
   open,
   onOpenChange,
-  owner,
+  client,
   onSuccess,
   clinicId,
-}: EditOwnerDialogProps) {
+}: EditClientDialogProps) {
   const { getToken } = useAuth();
   
   const [firstName, setFirstName] = useState('');
@@ -53,16 +53,16 @@ export function EditOwnerDialog({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (owner && open) {
-      const nameParts = owner.name.split(' ');
+    if (client && open) {
+      const nameParts = client.name.split(' ');
       setFirstName(nameParts[0] || '');
       setLastName(nameParts.slice(1).join(' ') || '');
-      setEmail(owner.email || '');
-      setPhone(owner.phone || '');
-      setAddress(owner.address || '');
+      setEmail(client.email || '');
+      setPhone(client.phone || '');
+      setAddress(client.address || '');
       setError(null);
     }
-  }, [owner, open]);
+  }, [client, open]);
 
   const handleClose = () => {
     setError(null);
@@ -72,13 +72,13 @@ export function EditOwnerDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!owner) {
-      setError('No owner data available');
+    if (!client) {
+      setError('No client data available');
       return;
     }
 
-    if (owner.hasClerkAccount) {
-      setError('This owner has a registered account and must update their own profile.');
+    if (client.hasClerkAccount) {
+      setError('This client has a registered account and must update their own profile.');
       return;
     }
 
@@ -106,54 +106,54 @@ export function EditOwnerDialog({
         address: address.trim() || null,
       };
 
-      const response = await updatePetOwner(owner.id, updateData, token, clinicId);
+      const response = await updatePetOwner(client.id, updateData, token, clinicId);
 
       if (response.success && response.data) {
-        const updatedOwner: OwnerData = {
-          id: owner.id,
+        const updatedClient: ClientData = {
+          id: client.id,
           name: `${firstName.trim()} ${lastName.trim()}`.trim(),
           email: email.trim() || undefined,
           phone: phone.trim() || null,
           address: address.trim() || null,
-          imageUrl: owner.imageUrl,
+          imageUrl: client.imageUrl,
           hasClerkAccount: false,
         };
         
-        onSuccess?.(updatedOwner);
+        onSuccess?.(updatedClient);
         handleClose();
       } else {
-        setError(response.message || response.error || 'Failed to update owner');
+        setError(response.message || response.error || 'Failed to update client');
       }
     } catch (err) {
-      console.error('Error updating owner:', err);
+      console.error('Error updating client:', err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!owner) return null;
+  if (!client) return null;
 
-  const isClerkOwner = owner.hasClerkAccount;
+  const isClerkClient = client.hasClerkAccount;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Edit Owner</DialogTitle>
+          <DialogTitle>Edit Client</DialogTitle>
           <DialogDescription>
-            {isClerkOwner 
-              ? `${owner.name} has a registered account and must update their own profile.`
-              : `Update ${owner.name}'s information.`
+            {isClerkClient 
+              ? `${client.name} has a registered account and must update their own profile.`
+              : `Update ${client.name}'s information.`
             }
           </DialogDescription>
         </DialogHeader>
 
-        {isClerkOwner ? (
+        {isClerkClient ? (
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              This owner has a registered account. They can update their profile through the mobile app or by contacting support.
+              This client has a registered account. They can update their profile through the mobile app or by contacting support.
             </AlertDescription>
           </Alert>
         ) : (
@@ -244,7 +244,7 @@ export function EditOwnerDialog({
           </form>
         )}
 
-        {isClerkOwner && (
+        {isClerkClient && (
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose}>
               Close

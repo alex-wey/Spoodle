@@ -25,25 +25,25 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-interface PetRecord {
+interface PatientRecord {
   id: string;
   title: string;
   type: string;
   date: string;
   veterinarian: string;
-  petName: string;
-  ownerName: string;
+  patientName: string;
+  clientName: string;
   fileUrl: string;
   notes?: string[];
 }
 
-interface PetRecordsViewerProps {
-  record: PetRecord | null;
+interface PatientRecordsViewerProps {
+  record: PatientRecord | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const PetRecordsViewer = ({ record, isOpen, onClose }: PetRecordsViewerProps) => {
+export const PatientRecordsViewer = ({ record, isOpen, onClose }: PatientRecordsViewerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [activeTool, setActiveTool] = useState<"select" | "draw" | "erase" | "text" | "rectangle" | "circle">("select");
@@ -150,8 +150,8 @@ export const PetRecordsViewer = ({ record, isOpen, onClose }: PetRecordsViewerPr
   };
 
   const handleEmail = () => {
-    const subject = encodeURIComponent(`Pet Record: ${record?.petName} - ${record?.title}`);
-    const body = encodeURIComponent(`Please find attached the pet record for ${record?.petName}.`);
+    const subject = encodeURIComponent(`Patient Record: ${record?.patientName} - ${record?.title}`);
+    const body = encodeURIComponent(`Please find attached the patient record for ${record?.patientName}.`);
     window.open(`mailto:?subject=${subject}&body=${body}`);
   };
 
@@ -159,7 +159,7 @@ export const PetRecordsViewer = ({ record, isOpen, onClose }: PetRecordsViewerPr
     if (record?.fileUrl) {
       const link = document.createElement("a");
       link.href = record.fileUrl;
-      link.download = `${record.petName}-${record.title}.pdf`;
+      link.download = `${record.patientName}-${record.title}.pdf`;
       link.click();
       toast("Download started");
     }
@@ -190,9 +190,9 @@ export const PetRecordsViewer = ({ record, isOpen, onClose }: PetRecordsViewerPr
               <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
                 <Badge variant="outline">{record.type}</Badge>
                 <span>•</span>
-                <span>{record.petName}</span>
+                <span>{record.patientName}</span>
                 <span>•</span>
-                <span>{record.ownerName}</span>
+                <span>{record.clientName}</span>
                 <span>•</span>
                 <span>{record.date}</span>
                 <span>•</span>

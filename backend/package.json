@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "npm run prisma:push && tsx watch --clear-screen=false src/index.ts",
-    "start": "npx prisma db push && node dist/index.js",
+    "start": "npx prisma db push --accept-data-loss && node dist/index.js",
     "postinstall": "npm run prisma:generate",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",

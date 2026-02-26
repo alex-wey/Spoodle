@@ -20,25 +20,25 @@ interface Message {
   id: string;
   senderId: string;
   senderName: string;
-  senderType: "vet" | "owner";
+  senderType: "vet" | "client";
   content: string;
   timestamp: string;
   read: boolean;
 }
 
 interface MessagingPopupProps {
-  ownerName: string;
-  ownerImage?: string;
-  petName: string;
+  clientName: string;
+  clientImage?: string;
+  patientName: string;
   appointmentId: string;
 }
 
 const mockMessages: Message[] = [
   {
     id: "1",
-    senderId: "owner1",
+    senderId: "client1",
     senderName: "Sarah Johnson",
-    senderType: "owner",
+    senderType: "client",
     content: "Hi Dr. Chen, I wanted to ask about Max's vaccination. Is it okay if he had a small snack this morning?",
     timestamp: "2024-01-15T09:15:00Z",
     read: true
@@ -54,16 +54,16 @@ const mockMessages: Message[] = [
   },
   {
     id: "3",
-    senderId: "owner1", 
+    senderId: "client1", 
     senderName: "Sarah Johnson",
-    senderType: "owner",
+    senderType: "client",
     content: "Thank you so much! Also, should I bring his previous vaccination records?",
     timestamp: "2024-01-15T09:20:00Z",
     read: false
   }
 ];
 
-export function MessagingPopup({ ownerName, ownerImage, petName }: MessagingPopupProps) {
+export function MessagingPopup({ clientName, clientImage, patientName }: MessagingPopupProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>(mockMessages);
   const [newMessage, setNewMessage] = useState("");
@@ -100,7 +100,7 @@ export function MessagingPopup({ ownerName, ownerImage, petName }: MessagingPopu
     });
   };
 
-  const unreadCount = messages.filter(msg => !msg.read && msg.senderType === "owner").length;
+  const unreadCount = messages.filter(msg => !msg.read && msg.senderType === "client").length;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -121,14 +121,14 @@ export function MessagingPopup({ ownerName, ownerImage, petName }: MessagingPopu
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
-                <AvatarImage src={ownerImage} alt={ownerName} />
+                <AvatarImage src={clientImage} alt={clientName} />
                 <AvatarFallback className="bg-primary text-primary-foreground">
-                  {ownerName.split(' ').map(n => n.charAt(0)).join('')}
+                  {clientName.split(' ').map(n => n.charAt(0)).join('')}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <DialogTitle className="text-lg">{ownerName}</DialogTitle>
-                <p className="text-sm text-muted-foreground">About {petName}</p>
+                <DialogTitle className="text-lg">{clientName}</DialogTitle>
+                <p className="text-sm text-muted-foreground">About {patientName}</p>
               </div>
             </div>
             
@@ -156,7 +156,7 @@ export function MessagingPopup({ ownerName, ownerImage, petName }: MessagingPopu
             </div>
             {messagingEnabled && (
               <Badge variant="secondary" className="text-xs">
-                Owner can send messages
+                Client can send messages
               </Badge>
             )}
           </div>
@@ -181,7 +181,7 @@ export function MessagingPopup({ ownerName, ownerImage, petName }: MessagingPopu
                         <span className="text-xs text-muted-foreground">
                           {formatTime(message.timestamp)}
                         </span>
-                        {!message.read && message.senderType === 'owner' && (
+                        {!message.read && message.senderType === 'client' && (
                           <div className="w-2 h-2 bg-primary rounded-full" />
                         )}
                       </div>
@@ -219,7 +219,7 @@ export function MessagingPopup({ ownerName, ownerImage, petName }: MessagingPopu
               <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
               <h3 className="text-lg font-medium mb-2">Messaging Disabled</h3>
               <p className="text-muted-foreground">
-                Enable messaging to allow communication with the pet owner about this appointment.
+                Enable messaging to allow communication with the client about this appointment.
               </p>
             </div>
           </div>

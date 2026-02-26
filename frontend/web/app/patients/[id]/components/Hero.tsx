@@ -4,12 +4,12 @@ import { Avatar, AvatarImage, AvatarFallback } from "../../../../components/ui/a
 import { Badge } from "../../../../components/ui/badge";
 import { Button } from "../../../../components/ui/button";
 import { Separator } from "../../../../components/ui/separator";
-import type { PetData } from "./types";
+import type { PatientData } from "./types";
 
 interface HeroProps {
-  pet: PetData;
+  patient: PatientData;
   onEdit?: () => void;
-  onEditOwner?: () => void;
+  onEditClient?: () => void;
 }
 
 // Calculate age from date of birth
@@ -64,20 +64,20 @@ const getSpeciesLabel = (species: string | null | undefined) => {
   return normalizedSpecies.charAt(0).toUpperCase() + normalizedSpecies.slice(1);
 };
 
-export function Hero({ pet, onEdit, onEditOwner }: HeroProps) {
-  const SpeciesIcon = getSpeciesIcon(pet.species);
-  const SexIcon = getSexIcon(pet.biologicalSex);
+export function Hero({ patient, onEdit, onEditClient }: HeroProps) {
+  const SpeciesIcon = getSpeciesIcon(patient.species);
+  const SexIcon = getSexIcon(patient.biologicalSex);
   
   return (
     <Card className="overflow-hidden">
       <div className="p-8">
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Pet Section */}
+          {/* Patient Section */}
           <div className="flex-1 lg:flex-[2] flex flex-col">
             <div className="flex flex-col lg:flex-row items-center lg:items-start gap-6">
               {/* Avatar */}
               <Avatar className="h-32 w-32 border-4 border-background shadow-xl flex-shrink-0">
-                <AvatarImage src={pet.imageUrl || ''} alt={pet.name} className="object-cover" />
+                <AvatarImage src={patient.imageUrl || ''} alt={patient.name} className="object-cover" />
                 <AvatarFallback className="text-4xl bg-primary/20 flex items-center justify-center">
                   <SpeciesIcon className="h-12 w-12 text-primary" />
                 </AvatarFallback>
@@ -86,7 +86,7 @@ export function Hero({ pet, onEdit, onEditOwner }: HeroProps) {
               {/* Basic Info */}
               <div className="flex-1 text-center lg:text-left min-w-0">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
-                  <h1 className="text-4xl font-bold text-primary">{pet.name}</h1>
+                  <h1 className="text-4xl font-bold text-primary">{patient.name}</h1>
                   {onEdit && (
                     <Button variant="outline" size="sm" onClick={onEdit} className="hidden lg:flex">
                       <Pencil className="h-4 w-4 mr-1" />
@@ -95,19 +95,19 @@ export function Hero({ pet, onEdit, onEditOwner }: HeroProps) {
                   )}
                 </div>
                 <p className="text-lg text-muted-foreground mb-4">
-                  {calculateAge(pet.dateOfBirth)} old{pet.biologicalSex ? ` • ${pet.biologicalSex.charAt(0).toUpperCase() + pet.biologicalSex.slice(1)}` : ''}
+                  {calculateAge(patient.dateOfBirth)} old{patient.biologicalSex ? ` • ${patient.biologicalSex.charAt(0).toUpperCase() + patient.biologicalSex.slice(1)}` : ''}
                 </p>
                 
                 {/* Quick Stats */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {pet.species && (
+                  {patient.species && (
                     <div className="flex items-center gap-3 text-base">
                       <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
                         <SpeciesIcon className="h-5 w-5 text-primary" />
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Species</p>
-                        <p className="font-medium text-base">{getSpeciesLabel(pet.species)}</p>
+                        <p className="font-medium text-base">{getSpeciesLabel(patient.species)}</p>
                       </div>
                     </div>
                   )}
@@ -118,18 +118,18 @@ export function Hero({ pet, onEdit, onEditOwner }: HeroProps) {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Breed</p>
-                      <p className="font-medium text-base">{pet.breed || 'Unknown'}</p>
+                      <p className="font-medium text-base">{patient.breed || 'Unknown'}</p>
                     </div>
                   </div>
                   
-                  {pet.biologicalSex && (
+                  {patient.biologicalSex && (
                     <div className="flex items-center gap-3 text-base">
                       <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
                         <SexIcon className="h-5 w-5 text-primary" />
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Sex</p>
-                        <p className="font-medium text-base">{getSexLabel(pet.biologicalSex)}</p>
+                        <p className="font-medium text-base">{getSexLabel(patient.biologicalSex)}</p>
                       </div>
                     </div>
                   )}
@@ -141,21 +141,21 @@ export function Hero({ pet, onEdit, onEditOwner }: HeroProps) {
                     <div>
                       <p className="text-sm text-muted-foreground">Date of Birth</p>
                       <p className="font-medium text-base">
-                        {pet.dateOfBirth 
-                          ? new Date(pet.dateOfBirth).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                        {patient.dateOfBirth 
+                          ? new Date(patient.dateOfBirth).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                           : 'Unknown'}
                       </p>
                     </div>
                   </div>
                   
-                  {pet.weight && (
+                  {patient.weight && (
                     <div className="flex items-center gap-3 text-base">
                       <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
                         <Weight className="h-5 w-5 text-primary" />
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Weight</p>
-                        <p className="font-medium text-base">{pet.weight} lbs</p>
+                        <p className="font-medium text-base">{patient.weight} lbs</p>
                       </div>
                     </div>
                   )}
@@ -166,15 +166,15 @@ export function Hero({ pet, onEdit, onEditOwner }: HeroProps) {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Spayed/Neutered</p>
-                      <p className="font-medium text-base">{pet.spayedNeutered ? 'Yes' : 'No'}</p>
+                      <p className="font-medium text-base">{patient.spayedNeutered ? 'Yes' : 'No'}</p>
                     </div>
                   </div>
                 </div>
                 
                 {/* Allergies & Dietary Restrictions */}
-                {((pet.allergies && pet.allergies.length > 0) || (pet.dietaryRestrictions && pet.dietaryRestrictions.length > 0)) && (
+                {((patient.allergies && patient.allergies.length > 0) || (patient.dietaryRestrictions && patient.dietaryRestrictions.length > 0)) && (
                   <div className="mt-6 space-y-4">
-                    {pet.allergies && pet.allergies.length > 0 && (
+                    {patient.allergies && patient.allergies.length > 0 && (
                       <div className="flex items-start gap-3">
                         <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
                           <AlertTriangle className="h-5 w-5 text-red-600" />
@@ -182,7 +182,7 @@ export function Hero({ pet, onEdit, onEditOwner }: HeroProps) {
                         <div>
                           <p className="text-sm text-muted-foreground mb-1">Allergies</p>
                           <div className="flex flex-wrap gap-1">
-                            {pet.allergies.map((allergy) => (
+                            {patient.allergies.map((allergy) => (
                               <Badge key={allergy} variant="destructive" className="text-xs">
                                 {allergy}
                               </Badge>
@@ -192,7 +192,7 @@ export function Hero({ pet, onEdit, onEditOwner }: HeroProps) {
                       </div>
                     )}
                     
-                    {pet.dietaryRestrictions && pet.dietaryRestrictions.length > 0 && (
+                    {patient.dietaryRestrictions && patient.dietaryRestrictions.length > 0 && (
                       <div className="flex items-start gap-3">
                         <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
                           <Utensils className="h-5 w-5 text-amber-600" />
@@ -200,7 +200,7 @@ export function Hero({ pet, onEdit, onEditOwner }: HeroProps) {
                         <div>
                           <p className="text-sm text-muted-foreground mb-1">Dietary Restrictions</p>
                           <div className="flex flex-wrap gap-1">
-                            {pet.dietaryRestrictions.map((restriction) => (
+                            {patient.dietaryRestrictions.map((restriction) => (
                               <Badge key={restriction} variant="secondary" className="text-xs bg-amber-100 text-amber-800">
                                 {restriction}
                               </Badge>
@@ -226,31 +226,31 @@ export function Hero({ pet, onEdit, onEditOwner }: HeroProps) {
           )}
           
           {/* Divider */}
-          {pet.owner && (
+          {patient.client && (
             <Separator orientation="vertical" className="hidden lg:block h-auto" />
           )}
           
-          {/* Owner Section */}
-          {pet.owner && (
+          {/* Client Section */}
+          {patient.client && (
             <div className="w-full lg:flex-1 lg:max-w-md">
               <div className="space-y-3">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
-                      {pet.owner.imageUrl && (
-                        <AvatarImage src={pet.owner.imageUrl} alt={pet.owner.name} />
+                      {patient.client.imageUrl && (
+                        <AvatarImage src={patient.client.imageUrl} alt={patient.client.name} />
                       )}
                       <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                        {pet.owner.name.split(' ').map(n => n.charAt(0)).join('')}
+                        {patient.client.name.split(' ').map(n => n.charAt(0)).join('')}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex items-center gap-2">
-                      <h4 className="text-xl font-semibold">{pet.owner.name}</h4>
-                      <Badge>Owner</Badge>
+                      <h4 className="text-xl font-semibold">{patient.client.name}</h4>
+                      <Badge>Client</Badge>
                     </div>
                   </div>
-                  {onEditOwner && (
-                    <Button variant="outline" size="sm" onClick={onEditOwner}>
+                  {onEditClient && (
+                    <Button variant="outline" size="sm" onClick={onEditClient}>
                       <Pencil className="h-4 w-4 mr-1" />
                       Edit
                     </Button>
@@ -266,30 +266,30 @@ export function Hero({ pet, onEdit, onEditOwner }: HeroProps) {
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">Email</p>
-                      <p className="font-medium truncate">{pet.owner.email || 'N/A'}</p>
+                      <p className="font-medium truncate">{patient.client.email || 'N/A'}</p>
                     </div>
                   </div>
                   
-                  {pet.owner.phone && (
+                  {patient.client.phone && (
                     <div className="flex items-center gap-3 text-sm">
                       <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                         <Phone className="h-4 w-4 text-primary" />
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Phone</p>
-                        <p className="font-medium">{pet.owner.phone}</p>
+                        <p className="font-medium">{patient.client.phone}</p>
                       </div>
                     </div>
                   )}
                   
-                  {pet.owner.address && (
+                  {patient.client.address && (
                     <div className="flex items-center gap-3 text-sm">
                       <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                         <MapPin className="h-4 w-4 text-primary" />
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Address</p>
-                        <p className="font-medium">{pet.owner.address}</p>
+                        <p className="font-medium">{patient.client.address}</p>
                       </div>
                     </div>
                   )}

@@ -1,6 +1,6 @@
 import AppLayout from "../../components/AppLayout";
 
-export default function PetProfileLayout({
+export default function PatientProfileLayout({
   children,
 }: {
   children: React.ReactNode;

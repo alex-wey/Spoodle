@@ -18,20 +18,20 @@ import {
 } from "../../../../components/ui/table";
 import { downloadDocument } from "@/lib/api";
 import type { MedicalRecord } from "./types";
-import { PetRecordUploadDialog } from "./PetRecordUploadDialog";
+import { PatientRecordUploadDialog } from "./PatientRecordUploadDialog";
 import { useSessionContext } from "@/components/SessionContext";
 
-interface PetRecordsSectionProps {
-  petRecords: MedicalRecord[];
+interface PatientRecordsSectionProps {
+  patientRecords: MedicalRecord[];
   loading: boolean;
   error: string | null;
   onError: (error: string) => void;
-  petId: string;
+  patientId: string;
   onRefresh?: () => void;
 }
 
-// Get pet record type colors
-const getPetRecordTypeColors = (category: string) => {
+// Get patient record type colors
+const getPatientRecordTypeColors = (category: string) => {
   const colors: { [key: string]: string } = {
     "veterinary_notes": "bg-indigo-100 text-indigo-800",
     "diagnostic_reports": "bg-blue-100 text-blue-800",
@@ -54,25 +54,25 @@ const formatCategoryName = (category: string) => {
   return names[category] || category;
 };
 
-export function PetRecordsSection({ petRecords, loading, error, onError, petId, onRefresh }: PetRecordsSectionProps) {
+export function PatientRecordsSection({ patientRecords, loading, error, onError, patientId, onRefresh }: PatientRecordsSectionProps) {
   const { getToken } = useAuth();
   const { clinicId } = useSessionContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
-  // Filter pet records based on search and filter
-  const filteredPetRecords = petRecords.filter(petRecord => {
-    const matchesSearch = petRecord.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          petRecord.category.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filterType === "all" || petRecord.category === filterType;
+  // Filter patient records based on search and filter
+  const filteredPatientRecords = patientRecords.filter(patientRecord => {
+    const matchesSearch = patientRecord.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          patientRecord.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filterType === "all" || patientRecord.category === filterType;
     return matchesSearch && matchesFilter;
   });
 
   // Get unique categories for filter dropdown
-  const uniqueCategories = Array.from(new Set(petRecords.map(r => r.category)));
+  const uniqueCategories = Array.from(new Set(patientRecords.map(r => r.category)));
 
-  const handleDownload = async (petRecordId: string) => {
+  const handleDownload = async (patientRecordId: string) => {
     try {
       const token = await getToken();
       if (!token) {
@@ -80,30 +80,30 @@ export function PetRecordsSection({ petRecords, loading, error, onError, petId, 
         return;
       }
       
-      const result = await downloadDocument(petRecordId, token, clinicId);
+      const result = await downloadDocument(patientRecordId, token, clinicId);
       
       if (result.success && result.data?.url) {
         // Open the presigned URL in a new tab
         window.open(result.data.url, '_blank');
       } else {
-        onError(result.message || result.error || 'Failed to download pet record');
+        onError(result.message || result.error || 'Failed to download patient record');
       }
     } catch (err) {
-      console.error('Error downloading pet record:', err);
-      onError('An error occurred while downloading the pet record');
+      console.error('Error downloading patient record:', err);
+      onError('An error occurred while downloading the patient record');
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Pet Records Table */}
+      {/* Patient Records Table */}
       <Card>
         <CardHeader>
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <CardTitle>Pet Records</CardTitle>
-                <Badge variant="default">{filteredPetRecords.length}</Badge>
+                <CardTitle>Patient Records</CardTitle>
+                <Badge variant="default">{filteredPatientRecords.length}</Badge>
               </div>
               <Button 
                 size="icon"
@@ -117,7 +117,7 @@ export function PetRecordsSection({ petRecords, loading, error, onError, petId, 
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search pet records..."
+                  placeholder="Search patient records..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -150,10 +150,10 @@ export function PetRecordsSection({ petRecords, loading, error, onError, petId, 
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading pet records...</p>
+                <p className="text-muted-foreground">Loading patient records...</p>
               </div>
             </div>
-          ) : !error && filteredPetRecords.length > 0 ? (
+          ) : !error && filteredPatientRecords.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -164,20 +164,20 @@ export function PetRecordsSection({ petRecords, loading, error, onError, petId, 
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPetRecords.map((petRecord) => (
-                  <TableRow key={petRecord.id}>
-                    <TableCell className="font-medium">{petRecord.fileName}</TableCell>
+                {filteredPatientRecords.map((patientRecord) => (
+                  <TableRow key={patientRecord.id}>
+                    <TableCell className="font-medium">{patientRecord.fileName}</TableCell>
                     <TableCell>
-                      <Badge className={getPetRecordTypeColors(petRecord.category)}>
-                        {formatCategoryName(petRecord.category)}
+                      <Badge className={getPatientRecordTypeColors(patientRecord.category)}>
+                        {formatCategoryName(patientRecord.category)}
                       </Badge>
                     </TableCell>
-                    <TableCell>{new Date(petRecord.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>{new Date(patientRecord.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => handleDownload(petRecord.id)}
+                        onClick={() => handleDownload(patientRecord.id)}
                       >
                         <Download className="h-4 w-4 mr-2" />
                         Download
@@ -190,11 +190,11 @@ export function PetRecordsSection({ petRecords, loading, error, onError, petId, 
           ) : !error ? (
             <div className="text-center py-8">
               <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-lg font-medium">No pet records found</p>
+              <p className="text-lg font-medium">No patient records found</p>
               <p className="text-muted-foreground">
                 {searchQuery || filterType !== "all"
                   ? "Try adjusting your search criteria or filters"
-                  : "No pet records have been added yet"
+                  : "No patient records have been added yet"
                 }
               </p>
             </div>
@@ -202,10 +202,10 @@ export function PetRecordsSection({ petRecords, loading, error, onError, petId, 
         </CardContent>
       </Card>
 
-      <PetRecordUploadDialog
+      <PatientRecordUploadDialog
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
-        petId={petId}
+        patientId={patientId}
         onSuccess={onRefresh}
       />
     </div>
