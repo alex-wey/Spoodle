@@ -8,8 +8,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../../../components
 import { Badge } from "../../../../components/ui/badge";
 import { Label } from "../../../../components/ui/label";
 import { Textarea } from "../../../../components/ui/textarea";
-import { ArrowLeft, Calendar, User, FileText, ExternalLink, AlertCircle, Clock, Stethoscope, Dog, Dna, Save, Loader2, StickyNote, ClipboardList } from "lucide-react";
-import { getAppointmentById, updateAppointmentNotes, getFormInvites, getDocumentsByPetAndCategory, downloadDocument } from "../../../../lib/api";
+import { Checkbox } from "../../../../components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../../../components/ui/dialog";
+import { ArrowLeft, Calendar, User, FileText, ExternalLink, AlertCircle, Clock, Stethoscope, Dog, Dna, Save, Loader2, StickyNote, ClipboardList, Send, Plus } from "lucide-react";
+import { getAppointmentById, updateAppointmentNotes, getFormInvites, getDocumentsByPetAndCategory, downloadDocument, createFormInvite } from "../../../../lib/api";
 import { useSessionContext } from "../../../../components/SessionContext";
 import { Alert, AlertDescription } from "../../../../components/ui/alert";
 import type { Appointment as ApiAppointment, Document } from "../../../../lib/types";
@@ -66,6 +75,26 @@ export default function AppointmentDetailView() {
   const [formInvitesLoading, setFormInvitesLoading] = useState(false);
   const [dischargeReports, setDischargeReports] = useState<Document[]>([]);
   const [dischargeReportsLoading, setDischargeReportsLoading] = useState(false);
+  const [sendFormDialogOpen, setSendFormDialogOpen] = useState(false);
+  const [selectedFormUrls, setSelectedFormUrls] = useState<string[]>([]);
+  const [sendingForms, setSendingForms] = useState(false);
+  const [sendFormsError, setSendFormsError] = useState<string | null>(null);
+  const [sendFormsSuccess, setSendFormsSuccess] = useState(false);
+
+  const formOptions = [
+    {
+      label: 'Morning of Surgery Questionnaire',
+      url: 'https://tally.so/r/Y50xYz',
+    },
+    {
+      label: 'Pre-Surgery Instructions',
+      url: 'https://tally.so/r/RGDvYj',
+    },
+    {
+      label: 'Medication Protocol for a Stress-Free Recovery',
+      url: 'https://tally.so/r/xXJ4y5',
+    },
+  ];
 
   // Helper to format time
   const formatTime = (date: Date): string => {
@@ -255,6 +284,91 @@ export default function AppointmentDetailView() {
       setNotesError(err instanceof Error ? err.message : 'Failed to save notes');
     } finally {
       setSavingNotes(false);
+    }
+  };
+
+  const handleFormToggle = (url: string, checked: boolean) => {
+    if (checked) {
+      setSelectedFormUrls(prev => [...prev, url]);
+    } else {
+      setSelectedFormUrls(prev => prev.filter(u => u !== url));
+    }
+  };
+
+  const handleSendForms = async () => {
+    if (!apiAppointment || selectedFormUrls.length === 0) return;
+
+    setSendingForms(true);
+    setSendFormsError(null);
+    setSendFormsSuccess(false);
+
+    try {
+      const token = await getToken();
+      if (!token) {
+        setSendFormsError('Unable to authenticate. Please sign in again.');
+        return;
+      }
+
+      let successCount = 0;
+      let existingCount = 0;
+
+      for (const formUrl of selectedFormUrls) {
+        try {
+          const selectedForm = formOptions.find(form => form.url === formUrl);
+          const formName = selectedForm?.label || 'Form';
+
+          const result = await createFormInvite(
+            formUrl,
+            formName,
+            apiAppointment.petId,
+            token
+          );
+
+          if (result.success) {
+            // Check if form already existed (backend returns message indicating this)
+            if (result.message?.includes('already exists')) {
+              existingCount++;
+            } else {
+              successCount++;
+            }
+          } else {
+            console.warn('Failed to create form invite:', result.error || result.message);
+          }
+        } catch (formError) {
+          console.error('Error creating form invite:', formError);
+        }
+      }
+
+      if (successCount > 0 || existingCount > 0) {
+        setSendFormsSuccess(true);
+        // Refresh form invites list
+        const refreshResult = await getFormInvites(token, clinicId || undefined, apiAppointment.petId);
+        if (refreshResult?.success && refreshResult?.data) {
+          setFormInvites(refreshResult.data);
+        }
+        // Close dialog after short delay
+        setTimeout(() => {
+          setSendFormDialogOpen(false);
+          setSelectedFormUrls([]);
+          setSendFormsSuccess(false);
+        }, 1500);
+      } else {
+        setSendFormsError('Failed to send forms. Please try again.');
+      }
+    } catch (err) {
+      console.error('Send forms error', err);
+      setSendFormsError(err instanceof Error ? err.message : 'Failed to send forms');
+    } finally {
+      setSendingForms(false);
+    }
+  };
+
+  const handleCloseSendFormDialog = () => {
+    if (!sendingForms) {
+      setSendFormDialogOpen(false);
+      setSelectedFormUrls([]);
+      setSendFormsError(null);
+      setSendFormsSuccess(false);
     }
   };
 
@@ -561,10 +675,20 @@ export default function AppointmentDetailView() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => setSendFormDialogOpen(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Send Forms to Patient
+                  </Button>
+
                   {formInvitesLoading ? (
                     <p className="text-sm text-muted-foreground">Loading forms...</p>
                   ) : formInvites.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="space-y-2 pt-2 border-t">
+                      <p className="text-sm font-medium">Sent Forms</p>
                       {formInvites.map((invite) => (
                         <Button
                           key={invite.id}
@@ -581,8 +705,8 @@ export default function AppointmentDetailView() {
                       </p>
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">
-                      No forms assigned to this patient. Forms can be added when creating an appointment.
+                    <p className="text-xs text-muted-foreground">
+                      No forms sent yet. Click &quot;Send Forms to Patient&quot; to send pre-visit forms.
                     </p>
                   )}
 
@@ -653,6 +777,83 @@ export default function AppointmentDetailView() {
             </Card>
           </div>
         </div>
+
+        {/* Send Forms Dialog */}
+        <Dialog open={sendFormDialogOpen} onOpenChange={handleCloseSendFormDialog}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Send Forms to Patient</DialogTitle>
+              <DialogDescription>
+                Select the forms you want to send to {appointment.clientName} for {appointment.patientName}.
+              </DialogDescription>
+            </DialogHeader>
+
+            {sendFormsError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{sendFormsError}</AlertDescription>
+              </Alert>
+            )}
+
+            {sendFormsSuccess && (
+              <Alert>
+                <AlertDescription className="text-green-600">Forms sent successfully!</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="space-y-4 py-4">
+              <div className="space-y-3">
+                <Label>Select Forms</Label>
+                <div className="space-y-2">
+                  {formOptions.map((form) => {
+                    const alreadySent = formInvites.some(invite => invite.formName === form.label);
+                    return (
+                      <div key={form.url} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`send-form-${form.url}`}
+                          checked={selectedFormUrls.includes(form.url)}
+                          onCheckedChange={(checked) => handleFormToggle(form.url, checked === true)}
+                          disabled={sendingForms}
+                        />
+                        <Label
+                          htmlFor={`send-form-${form.url}`}
+                          className="text-sm font-normal cursor-pointer flex-1"
+                        >
+                          {form.label}
+                          {alreadySent && (
+                            <span className="text-xs text-muted-foreground ml-2">(already sent)</span>
+                          )}
+                        </Label>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={handleCloseSendFormDialog} disabled={sendingForms}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSendForms} 
+                disabled={sendingForms || selectedFormUrls.length === 0}
+              >
+                {sendingForms ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    Send Forms
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
     </PageLayout>
   );
 }
