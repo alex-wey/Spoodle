@@ -322,6 +322,7 @@ model FormInvite {
   pet        Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
   petOwner   PetOwner @relation(fields: [petOwnerId], references: [id], onDelete: Cascade)
 
+  @@unique([formName, petId])
   @@index([clinicId])
   @@index([petId])
   @@index([petOwnerId])

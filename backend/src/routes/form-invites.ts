@@ -279,7 +279,56 @@ router.post('/', async (req: Request, res: Response) => {
 
     const formLinkString = formUrl.toString();
 
-    // Create invite in database
+    // Check if invite already exists for this form + pet combination
+    const existingInvite = await prisma.formInvite.findUnique({
+      where: {
+        formName_petId: {
+          formName,
+          petId,
+        },
+      },
+      include: {
+        clinic: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        pet: {
+          select: {
+            id: true,
+            name: true,
+            species: true,
+            breed: true,
+            imageUrl: true,
+          },
+        },
+        petOwner: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (existingInvite) {
+      return res.status(200).json({
+        success: true,
+        data: existingInvite,
+        message: 'Form invite already exists for this patient.',
+        existing: true,
+      });
+    }
+
+    // Create new invite in database
     const invite = await prisma.formInvite.create({
       data: {
         formLink: formLinkString,

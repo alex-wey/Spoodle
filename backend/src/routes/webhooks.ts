@@ -659,26 +659,31 @@ router.post('/tally', async (req: Request, res: Response) => {
         console.error('⚠️ Error creating discharge document:', docErr);
       }
 
-      // Delete form invites for this petOwner (and pet if provided) so submitted forms disappear
-      // Fallback: if petOwnerId is missing but petId is known, delete by petId
-      if (petOwnerId || petId) {
+      // Delete the specific form invite that was completed (match on formName and petId)
+      // Only delete the invite for the specific form that was submitted, not all invites
+      if (petId && form?.title) {
         try {
-          const where: any = {};
-          if (petOwnerId) where.petOwnerId = petOwnerId;
-          if (petId) where.petId = petId;
-
-          const deletedInvites = await prisma.formInvite.deleteMany({ where });
+          // Use the unique constraint (formName, petId) to find and delete the specific invite
+          const deletedInvite = await prisma.formInvite.delete({
+            where: {
+              formName_petId: {
+                formName: form.title,
+                petId: petId,
+              },
+            },
+          });
           
-          if (deletedInvites.count > 0) {
-            console.log(
-              `🗑️  Deleted ${deletedInvites.count} form invite(s)` +
-              (petOwnerId ? ` for petOwner ${petOwnerId}` : '') +
-              (petId ? ` and pet ${petId}` : '')
-            );
+          console.log(
+            `🗑️  Deleted form invite for "${form.title}" and pet ${petId}`
+          );
+        } catch (deleteError: any) {
+          // P2025 = Record not found - this is fine, invite may not exist
+          if (deleteError.code === 'P2025') {
+            console.log(`ℹ️  No form invite found to delete for "${form.title}" and pet ${petId}`);
+          } else {
+            // Log error but don't fail the webhook - form submission is more important
+            console.error('⚠️  Error deleting form invite (non-fatal):', deleteError);
           }
-        } catch (deleteError) {
-          // Log error but don't fail the webhook - form submission is more important
-          console.error('⚠️  Error deleting form invites (non-fatal):', deleteError);
         }
       }
 
