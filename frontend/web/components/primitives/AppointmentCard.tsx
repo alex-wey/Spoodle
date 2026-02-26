@@ -8,10 +8,10 @@ export type AppointmentStatus = "booked" | "pending" | "discharged";
 
 export interface Appointment {
   id: string;
-  petName: string;
-  petImage?: string;
-  petBreed: string;
-  ownerName: string;
+  patientName: string;
+  patientImage?: string;
+  patientBreed: string;
+  clientName: string;
   appointmentType: string;
   time: string;
   isNewClient: boolean;
@@ -70,24 +70,24 @@ export function AppointmentCard({ appointment, onClick }: AppointmentCardProps) 
           </div>
         </div>
 
-        {/* Pet information */}
+        {/* Patient information */}
         <div className="flex items-center gap-3 mb-3">
           <Avatar className="h-12 w-12 border-2 border-primary/20">
-            <AvatarImage src={appointment.petImage} alt={appointment.petName} />
+            <AvatarImage src={appointment.patientImage} alt={appointment.patientName} />
             <AvatarFallback className="bg-gradient-primary text-primary-foreground font-medium">
-              {appointment.petName.charAt(0)}
+              {appointment.patientName.charAt(0)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-card-foreground truncate">{appointment.petName}</h3>
-            <p className="text-sm text-muted-foreground truncate">{appointment.petBreed}</p>
+            <h3 className="font-semibold text-card-foreground truncate">{appointment.patientName}</h3>
+            <p className="text-sm text-muted-foreground truncate">{appointment.patientBreed}</p>
           </div>
         </div>
 
-        {/* Owner information */}
+        {/* Client information */}
         <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
           <User className="w-4 h-4" />
-          <span className="truncate">{appointment.ownerName}</span>
+          <span className="truncate">{appointment.clientName}</span>
         </div>
 
         {/* Appointment details */}

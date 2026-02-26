@@ -160,7 +160,7 @@ export default function SubmissionDetailPage() {
           <div>
             <h2 className="text-3xl font-bold tracking-tight">{submission.form?.title || "Form submission"}</h2>
             <p className="text-muted-foreground">
-              Pet: {submission.pet?.name || "Unknown"} • Owner:{" "}
+              Patient: {submission.pet?.name || "Unknown"} • Client:{" "}
               {submission.petOwner?.user
                 ? `${submission.petOwner.user.firstName} ${submission.petOwner.user.lastName}`.trim()
                 : submission.respondentEmail || "Unknown"}

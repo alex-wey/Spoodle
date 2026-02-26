@@ -24,10 +24,10 @@ import {
 import { Textarea } from "../../../../components/ui/textarea";
 import { uploadDocument } from "@/lib/api";
 
-interface PetRecordUploadDialogProps {
+interface PatientRecordUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  petId: string;
+  patientId: string;
   onSuccess?: () => void;
 }
 
@@ -39,7 +39,7 @@ const categories = [
   { id: 'discharge_reports', title: 'Discharge Reports' },
 ];
 
-export function PetRecordUploadDialog({ open, onOpenChange, petId, onSuccess }: PetRecordUploadDialogProps) {
+export function PatientRecordUploadDialog({ open, onOpenChange, patientId, onSuccess }: PatientRecordUploadDialogProps) {
   const { getToken } = useAuth();
   const [category, setCategory] = useState<string>('');
   const [fileName, setFileName] = useState('');
@@ -84,7 +84,7 @@ export function PetRecordUploadDialog({ open, onOpenChange, petId, onSuccess }: 
 
   const handleSubmit = async () => {
     if (!category) {
-      setError('Please select a pet record category');
+      setError('Please select a patient record category');
       return;
     }
 
@@ -106,7 +106,7 @@ export function PetRecordUploadDialog({ open, onOpenChange, petId, onSuccess }: 
 
       const formData = new FormData();
       formData.append('document', file);
-      formData.append('petId', petId);
+      formData.append('petId', patientId);
       formData.append('category', category);
       if (customFileName.trim()) {
         formData.append('fileName', customFileName.trim());
@@ -124,11 +124,11 @@ export function PetRecordUploadDialog({ open, onOpenChange, petId, onSuccess }: 
           onSuccess();
         }
       } else {
-        setError(result.message || result.error || 'Failed to upload pet record');
+        setError(result.message || result.error || 'Failed to upload patient record');
       }
     } catch (err) {
       console.error('Upload error:', err);
-      setError('An error occurred while uploading the pet record. Please try again.');
+      setError('An error occurred while uploading the patient record. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -145,7 +145,7 @@ export function PetRecordUploadDialog({ open, onOpenChange, petId, onSuccess }: 
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Upload Pet Record</DialogTitle>
+          <DialogTitle>Upload Patient Record</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -158,7 +158,7 @@ export function PetRecordUploadDialog({ open, onOpenChange, petId, onSuccess }: 
 
           {/* Category Selection */}
           <div className="space-y-2">
-            <Label htmlFor="category">Pet Record Category *</Label>
+            <Label htmlFor="category">Patient Record Category *</Label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger id="category">
                 <SelectValue placeholder="Choose a category..." />
@@ -175,7 +175,7 @@ export function PetRecordUploadDialog({ open, onOpenChange, petId, onSuccess }: 
 
           {/* File Picker */}
           <div className="space-y-2">
-            <Label htmlFor="file">Pet Record File *</Label>
+            <Label htmlFor="file">Patient Record File *</Label>
             {file ? (
               <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
                 <FileText className="h-5 w-5 text-primary" />
@@ -253,7 +253,7 @@ export function PetRecordUploadDialog({ open, onOpenChange, petId, onSuccess }: 
             ) : (
               <>
                 <Upload className="h-4 w-4 mr-2" />
-                Upload Pet Record
+                Upload Patient Record
               </>
             )}
           </Button>

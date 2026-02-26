@@ -1,4 +1,4 @@
-export interface PetData {
+export interface PatientData {
   id: string;
   name: string;
   species?: string | null;
@@ -10,7 +10,7 @@ export interface PetData {
   allergies?: string[];
   dietaryRestrictions?: string[];
   imageUrl?: string | null;
-  owner?: {
+  client?: {
     id: string;
     name: string;
     email?: string;
@@ -22,7 +22,7 @@ export interface PetData {
 
 export interface MedicalRecord {
   id: string;
-  petId: string;
+  patientId: string;
   category: string;
   fileName: string;
   filePath?: string;

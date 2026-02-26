@@ -22,9 +22,9 @@ import { getClinicPets } from "@/lib/api";
 import { useSessionContext } from "@/components/SessionContext";
 import type { Pet as ApiPet } from "@/lib/types";
 import PageLayout from "@/components/primitives/PageLayout";
-import { AddEditPetDialog } from "@/components/primitives/AddEditPetDialog";
+import { AddEditPatientDialog } from "@/components/primitives/AddEditPatientDialog";
 
-interface Pet {
+interface Patient {
   id: string;
   name: string;
   imageUrl?: string | null;
@@ -32,7 +32,7 @@ interface Pet {
   breed?: string | null;
   dateOfBirth?: string | null;
   weight?: number | null;
-  owner?: {
+  client?: {
     name: string;
     email?: string;
     phone?: string | null;
@@ -40,26 +40,26 @@ interface Pet {
   } | null;
 }
 
-export default function Records() {
+export default function PatientsView() {
   const router = useRouter();
   const { getToken, isSignedIn } = useAuth();
   const { clinicId, userType } = useSessionContext();
   const [searchQuery, setSearchQuery] = useState("");
-  const [allPets, setAllPets] = useState<Pet[]>([]);
+  const [allPatients, setAllPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAddPetDialog, setShowAddPetDialog] = useState(false);
+  const [showAddPatientDialog, setShowAddPatientDialog] = useState(false);
 
   useEffect(() => {
-    const fetchPets = async () => {
+    const fetchPatients = async () => {
       if (!isSignedIn) {
-        setError('Please sign in to view pets');
+        setError('Please sign in to view patients');
         setLoading(false);
         return;
       }
 
       if (!clinicId) {
-        setError('No clinic selected. Please select a clinic to view pets.');
+        setError('No clinic selected. Please select a clinic to view patients.');
         setLoading(false);
         return;
       }
@@ -75,76 +75,76 @@ export default function Records() {
         const result = await getClinicPets(token, clinicId);
         
         if (result.success && result.data) {
-          // Transform backend pet data to match UI format
-          // Backend now returns pets with owner information included
-          const transformedPets: Pet[] = result.data.map((pet: ApiPet) => ({
-            id: pet.id,
-            name: pet.name,
-            imageUrl: pet.imageUrl,
-            species: pet.species,
-            breed: pet.breed || 'Unknown',
-            dateOfBirth: pet.dateOfBirth,
-            weight: pet.weight,
-            owner: pet.owner || null
+          // Transform backend patient data to match UI format
+          // Backend now returns patients with client information included
+          const transformedPatients: Patient[] = result.data.map((patient: ApiPet) => ({
+            id: patient.id,
+            name: patient.name,
+            imageUrl: patient.imageUrl,
+            species: patient.species,
+            breed: patient.breed || 'Unknown',
+            dateOfBirth: patient.dateOfBirth,
+            weight: patient.weight,
+            client: patient.owner || null
           }));
           
-          setAllPets(transformedPets);
+          setAllPatients(transformedPatients);
           setError(null);
         } else {
-          setError(result.message || result.error || 'Failed to fetch pets');
+          setError(result.message || result.error || 'Failed to fetch patients');
         }
       } catch (err) {
-        console.error('Error fetching pets:', err);
-        setError('An error occurred while fetching pets');
+        console.error('Error fetching patients:', err);
+        setError('An error occurred while fetching patients');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPets();
+    fetchPatients();
   }, [isSignedIn, getToken, clinicId]);
 
-  const filteredPets = allPets.filter(pet => {
-    const matchesSearch = pet.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         pet.owner?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         (pet.species || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         (pet.breed || '').toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredPatients = allPatients.filter(patient => {
+    const matchesSearch = patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         patient.client?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (patient.species || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (patient.breed || '').toLowerCase().includes(searchQuery.toLowerCase());
     
     return matchesSearch;
   });
 
-  const handlePetAdded = (newPet: ApiPet) => {
-    const transformedPet: Pet = {
-      id: newPet.id,
-      name: newPet.name,
-      imageUrl: newPet.imageUrl,
-      species: newPet.species,
-      breed: newPet.breed || 'Unknown',
-      dateOfBirth: newPet.dateOfBirth,
-      weight: newPet.weight,
-      owner: newPet.owner || null
+  const handlePatientAdded = (newPatient: ApiPet) => {
+    const transformedPatient: Patient = {
+      id: newPatient.id,
+      name: newPatient.name,
+      imageUrl: newPatient.imageUrl,
+      species: newPatient.species,
+      breed: newPatient.breed || 'Unknown',
+      dateOfBirth: newPatient.dateOfBirth,
+      weight: newPatient.weight,
+      client: newPatient.owner || null
     };
-    setAllPets((prevPets) => [transformedPet, ...prevPets]);
-    setShowAddPetDialog(false);
+    setAllPatients((prevPatients) => [transformedPatient, ...prevPatients]);
+    setShowAddPatientDialog(false);
   };
 
   return (
     <PageLayout
-      title="Pets"
-      description="View all pets and their medical records"
+      title="Patients"
+      description="View all patients and their medical records"
     >
-      {/* Pets Table */}
+      {/* Patients Table */}
       <Card>
         <CardHeader>
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <CardTitle>All Pets</CardTitle>
-                <Badge variant="default">{loading ? '...' : filteredPets.length}</Badge>
+                <CardTitle>All Patients</CardTitle>
+                <Badge variant="default">{loading ? '...' : filteredPatients.length}</Badge>
               </div>
-              <Button onClick={() => setShowAddPetDialog(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Pet
+              <Button onClick={() => setShowAddPatientDialog(true)}>
+                <Plus className="h-4 w-4" />
+                New Patient
               </Button>
             </div>
             {/* Search */}
@@ -152,7 +152,7 @@ export default function Records() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by pet name, owner, species, or breed..."
+                  placeholder="Search by patient name, client, species, or breed..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -172,7 +172,7 @@ export default function Records() {
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading pets...</p>
+                <p className="text-muted-foreground">Loading patients...</p>
               </div>
             </div>
           ) : !error ? (
@@ -180,8 +180,8 @@ export default function Records() {
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead>Pet Name</TableHead>
-                    <TableHead>Owner</TableHead>
+                    <TableHead>Patient Name</TableHead>
+                    <TableHead>Client</TableHead>
                     <TableHead>Species</TableHead>
                     <TableHead>Breed</TableHead>
                     <TableHead>Date of Birth</TableHead>
@@ -190,37 +190,37 @@ export default function Records() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredPets.map((pet) => (
+                  {filteredPatients.map((patient) => (
                     <TableRow 
-                      key={pet.id}
+                      key={patient.id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => router.push(`/pets/${pet.id}`)}
+                      onClick={() => router.push(`/pets/${patient.id}`)}
                     >
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={pet.imageUrl || ''} alt={pet.name} />
-                            <AvatarFallback>{pet.name.charAt(0)}</AvatarFallback>
+                            <AvatarImage src={patient.imageUrl || ''} alt={patient.name} />
+                            <AvatarFallback>{patient.name.charAt(0)}</AvatarFallback>
                           </Avatar>
-                          <span className="font-medium">{pet.name}</span>
+                          <span className="font-medium">{patient.name}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{pet.owner?.name || 'Unknown Owner'}</TableCell>
-                      <TableCell>{pet.species || 'N/A'}</TableCell>
-                      <TableCell>{pet.breed || 'Unknown'}</TableCell>
+                      <TableCell>{patient.client?.name || 'Unknown Client'}</TableCell>
+                      <TableCell>{patient.species || 'N/A'}</TableCell>
+                      <TableCell>{patient.breed || 'Unknown'}</TableCell>
                       <TableCell>
-                        {pet.dateOfBirth 
-                          ? new Date(pet.dateOfBirth).toLocaleDateString()
+                        {patient.dateOfBirth 
+                          ? new Date(patient.dateOfBirth).toLocaleDateString()
                           : 'N/A'}
                       </TableCell>
                       <TableCell>
-                        {pet.weight ? `${pet.weight} lbs` : 'N/A'}
+                        {patient.weight ? `${patient.weight} lbs` : 'N/A'}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => router.push(`/pets/${pet.id}?tab=records`)}
+                          onClick={() => router.push(`/pets/${patient.id}?tab=records`)}
                         >
                           <FileText className="h-4 w-4 mr-2" />
                           View Records
@@ -231,14 +231,14 @@ export default function Records() {
                 </TableBody>
               </Table>
               
-              {filteredPets.length === 0 && !loading && (
+              {filteredPatients.length === 0 && !loading && (
                 <div className="text-center py-8">
                   <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-lg font-medium">No pets found</p>
+                  <p className="text-lg font-medium">No patients found</p>
                   <p className="text-muted-foreground">
                     {searchQuery 
                       ? "Try adjusting your search criteria"
-                      : "No pets have been added yet"
+                      : "No patients have been added yet"
                     }
                   </p>
                 </div>
@@ -248,10 +248,10 @@ export default function Records() {
         </CardContent>
       </Card>
 
-      <AddEditPetDialog
-        open={showAddPetDialog}
-        onOpenChange={setShowAddPetDialog}
-        onSuccess={handlePetAdded}
+      <AddEditPatientDialog
+        open={showAddPatientDialog}
+        onOpenChange={setShowAddPatientDialog}
+        onSuccess={handlePatientAdded}
         isStaff={userType === 'staff'}
         clinicId={clinicId}
       />

@@ -25,7 +25,7 @@ import { AlertCircle, Loader2, Plus, UserPlus, X } from 'lucide-react';
 import { createPet, getPetOwners, createPetOwner, updatePet, type CreatePetData, type UpdatePetData, type PetOwner } from '@/lib/api';
 import type { Pet } from '@/lib/types';
 
-export interface PetDialogPet {
+export interface PatientDialogPatient {
   id: string;
   name: string;
   species?: string | null;
@@ -38,14 +38,14 @@ export interface PetDialogPet {
   dietaryRestrictions?: string[];
 }
 
-export interface AddEditPetDialogProps {
+export interface AddEditPatientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess?: (pet: Pet) => void;
+  onSuccess?: (patient: Pet) => void;
   isStaff?: boolean;
   clinicId?: string | null;
-  pet?: PetDialogPet | null;
-  onEditSuccess?: (updatedPet: PetDialogPet) => void;
+  patient?: PatientDialogPatient | null;
+  onEditSuccess?: (updatedPatient: PatientDialogPatient) => void;
 }
 
 const speciesOptions = [
@@ -66,17 +66,17 @@ const biologicalSexOptions = [
   { value: 'Unknown', label: 'Unknown' },
 ];
 
-export function AddEditPetDialog({
+export function AddEditPatientDialog({
   open,
   onOpenChange,
   onSuccess,
   isStaff = false,
   clinicId,
-  pet,
+  patient,
   onEditSuccess,
-}: AddEditPetDialogProps) {
+}: AddEditPatientDialogProps) {
   const { getToken } = useAuth();
-  const isEditMode = !!pet;
+  const isEditMode = !!patient;
   
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,58 +94,58 @@ export function AddEditPetDialog({
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
   const [dietaryInput, setDietaryInput] = useState('');
   
-  // Owner selection (staff only, add mode only)
-  const [owners, setOwners] = useState<PetOwner[]>([]);
-  const [loadingOwners, setLoadingOwners] = useState(false);
-  const [selectedOwnerId, setSelectedOwnerId] = useState('');
-  const [showNewOwnerForm, setShowNewOwnerForm] = useState(false);
+  // Client selection (staff only, add mode only)
+  const [clients, setClients] = useState<PetOwner[]>([]);
+  const [loadingClients, setLoadingClients] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState('');
+  const [showNewClientForm, setShowNewClientForm] = useState(false);
   
-  // New owner form fields
-  const [ownerFirstName, setOwnerFirstName] = useState('');
-  const [ownerLastName, setOwnerLastName] = useState('');
-  const [ownerEmail, setOwnerEmail] = useState('');
-  const [ownerPhone, setOwnerPhone] = useState('');
-  const [creatingOwner, setCreatingOwner] = useState(false);
+  // New client form fields
+  const [clientFirstName, setClientFirstName] = useState('');
+  const [clientLastName, setClientLastName] = useState('');
+  const [clientEmail, setClientEmail] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [creatingClient, setCreatingClient] = useState(false);
 
-  // Load owners when dialog opens (staff only, add mode only)
+  // Load clients when dialog opens (staff only, add mode only)
   useEffect(() => {
     if (open && isStaff && !isEditMode) {
-      loadOwners();
+      loadClients();
     }
   }, [open, isStaff, isEditMode]);
 
   // Populate form when editing
   useEffect(() => {
-    if (open && pet) {
-      setName(pet.name);
-      setSpecies(pet.species || 'Dog');
-      setBreed(pet.breed || '');
-      setBiologicalSex(pet.biologicalSex || '');
-      setDateOfBirth(pet.dateOfBirth ? pet.dateOfBirth.split('T')[0] : '');
-      setWeight(pet.weight?.toString() || '');
-      setSpayedNeutered(pet.spayedNeutered === true ? 'yes' : pet.spayedNeutered === false ? 'no' : '');
-      setAllergies(pet.allergies || []);
-      setDietaryRestrictions(pet.dietaryRestrictions || []);
+    if (open && patient) {
+      setName(patient.name);
+      setSpecies(patient.species || 'Dog');
+      setBreed(patient.breed || '');
+      setBiologicalSex(patient.biologicalSex || '');
+      setDateOfBirth(patient.dateOfBirth ? patient.dateOfBirth.split('T')[0] : '');
+      setWeight(patient.weight?.toString() || '');
+      setSpayedNeutered(patient.spayedNeutered === true ? 'yes' : patient.spayedNeutered === false ? 'no' : '');
+      setAllergies(patient.allergies || []);
+      setDietaryRestrictions(patient.dietaryRestrictions || []);
       setAllergyInput('');
       setDietaryInput('');
       setError(null);
     }
-  }, [open, pet]);
+  }, [open, patient]);
 
-  const loadOwners = async () => {
-    setLoadingOwners(true);
+  const loadClients = async () => {
+    setLoadingClients(true);
     try {
       const token = await getToken();
       if (!token) return;
       
       const result = await getPetOwners(token, clinicId);
       if (result.success && result.data) {
-        setOwners(result.data);
+        setClients(result.data);
       }
     } catch (err) {
-      console.error('Error loading owners:', err);
+      console.error('Error loading clients:', err);
     } finally {
-      setLoadingOwners(false);
+      setLoadingClients(false);
     }
   };
 
@@ -161,12 +161,12 @@ export function AddEditPetDialog({
     setAllergyInput('');
     setDietaryRestrictions([]);
     setDietaryInput('');
-    setSelectedOwnerId('');
-    setShowNewOwnerForm(false);
-    setOwnerFirstName('');
-    setOwnerLastName('');
-    setOwnerEmail('');
-    setOwnerPhone('');
+    setSelectedClientId('');
+    setShowNewClientForm(false);
+    setClientFirstName('');
+    setClientLastName('');
+    setClientEmail('');
+    setClientPhone('');
     setError(null);
   };
 
@@ -195,7 +195,7 @@ export function AddEditPetDialog({
   };
 
   const handleClose = () => {
-    if (!saving && !creatingOwner) {
+    if (!saving && !creatingClient) {
       if (!isEditMode) {
         resetForm();
       }
@@ -203,47 +203,47 @@ export function AddEditPetDialog({
     }
   };
 
-  const handleCreateOwner = async () => {
-    if (!ownerFirstName.trim() || !ownerLastName.trim()) {
-      setError('Owner first name and last name are required');
+  const handleCreateClient = async () => {
+    if (!clientFirstName.trim() || !clientLastName.trim()) {
+      setError('Client first name and last name are required');
       return;
     }
 
-    setCreatingOwner(true);
+    setCreatingClient(true);
     setError(null);
 
     try {
       const token = await getToken();
       if (!token) {
         setError('Unable to authenticate. Please try signing in again.');
-        setCreatingOwner(false);
+        setCreatingClient(false);
         return;
       }
 
       const result = await createPetOwner({
-        firstName: ownerFirstName.trim(),
-        lastName: ownerLastName.trim(),
-        email: ownerEmail.trim() || null,
-        phone: ownerPhone.trim() || null,
+        firstName: clientFirstName.trim(),
+        lastName: clientLastName.trim(),
+        email: clientEmail.trim() || null,
+        phone: clientPhone.trim() || null,
       }, token, clinicId);
 
       if (result.success && result.data) {
-        setOwners(prev => [result.data!, ...prev]);
-        setSelectedOwnerId(result.data.id);
-        setShowNewOwnerForm(false);
-        setOwnerFirstName('');
-        setOwnerLastName('');
-        setOwnerEmail('');
-        setOwnerPhone('');
+        setClients(prev => [result.data!, ...prev]);
+        setSelectedClientId(result.data.id);
+        setShowNewClientForm(false);
+        setClientFirstName('');
+        setClientLastName('');
+        setClientEmail('');
+        setClientPhone('');
       } else {
-        setError(result.error || result.message || 'Failed to create owner');
+        setError(result.error || result.message || 'Failed to create client');
       }
     } catch (err: unknown) {
-      console.error('Error creating owner:', err);
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred while creating the owner';
+      console.error('Error creating client:', err);
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred while creating the client';
       setError(errorMessage);
     } finally {
-      setCreatingOwner(false);
+      setCreatingClient(false);
     }
   };
 
@@ -251,13 +251,13 @@ export function AddEditPetDialog({
     e.preventDefault();
     
     if (!name.trim()) {
-      setError('Pet name is required');
+      setError('Patient name is required');
       return;
     }
 
-    // Staff must select an owner (add mode only)
-    if (!isEditMode && isStaff && !selectedOwnerId) {
-      setError('Please select an owner for this pet');
+    // Staff must select a client (add mode only)
+    if (!isEditMode && isStaff && !selectedClientId) {
+      setError('Please select a client for this patient');
       return;
     }
 
@@ -272,8 +272,8 @@ export function AddEditPetDialog({
         return;
       }
 
-      if (isEditMode && pet) {
-        // Edit mode - update existing pet
+      if (isEditMode && patient) {
+        // Edit mode - update existing patient
         const updateData: UpdatePetData = {
           name: name.trim(),
           species,
@@ -286,11 +286,11 @@ export function AddEditPetDialog({
           dietaryRestrictions,
         };
 
-        const result = await updatePet(pet.id, updateData, token, clinicId);
+        const result = await updatePet(patient.id, updateData, token, clinicId);
 
         if (result.success && result.data) {
-          const updatedPet: PetDialogPet = {
-            ...pet,
+          const updatedPatient: PatientDialogPatient = {
+            ...patient,
             name: result.data.name,
             species: result.data.species,
             breed: result.data.breed,
@@ -302,14 +302,14 @@ export function AddEditPetDialog({
             dietaryRestrictions: result.data.dietaryRestrictions || [],
           };
           if (onEditSuccess) {
-            onEditSuccess(updatedPet);
+            onEditSuccess(updatedPatient);
           }
           onOpenChange(false);
         } else {
-          setError(result.error || result.message || 'Failed to update pet');
+          setError(result.error || result.message || 'Failed to update patient');
         }
       } else {
-        // Add mode - create new pet
+        // Add mode - create new patient
         const petData: CreatePetData = {
           name: name.trim(),
           species,
@@ -320,7 +320,7 @@ export function AddEditPetDialog({
           spayedNeutered: spayedNeutered === 'yes',
           allergies,
           dietaryRestrictions,
-          ...(isStaff && selectedOwnerId ? { ownerId: selectedOwnerId } : {}),
+          ...(isStaff && selectedClientId ? { ownerId: selectedClientId } : {}),
         };
 
         const result = await createPet(petData, token);
@@ -332,12 +332,12 @@ export function AddEditPetDialog({
           resetForm();
           onOpenChange(false);
         } else {
-          setError(result.error || result.message || 'Failed to create pet');
+          setError(result.error || result.message || 'Failed to create patient');
         }
       }
     } catch (err: unknown) {
-      console.error(`Error ${isEditMode ? 'updating' : 'creating'} pet:`, err);
-      const errorMessage = err instanceof Error ? err.message : `An error occurred while ${isEditMode ? 'updating' : 'creating'} the pet`;
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} patient:`, err);
+      const errorMessage = err instanceof Error ? err.message : `An error occurred while ${isEditMode ? 'updating' : 'creating'} the patient`;
       setError(errorMessage);
     } finally {
       setSaving(false);
@@ -348,11 +348,11 @@ export function AddEditPetDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? 'Edit Pet' : 'Add New Pet'}</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Edit Patient' : 'Add New Patient'}</DialogTitle>
           <DialogDescription>
             {isEditMode 
-              ? `Update ${pet?.name}'s information.`
-              : "Enter the pet's information to add them to the system."
+              ? `Update ${patient?.name}'s information.`
+              : "Enter the patient's information to add them to the system."
             }
           </DialogDescription>
         </DialogHeader>
@@ -367,49 +367,49 @@ export function AddEditPetDialog({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Owner Selection (Staff Only, Add Mode Only) */}
+          {/* Client Selection (Staff Only, Add Mode Only) */}
           {isStaff && !isEditMode && (
             <div className="space-y-3 pb-3 border-b">
-              {!showNewOwnerForm ? (
+              {!showNewClientForm ? (
                 <>
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="owner">Pet Owner *</Label>
+                    <Label htmlFor="client">Client *</Label>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       className="h-auto py-1 px-2 text-xs"
-                      onClick={() => setShowNewOwnerForm(true)}
+                      onClick={() => setShowNewClientForm(true)}
                     >
                       <UserPlus className="h-3 w-3 mr-1" />
-                      New Owner
+                      New Client
                     </Button>
                   </div>
                   <Select 
-                    value={selectedOwnerId} 
-                    onValueChange={setSelectedOwnerId}
-                    disabled={loadingOwners}
+                    value={selectedClientId} 
+                    onValueChange={setSelectedClientId}
+                    disabled={loadingClients}
                   >
-                    <SelectTrigger id="owner">
-                      <SelectValue placeholder={loadingOwners ? "Loading owners..." : "Select owner"} />
+                    <SelectTrigger id="client">
+                      <SelectValue placeholder={loadingClients ? "Loading clients..." : "Select client"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {owners.map((owner) => (
-                        <SelectItem key={owner.id} value={owner.id}>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
                           <div className="flex items-center gap-2">
-                            <span>{owner.name}</span>
-                            {owner.email && (
-                              <span className="text-xs text-muted-foreground">({owner.email})</span>
+                            <span>{client.name}</span>
+                            {client.email && (
+                              <span className="text-xs text-muted-foreground">({client.email})</span>
                             )}
-                            {!owner.hasClerkAccount && (
+                            {!client.hasClerkAccount && (
                               <span className="text-xs text-amber-600">(Not registered)</span>
                             )}
                           </div>
                         </SelectItem>
                       ))}
-                      {owners.length === 0 && !loadingOwners && (
+                      {clients.length === 0 && !loadingClients && (
                         <SelectItem value="__none__" disabled>
-                          No owners found. Create one first.
+                          No clients found. Create one first.
                         </SelectItem>
                       )}
                     </SelectContent>
@@ -418,34 +418,34 @@ export function AddEditPetDialog({
               ) : (
                 <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
                   <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Create New Owner</Label>
+                    <Label className="text-sm font-medium">Create New Client</Label>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       className="h-auto py-1 px-2 text-xs"
-                      onClick={() => setShowNewOwnerForm(false)}
+                      onClick={() => setShowNewClientForm(false)}
                     >
                       Cancel
                     </Button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <Label htmlFor="ownerFirstName" className="text-xs">First Name *</Label>
+                      <Label htmlFor="clientFirstName" className="text-xs">First Name *</Label>
                       <Input
-                        id="ownerFirstName"
-                        value={ownerFirstName}
-                        onChange={(e) => setOwnerFirstName(e.target.value)}
+                        id="clientFirstName"
+                        value={clientFirstName}
+                        onChange={(e) => setClientFirstName(e.target.value)}
                         placeholder="First name"
                         className="h-8"
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="ownerLastName" className="text-xs">Last Name *</Label>
+                      <Label htmlFor="clientLastName" className="text-xs">Last Name *</Label>
                       <Input
-                        id="ownerLastName"
-                        value={ownerLastName}
-                        onChange={(e) => setOwnerLastName(e.target.value)}
+                        id="clientLastName"
+                        value={clientLastName}
+                        onChange={(e) => setClientLastName(e.target.value)}
                         placeholder="Last name"
                         className="h-8"
                       />
@@ -453,23 +453,23 @@ export function AddEditPetDialog({
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <Label htmlFor="ownerEmail" className="text-xs">Email</Label>
+                      <Label htmlFor="clientEmail" className="text-xs">Email</Label>
                       <Input
-                        id="ownerEmail"
+                        id="clientEmail"
                         type="email"
-                        value={ownerEmail}
-                        onChange={(e) => setOwnerEmail(e.target.value)}
+                        value={clientEmail}
+                        onChange={(e) => setClientEmail(e.target.value)}
                         placeholder="Email (optional)"
                         className="h-8"
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="ownerPhone" className="text-xs">Phone</Label>
+                      <Label htmlFor="clientPhone" className="text-xs">Phone</Label>
                       <Input
-                        id="ownerPhone"
+                        id="clientPhone"
                         type="tel"
-                        value={ownerPhone}
-                        onChange={(e) => setOwnerPhone(e.target.value)}
+                        value={clientPhone}
+                        onChange={(e) => setClientPhone(e.target.value)}
                         placeholder="Phone (optional)"
                         className="h-8"
                       />
@@ -478,11 +478,11 @@ export function AddEditPetDialog({
                   <Button
                     type="button"
                     size="sm"
-                    onClick={handleCreateOwner}
-                    disabled={creatingOwner}
+                    onClick={handleCreateClient}
+                    disabled={creatingClient}
                     className="w-full"
                   >
-                    {creatingOwner ? (
+                    {creatingClient ? (
                       <>
                         <Loader2 className="h-3 w-3 animate-spin mr-1" />
                         Creating...
@@ -490,7 +490,7 @@ export function AddEditPetDialog({
                     ) : (
                       <>
                         <Plus className="h-3 w-3 mr-1" />
-                        Create Owner
+                        Create Client
                       </>
                     )}
                   </Button>
@@ -500,12 +500,12 @@ export function AddEditPetDialog({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="petName">Pet Name *</Label>
+            <Label htmlFor="patientName">Patient Name *</Label>
             <Input
-              id="petName"
+              id="patientName"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter pet name"
+              placeholder="Enter patient name"
               required
             />
           </div>
@@ -676,17 +676,17 @@ export function AddEditPetDialog({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose} disabled={saving || creatingOwner}>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={saving || creatingClient}>
               Cancel
             </Button>
-            <Button type="submit" disabled={saving || creatingOwner || (!isEditMode && isStaff && showNewOwnerForm)}>
+            <Button type="submit" disabled={saving || creatingClient || (!isEditMode && isStaff && showNewClientForm)}>
               {saving ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   {isEditMode ? 'Saving...' : 'Adding...'}
                 </>
               ) : (
-                isEditMode ? 'Save Changes' : 'Add Pet'
+                isEditMode ? 'Save Changes' : 'Add Patient'
               )}
             </Button>
           </DialogFooter>

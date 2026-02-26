@@ -55,13 +55,13 @@ export function AppointmentInvitesModal({
   const { clinicId } = useSessionContext();
   
   const [invites, setInvites] = useState<AppointmentInvite[]>([]);
-  const [pets, setPets] = useState<Pet[]>([]);
+  const [patients, setPatients] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [petFilter, setPetFilter] = useState<string>('all');
-  const [petOwnerFilter, setPetOwnerFilter] = useState<string>('all');
+  const [patientFilter, setPatientFilter] = useState<string>('all');
+  const [clientFilter, setClientFilter] = useState<string>('all');
 
-  // Fetch invites and pets when modal opens
+  // Fetch invites and patients when modal opens
   useEffect(() => {
     if (open && isSignedIn && clinicId) {
       fetchData();
@@ -100,7 +100,7 @@ export function AppointmentInvitesModal({
       }
 
       if (petsResult.success && petsResult.data) {
-        setPets(petsResult.data);
+        setPatients(petsResult.data);
       }
     } catch (err: unknown) {
       console.error('[AppointmentInvitesModal] Error fetching data:', err);
@@ -110,38 +110,38 @@ export function AppointmentInvitesModal({
     }
   };
 
-  // Filter invites based on selected pet or pet owner
+  // Filter invites based on selected patient or client
   const filteredInvites = useMemo(() => {
     let filtered = invites;
 
-    if (petFilter && petFilter !== 'all') {
-      filtered = filtered.filter(invite => invite.petId === petFilter);
+    if (patientFilter && patientFilter !== 'all') {
+      filtered = filtered.filter(invite => invite.petId === patientFilter);
     }
 
-    if (petOwnerFilter && petOwnerFilter !== 'all') {
-      filtered = filtered.filter(invite => invite.petOwnerId === petOwnerFilter);
+    if (clientFilter && clientFilter !== 'all') {
+      filtered = filtered.filter(invite => invite.petOwnerId === clientFilter);
     }
 
     return filtered;
-  }, [invites, petFilter, petOwnerFilter]);
+  }, [invites, patientFilter, clientFilter]);
 
   // Helper functions to safely access nested properties
-  const getPetName = (pet: Record<string, unknown> | undefined): string => {
-    if (!pet || typeof pet.name !== 'string') return 'Unknown Pet';
+  const getPatientName = (pet: Record<string, unknown> | undefined): string => {
+    if (!pet || typeof pet.name !== 'string') return 'Unknown Patient';
     return pet.name;
   };
 
-  const getPetSpecies = (pet: Record<string, unknown> | undefined): string => {
+  const getPatientSpecies = (pet: Record<string, unknown> | undefined): string => {
     if (!pet || typeof pet.species !== 'string') return '';
     return pet.species;
   };
 
-  const getPetImageUrl = (pet: Record<string, unknown> | undefined): string => {
+  const getPatientImageUrl = (pet: Record<string, unknown> | undefined): string => {
     if (!pet || typeof pet.imageUrl !== 'string') return '';
     return pet.imageUrl;
   };
 
-  const getPetOwnerName = (petOwner: Record<string, unknown> | undefined): string => {
+  const getClientName = (petOwner: Record<string, unknown> | undefined): string => {
     if (!petOwner) return 'Unknown';
     const user = petOwner.user;
     if (user && typeof user === 'object' && user !== null) {
@@ -154,23 +154,23 @@ export function AppointmentInvitesModal({
     return 'Unknown';
   };
 
-  // Get unique pet owners from invites
-  const petOwners = useMemo(() => {
-    const ownerMap = new Map<string, { id: string; name: string }>();
+  // Get unique clients from invites
+  const clients = useMemo(() => {
+    const clientMap = new Map<string, { id: string; name: string }>();
     invites.forEach(invite => {
       const petOwner = invite.petOwner;
       if (petOwner) {
         const user = petOwner.user;
         if (user && typeof user === 'object' && user !== null) {
           const userObj = user as Record<string, unknown>;
-          const ownerId = invite.petOwnerId;
-          if (!ownerMap.has(ownerId)) {
+          const clientId = invite.petOwnerId;
+          if (!clientMap.has(clientId)) {
             const firstName = typeof userObj.firstName === 'string' ? userObj.firstName : '';
             const lastName = typeof userObj.lastName === 'string' ? userObj.lastName : '';
             const name = `${firstName} ${lastName}`.trim();
             if (name) {
-              ownerMap.set(ownerId, {
-                id: ownerId,
+              clientMap.set(clientId, {
+                id: clientId,
                 name,
               });
             }
@@ -178,7 +178,7 @@ export function AppointmentInvitesModal({
         }
       }
     });
-    return Array.from(ownerMap.values());
+    return Array.from(clientMap.values());
   }, [invites]);
 
   const formatDate = (dateString: string) => {
@@ -198,7 +198,7 @@ export function AppointmentInvitesModal({
         <DialogHeader>
           <DialogTitle>Appointment Invites</DialogTitle>
           <DialogDescription>
-            View and manage all appointment invites sent to pet owners.
+            View and manage all appointment invites sent to clients.
           </DialogDescription>
         </DialogHeader>
 
@@ -212,16 +212,16 @@ export function AppointmentInvitesModal({
         {/* Filters */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="pet-filter">Filter by Pet</Label>
-            <Select value={petFilter} onValueChange={setPetFilter}>
+            <Label htmlFor="pet-filter">Filter by Patient</Label>
+            <Select value={patientFilter} onValueChange={setPatientFilter}>
               <SelectTrigger id="pet-filter">
-                <SelectValue placeholder="All pets" />
+                <SelectValue placeholder="All patients" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All pets</SelectItem>
-                {pets.map((pet) => (
-                  <SelectItem key={pet.id} value={pet.id}>
-                    {pet.name} ({pet.species})
+                <SelectItem value="all">All patients</SelectItem>
+                {patients.map((patient) => (
+                  <SelectItem key={patient.id} value={patient.id}>
+                    {patient.name} ({patient.species})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -229,16 +229,16 @@ export function AppointmentInvitesModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="owner-filter">Filter by Pet Owner</Label>
-            <Select value={petOwnerFilter} onValueChange={setPetOwnerFilter}>
-              <SelectTrigger id="owner-filter">
-                <SelectValue placeholder="All owners" />
+            <Label htmlFor="client-filter">Filter by Client</Label>
+            <Select value={clientFilter} onValueChange={setClientFilter}>
+              <SelectTrigger id="client-filter">
+                <SelectValue placeholder="All clients" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All owners</SelectItem>
-                {petOwners.map((owner) => (
-                  <SelectItem key={owner.id} value={owner.id}>
-                    {owner.name}
+                <SelectItem value="all">All clients</SelectItem>
+                {clients.map((client) => (
+                  <SelectItem key={client.id} value={client.id}>
+                    {client.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -266,22 +266,22 @@ export function AppointmentInvitesModal({
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-4 flex-1">
                       <Avatar className="h-12 w-12">
-                        <AvatarImage src={getPetImageUrl(invite.pet)} alt={getPetName(invite.pet)} />
+                        <AvatarImage src={getPatientImageUrl(invite.pet)} alt={getPatientName(invite.pet)} />
                         <AvatarFallback>
-                          {getPetName(invite.pet).charAt(0) || 'P'}
+                          {getPatientName(invite.pet).charAt(0) || 'P'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold">{getPetName(invite.pet)}</h3>
-                          {getPetSpecies(invite.pet) && (
+                          <h3 className="font-semibold">{getPatientName(invite.pet)}</h3>
+                          {getPatientSpecies(invite.pet) && (
                             <Badge variant="outline" className="text-xs">
-                              {getPetSpecies(invite.pet)}
+                              {getPatientSpecies(invite.pet)}
                             </Badge>
                           )}
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Owner: {getPetOwnerName(invite.petOwner)}
+                          Client: {getClientName(invite.petOwner)}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
                           Sent: {formatDate(invite.createdAt)}

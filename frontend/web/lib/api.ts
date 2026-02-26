@@ -59,9 +59,9 @@ export async function apiRequest<T>(
 }
 
 /**
- * Get all pets for the authenticated user (petOwner sees their pets, staff sees all clinic pets)
+ * Get all patients for the authenticated user (client sees their patients, staff sees all clinic patients)
  * @param sessionToken - Clerk session token
- * @param clinicId - Clinic ID to filter pets (required for staff)
+ * @param clinicId - Clinic ID to filter patients (required for staff)
  */
 export async function getClinicPets(sessionToken: string, clinicId?: string | null) {
   const url = clinicId ? `/api/pets?clinicId=${clinicId}` : '/api/pets';
@@ -71,8 +71,8 @@ export async function getClinicPets(sessionToken: string, clinicId?: string | nu
 }
 
 /**
- * Create a new pet
- * @param petData - Pet data to create
+ * Create a new patient
+ * @param petData - Patient data to create
  * @param sessionToken - Clerk session token
  */
 export interface CreatePetData {
@@ -97,9 +97,9 @@ export async function createPet(petData: CreatePetData, sessionToken: string) {
 }
 
 /**
- * Update an existing pet
- * @param petId - Pet ID to update
- * @param petData - Pet data to update
+ * Update an existing patient
+ * @param petId - Patient ID to update
+ * @param petData - Patient data to update
  * @param sessionToken - Clerk session token
  * @param clinicId - Clinic ID (required for staff)
  */
@@ -125,7 +125,7 @@ export async function updatePet(petId: string, petData: UpdatePetData, sessionTo
 }
 
 /**
- * Pet Owner types and functions
+ * Client types and functions (API uses petOwner for backend compatibility)
  */
 export interface PetOwner {
   id: string;
@@ -151,9 +151,9 @@ export interface CreatePetOwnerData {
 }
 
 /**
- * Get all pet owners for the clinic (staff only)
+ * Get all clients for the clinic (staff only)
  * @param sessionToken - Clerk session token
- * @param clinicId - Clinic ID to filter pet owners (required for staff)
+ * @param clinicId - Clinic ID to filter clients (required for staff)
  */
 export async function getPetOwners(sessionToken: string, clinicId?: string | null) {
   const url = clinicId ? `/api/pet-owners?clinicId=${clinicId}` : '/api/pet-owners';
@@ -163,10 +163,10 @@ export async function getPetOwners(sessionToken: string, clinicId?: string | nul
 }
 
 /**
- * Create a new pet owner (staff only)
- * @param ownerData - Pet owner data to create
+ * Create a new client (staff only)
+ * @param ownerData - Client data to create
  * @param sessionToken - Clerk session token
- * @param clinicId - Clinic ID for the new pet owner (required for staff)
+ * @param clinicId - Clinic ID for the new client (required for staff)
  */
 export async function createPetOwner(ownerData: CreatePetOwnerData, sessionToken: string, clinicId?: string | null) {
   return apiRequest<PetOwner>('/api/pet-owners', {
@@ -176,8 +176,8 @@ export async function createPetOwner(ownerData: CreatePetOwnerData, sessionToken
 }
 
 /**
- * Get a specific pet owner by ID (staff only)
- * @param ownerId - Pet owner ID
+ * Get a specific client by ID (staff only)
+ * @param ownerId - Client ID
  * @param sessionToken - Clerk session token
  * @param clinicId - Clinic ID to verify access (required for staff)
  */
@@ -197,9 +197,9 @@ export interface UpdatePetOwnerData {
 }
 
 /**
- * Update a pet owner (staff only, for owners without Clerk accounts)
- * @param ownerId - Pet owner ID
- * @param ownerData - Updated pet owner data
+ * Update a client (staff only, for clients without Clerk accounts)
+ * @param ownerId - Client ID
+ * @param ownerData - Updated client data
  * @param sessionToken - Clerk session token
  * @param clinicId - Clinic ID to verify access (required for staff)
  */
@@ -212,11 +212,11 @@ export async function updatePetOwner(ownerId: string, ownerData: UpdatePetOwnerD
 }
 
 /**
- * Get a specific pet by ID
+ * Get a specific patient by ID
  * The backend automatically verifies clinic access
- * @param petId - Pet ID to fetch
+ * @param petId - Patient ID to fetch
  * @param sessionToken - Clerk session token
- * @param clinicId - Clinic ID to filter pets (required for staff)
+ * @param clinicId - Clinic ID to filter patients (required for staff)
  */
 export async function getPetById(petId: string, sessionToken: string, clinicId?: string | null) {
   const url = clinicId ? `/api/pets/${petId}?clinicId=${clinicId}` : `/api/pets/${petId}`;
@@ -226,9 +226,9 @@ export async function getPetById(petId: string, sessionToken: string, clinicId?:
 }
 
 /**
- * Get pet documents/records by pet ID
+ * Get patient documents/records by patient ID
  * The backend automatically filters by clinic and verifies access
- * @param petId - Pet ID to fetch documents for
+ * @param petId - Patient ID to fetch documents for
  * @param sessionToken - Clerk session token
  * @param clinicId - Clinic ID to filter documents (required for staff)
  */
@@ -240,7 +240,7 @@ export async function getPetDocuments(petId: string, sessionToken: string, clini
 }
 
 /**
- * Get all documents for a pet owner or clinic staff
+ * Get all documents for a client or clinic staff
  * @param sessionToken - Clerk session token
  * @param clinicId - Clinic ID to filter documents (required for staff)
  */
@@ -659,9 +659,9 @@ export async function getSchedulingLink(
 }
 
 /**
- * Create an appointment invite (sends invite to pet owner)
+ * Create an appointment invite (sends invite to client)
  * @param eventTypeId - Cal.com event type ID
- * @param petId - Pet ID
+ * @param petId - Patient ID
  * @param sessionToken - Clerk session token
  */
 export async function createAppointmentInvite(

@@ -9,37 +9,37 @@ import { useState, useEffect } from "react";
 import { getPetById, getPetDocuments } from "@/lib/api";
 import type { Document } from "@/lib/types";
 import { Hero } from "../components/Hero";
-import { AddEditPetDialog, type PetDialogPet } from "@/components/primitives/AddEditPetDialog";
-import { EditOwnerDialog, type OwnerData } from "@/components/primitives/EditOwnerDialog";
-import { PetRecordsSection } from "../components/PetRecordsSection";
-import type { PetData, MedicalRecord } from "../components/types";
+import { AddEditPatientDialog, type PatientDialogPatient } from "@/components/primitives/AddEditPatientDialog";
+import { EditClientDialog, type ClientData } from "@/components/primitives/EditClientDialog";
+import { PatientRecordsSection } from "../components/PatientRecordsSection";
+import type { PatientData, MedicalRecord } from "../components/types";
 import { useSessionContext } from "@/components/SessionContext";
 import PageLayout from "@/components/primitives/PageLayout";
 
-export default function PetProfileView() {
-  const { id: petId } = useParams();
+export default function PatientProfileView() {
+  const { id: patientId } = useParams();
   const router = useRouter();
   const { getToken, isSignedIn } = useAuth();
   const { clinicId } = useSessionContext();
-  const [pet, setPet] = useState<PetData | null>(null);
+  const [patient, setPatient] = useState<PatientData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [recordsLoading, setRecordsLoading] = useState(true);
   const [recordsError, setRecordsError] = useState<string | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showEditOwnerDialog, setShowEditOwnerDialog] = useState(false);
+  const [showEditClientDialog, setShowEditClientDialog] = useState(false);
 
   useEffect(() => {
     const fetchPetDetails = async () => {
       if (!isSignedIn) {
-        setError('Please sign in to view pet details');
+        setError('Please sign in to view patient details');
         setLoading(false);
         return;
       }
 
-      if (!petId) {
-        setError('Pet ID is required');
+      if (!patientId) {
+        setError('Patient ID is required');
         setLoading(false);
         return;
       }
@@ -52,12 +52,12 @@ export default function PetProfileView() {
           return;
         }
 
-        const result = await getPetById(petId as string, token, clinicId);
+        const result = await getPetById(patientId as string, token, clinicId);
         
         if (result.success && result.data) {
-          // Transform backend pet data to match UI format
-          // Backend now provides owner directly, but keep fallback for backwards compatibility
-          const ownerData = result.data.owner || (result.data.petOwner?.user ? {
+          // Transform backend patient data to match UI format
+          // Backend now provides client directly, but keep fallback for backwards compatibility
+          const clientData = result.data.owner || (result.data.petOwner?.user ? {
             id: result.data.petOwner.user.id,
             name: `${result.data.petOwner.user.firstName || ''} ${result.data.petOwner.user.lastName || ''}`.trim() || 'Unknown',
             email: result.data.petOwner.user.email,
@@ -65,7 +65,7 @@ export default function PetProfileView() {
             address: result.data.petOwner.user.address
           } : null);
           
-          const petData: PetData = {
+          const patientData: PatientData = {
             id: result.data.id,
             name: result.data.name,
             species: result.data.species,
@@ -77,41 +77,41 @@ export default function PetProfileView() {
             allergies: result.data.allergies || [],
             dietaryRestrictions: result.data.dietaryRestrictions || [],
             imageUrl: result.data.imageUrl,
-            owner: ownerData
+            client: clientData
           };
           
-          console.log('Pet data:', petData);
-          console.log('Owner data:', ownerData);
+          console.log('Patient data:', patientData);
+          console.log('Client data:', clientData);
           
-          setPet(petData);
+          setPatient(patientData);
           setError(null);
         } else {
-          setError(result.message || result.error || 'Failed to fetch pet details');
+          setError(result.message || result.error || 'Failed to fetch patient details');
         }
       } catch (err) {
-        console.error('Error fetching pet details:', err);
-        setError('An error occurred while fetching pet details');
+        console.error('Error fetching patient details:', err);
+        setError('An error occurred while fetching patient details');
       } finally {
         setLoading(false);
       }
     };
 
-    if (petId) {
+    if (patientId) {
       fetchPetDetails();
     }
-  }, [petId, isSignedIn, getToken, clinicId]);
+  }, [patientId, isSignedIn, getToken, clinicId]);
 
-  // Fetch pet records
+  // Fetch patient records
   useEffect(() => {
     const fetchRecords = async () => {
       if (!isSignedIn) {
-        setRecordsError('Please sign in to view pet records');
+        setRecordsError('Please sign in to view patient records');
         setRecordsLoading(false);
         return;
       }
 
-      if (!petId) {
-        setRecordsError('Pet ID is required');
+      if (!patientId) {
+        setRecordsError('Patient ID is required');
         setRecordsLoading(false);
         return;
       }
@@ -124,13 +124,13 @@ export default function PetProfileView() {
           return;
         }
 
-        const result = await getPetDocuments(petId as string, token, clinicId);
+        const result = await getPetDocuments(patientId as string, token, clinicId);
         
         if (result.success && result.data) {
           // Transform backend document data to match UI format
           const transformedRecords: MedicalRecord[] = result.data.map((doc: Document) => ({
             id: doc.id,
-            petId: doc.petId,
+            patientId: doc.petId,
             category: doc.category,
             fileName: doc.fileName,
             filePath: doc.filePath,
@@ -142,46 +142,46 @@ export default function PetProfileView() {
           setMedicalRecords(transformedRecords);
           setRecordsError(null);
         } else {
-          setRecordsError(result.message || result.error || 'Failed to fetch pet records');
+          setRecordsError(result.message || result.error || 'Failed to fetch patient records');
         }
       } catch (err) {
-        console.error('Error fetching pet records:', err);
-        setRecordsError('An error occurred while fetching pet records');
+        console.error('Error fetching patient records:', err);
+        setRecordsError('An error occurred while fetching patient records');
       } finally {
         setRecordsLoading(false);
       }
     };
 
-    if (petId) {
+    if (patientId) {
       fetchRecords();
     }
-  }, [petId, isSignedIn, getToken, clinicId]);
+  }, [patientId, isSignedIn, getToken, clinicId]);
 
-  const handlePetUpdated = (updatedPet: PetDialogPet) => {
-    setPet(prev => prev ? {
+  const handlePatientUpdated = (updatedPatient: PatientDialogPatient) => {
+    setPatient((prev: PatientData | null) => prev ? {
       ...prev,
-      name: updatedPet.name,
-      species: updatedPet.species,
-      breed: updatedPet.breed,
-      biologicalSex: updatedPet.biologicalSex,
-      dateOfBirth: updatedPet.dateOfBirth,
-      weight: updatedPet.weight,
-      spayedNeutered: updatedPet.spayedNeutered ?? false,
-      allergies: updatedPet.allergies || [],
-      dietaryRestrictions: updatedPet.dietaryRestrictions || [],
+      name: updatedPatient.name,
+      species: updatedPatient.species,
+      breed: updatedPatient.breed,
+      biologicalSex: updatedPatient.biologicalSex,
+      dateOfBirth: updatedPatient.dateOfBirth,
+      weight: updatedPatient.weight,
+      spayedNeutered: updatedPatient.spayedNeutered ?? false,
+      allergies: updatedPatient.allergies || [],
+      dietaryRestrictions: updatedPatient.dietaryRestrictions || [],
     } : null);
   };
 
-  const handleOwnerUpdated = (updatedOwner: OwnerData) => {
-    setPet(prev => prev ? {
+  const handleClientUpdated = (updatedClient: ClientData) => {
+    setPatient((prev: PatientData | null) => prev ? {
       ...prev,
-      owner: {
-        id: updatedOwner.id,
-        name: updatedOwner.name,
-        email: updatedOwner.email,
-        phone: updatedOwner.phone,
-        address: updatedOwner.address,
-        imageUrl: updatedOwner.imageUrl,
+      client: {
+        id: updatedClient.id,
+        name: updatedClient.name,
+        email: updatedClient.email,
+        phone: updatedClient.phone,
+        address: updatedClient.address,
+        imageUrl: updatedClient.imageUrl,
       }
     } : null);
   };
@@ -191,7 +191,7 @@ export default function PetProfileView() {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading pet profile...</p>
+          <p className="text-muted-foreground">Loading patient profile...</p>
         </div>
       </div>
     );
@@ -204,24 +204,24 @@ export default function PetProfileView() {
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
-        <Button onClick={() => router.push('/pets')}>Back to Pets</Button>
+        <Button onClick={() => router.push('/pets')}>Back to Patients</Button>
       </div>
     );
   }
 
-  if (!pet) {
+  if (!patient) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <h1 className="text-2xl font-bold text-muted-foreground mb-4">Pet Not Found</h1>
-        <Button onClick={() => router.push('/pets')}>Back to Pets</Button>
+        <h1 className="text-2xl font-bold text-muted-foreground mb-4">Patient Not Found</h1>
+        <Button onClick={() => router.push('/pets')}>Back to Patients</Button>
       </div>
     );
   }
 
   return (
     <PageLayout
-      title="Pet Profile"
-      description="View and manage pet information and records"
+      title="Patient Profile"
+      description="View and manage patient information and records"
       backAction={
         <Button 
           variant="ghost" 
@@ -233,30 +233,30 @@ export default function PetProfileView() {
       }
     >
       <Hero 
-        pet={pet} 
+        patient={patient} 
         onEdit={() => setShowEditDialog(true)} 
-        onEditOwner={() => setShowEditOwnerDialog(true)}
+        onEditClient={() => setShowEditClientDialog(true)}
       />
 
-      <PetRecordsSection 
-        petRecords={medicalRecords}
+      <PatientRecordsSection 
+        patientRecords={medicalRecords}
         loading={recordsLoading}
         error={recordsError}
         onError={setRecordsError}
-        petId={petId as string}
+        patientId={patientId as string}
         onRefresh={() => {
-          // Refetch pet records after upload
-          if (petId) {
+          // Refetch patient records after upload
+          if (patientId) {
             const fetchRecords = async () => {
               if (!isSignedIn) return;
               try {
                 const token = await getToken();
                 if (!token) return;
-                const result = await getPetDocuments(petId as string, token, clinicId);
+                const result = await getPetDocuments(patientId as string, token, clinicId);
                 if (result.success && result.data) {
                   const transformedRecords: MedicalRecord[] = result.data.map((doc: Document) => ({
                     id: doc.id,
-                    petId: doc.petId,
+                    patientId: doc.petId,
                     category: doc.category,
                     fileName: doc.fileName,
                     filePath: doc.filePath,
@@ -268,7 +268,7 @@ export default function PetProfileView() {
                   setRecordsError(null);
                 }
               } catch (err) {
-                console.error('Error fetching pet records:', err);
+                console.error('Error fetching patient records:', err);
               }
             };
             fetchRecords();
@@ -276,26 +276,26 @@ export default function PetProfileView() {
         }}
       />
 
-      <AddEditPetDialog
+      <AddEditPatientDialog
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
-        pet={pet}
-        onEditSuccess={handlePetUpdated}
+        patient={patient}
+        onEditSuccess={handlePatientUpdated}
         clinicId={clinicId}
       />
 
-      <EditOwnerDialog
-        open={showEditOwnerDialog}
-        onOpenChange={setShowEditOwnerDialog}
-        owner={pet.owner ? {
-          id: pet.owner.id,
-          name: pet.owner.name,
-          email: pet.owner.email,
-          phone: pet.owner.phone,
-          address: pet.owner.address,
-          imageUrl: pet.owner.imageUrl,
+      <EditClientDialog
+        open={showEditClientDialog}
+        onOpenChange={setShowEditClientDialog}
+        client={patient.client ? {
+          id: patient.client.id,
+          name: patient.client.name,
+          email: patient.client.email,
+          phone: patient.client.phone,
+          address: patient.client.address,
+          imageUrl: patient.client.imageUrl,
         } : null}
-        onSuccess={handleOwnerUpdated}
+        onSuccess={handleClientUpdated}
         clinicId={clinicId}
       />
     </PageLayout>

@@ -50,7 +50,7 @@ export default function HomeView() {
 
           {/* Quick Actions Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Pet Management Card */}
+            {/* Patient Management Card */}
             <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/pets')}>
               <CardHeader>
                 <div className="flex items-center gap-3">
@@ -58,14 +58,14 @@ export default function HomeView() {
                     <PawPrint className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <CardTitle>Pet Management</CardTitle>
-                    <CardDescription>View and manage your pets</CardDescription>
+                    <CardTitle>Patient Management</CardTitle>
+                    <CardDescription>View and manage your patients</CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground text-center">
-                  Access your pet profiles, medical records, and care history
+                  Access your patient profiles, medical records, and care history
                 </p>
                 <div className="flex justify-center">
                   <Button 
@@ -74,7 +74,7 @@ export default function HomeView() {
                       router.push('/pets');
                     }}
                   >
-                    View Pets
+                    View Patients
                   </Button>
                 </div>
               </CardContent>

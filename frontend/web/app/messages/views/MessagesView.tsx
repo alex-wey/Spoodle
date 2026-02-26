@@ -14,7 +14,7 @@ export default function MessagesView() {
   return (
     <PageLayout
       title="Messages"
-      description="Communicate seamlessly with pet owners"
+      description="Communicate seamlessly with clients"
     >
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="max-w-2xl w-full space-y-6 text-center">
@@ -32,7 +32,7 @@ export default function MessagesView() {
           <div className="space-y-2">
             <h2 className="text-2xl font-bold tracking-tight">Coming Soon</h2>
             <p className="text-muted-foreground">
-              A powerful messaging platform to communicate seamlessly with pet owners, share updates, and provide quick consultations.
+              A powerful messaging platform to communicate seamlessly with clients, share updates, and provide quick consultations.
             </p>
           </div>
 
@@ -45,7 +45,7 @@ export default function MessagesView() {
                 </div>
                 <h3 className="font-semibold text-sm">Instant Messaging</h3>
                 <p className="text-xs text-muted-foreground">
-                  Real-time chat with pet owners
+                  Real-time chat with clients
                 </p>
               </CardContent>
             </Card>

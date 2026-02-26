@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { 
-  Dog,
+  PawPrint,
   Settings,
   Home,
   Calendar,
@@ -30,9 +30,9 @@ const navigationItems = [
     icon: Home,
   },
   {
-    title: "Pets",
-    url: "/pets",
-    icon: Dog,
+    title: "Patients",
+    url: "/patients",
+    icon: PawPrint,
   },
   {
     title: "Appointments",
