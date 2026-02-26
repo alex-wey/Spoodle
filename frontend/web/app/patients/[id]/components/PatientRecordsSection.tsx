@@ -179,7 +179,7 @@ export function PatientRecordsSection({ patientRecords, loading, error, onError,
                         size="sm"
                         onClick={() => handleDownload(patientRecord.id)}
                       >
-                        <Download className="h-4 w-4 mr-2" />
+                        <Download className="h-4 w-4" />
                         Download
                       </Button>
                     </TableCell>

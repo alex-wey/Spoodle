@@ -681,7 +681,7 @@ export default function AppointmentDetailView() {
                     onClick={() => setSendFormDialogOpen(true)}
                   >
                     <Plus className="h-4 w-4" />
-                    Send Forms to Patient
+                    Send Forms to Client
                   </Button>
 
                   {formInvitesLoading ? (

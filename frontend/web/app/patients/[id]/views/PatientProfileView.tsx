@@ -326,8 +326,8 @@ export default function PatientProfileView() {
         onEditClient={() => setShowEditClientDialog(true)}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <div className="lg:col-span-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
           <PatientRecordsSection 
             patientRecords={medicalRecords}
             loading={recordsLoading}
@@ -367,16 +367,14 @@ export default function PatientProfileView() {
           />
         </div>
 
-        <div className="lg:col-span-2">
-          <PatientFormsSection
-            formInvites={formInvites}
-            formInvitesLoading={formInvitesLoading}
+        <PatientFormsSection
+          formInvites={formInvites}
+          formInvitesLoading={formInvitesLoading}
           formSubmissions={formSubmissions}
           formSubmissionsLoading={formSubmissionsLoading}
           patientId={patientId as string}
-            onRefreshInvites={refreshFormInvites}
-          />
-        </div>
+          onRefreshInvites={refreshFormInvites}
+        />
       </div>
 
       <AddEditPatientDialog
