@@ -16,8 +16,14 @@ import {
   TableHeader, 
   TableRow 
 } from "../../../../components/ui/table";
-import { downloadDocument } from "@/lib/api";
-import type { MedicalRecord } from "./types";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../../../../components/ui/dropdown-menu";
+import { downloadDocument, updateDocumentVisibility } from "@/lib/api";
+import type { MedicalRecord, DocumentVisibility } from "./types";
 import { PatientRecordUploadDialog } from "./PatientRecordUploadDialog";
 import { useSessionContext } from "@/components/SessionContext";
 
@@ -54,12 +60,25 @@ const formatCategoryName = (category: string) => {
   return names[category] || category;
 };
 
+// Visibility display config
+const visibilityConfig: Record<DocumentVisibility, { label: string; className: string }> = {
+  all: { label: "Everyone", className: "bg-blue-100 text-blue-800" },
+  staff_only: { label: "Staff Only", className: "bg-blue-100 text-blue-800" },
+  owner_only: { label: "Owner Only", className: "bg-blue-100 text-blue-800" },
+};
+
+// Options shown in the dropdown (subset of visibilityConfig)
+const visibilityOptions: DocumentVisibility[] = ['all', 'staff_only'];
+
 export function PatientRecordsSection({ patientRecords, loading, error, onError, patientId, onRefresh }: PatientRecordsSectionProps) {
   const { getToken } = useAuth();
-  const { clinicId } = useSessionContext();
+  const { clinicId, userType } = useSessionContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [updatingVisibility, setUpdatingVisibility] = useState<string | null>(null);
+  
+  const isStaff = userType === 'staff';
 
   // Filter patient records based on search and filter
   const filteredPatientRecords = patientRecords.filter(patientRecord => {
@@ -91,6 +110,32 @@ export function PatientRecordsSection({ patientRecords, loading, error, onError,
     } catch (err) {
       console.error('Error downloading patient record:', err);
       onError('An error occurred while downloading the patient record');
+    }
+  };
+
+  const handleVisibilityChange = async (recordId: string, newVisibility: DocumentVisibility) => {
+    try {
+      setUpdatingVisibility(recordId);
+      const token = await getToken();
+      if (!token) {
+        onError('Unable to authenticate. Please try signing in again.');
+        return;
+      }
+
+      const result = await updateDocumentVisibility(recordId, newVisibility, token, clinicId);
+
+      if (result.success) {
+        if (onRefresh) {
+          onRefresh();
+        }
+      } else {
+        onError(result.message || result.error || 'Failed to update visibility');
+      }
+    } catch (err) {
+      console.error('Error updating visibility:', err);
+      onError('An error occurred while updating visibility');
+    } finally {
+      setUpdatingVisibility(null);
     }
   };
 
@@ -159,32 +204,69 @@ export function PatientRecordsSection({ patientRecords, loading, error, onError,
                 <TableRow className="hover:bg-transparent">
                   <TableHead>File Name</TableHead>
                   <TableHead>Type</TableHead>
+                  {isStaff && <TableHead>Visibility</TableHead>}
                   <TableHead>Date Uploaded</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPatientRecords.map((patientRecord) => (
-                  <TableRow key={patientRecord.id}>
-                    <TableCell className="font-medium">{patientRecord.fileName}</TableCell>
-                    <TableCell>
-                      <Badge className={getPatientRecordTypeColors(patientRecord.category)}>
-                        {formatCategoryName(patientRecord.category)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{new Date(patientRecord.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleDownload(patientRecord.id)}
-                      >
-                        <Download className="h-4 w-4" />
-                        Download
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredPatientRecords.map((patientRecord) => {
+                  const visibility = (patientRecord.visibility || 'all') as DocumentVisibility;
+                  const visConfig = visibilityConfig[visibility];
+                  
+                  return (
+                    <TableRow key={patientRecord.id}>
+                      <TableCell className="font-medium">{patientRecord.fileName}</TableCell>
+                      <TableCell>
+                        <Badge className={getPatientRecordTypeColors(patientRecord.category)}>
+                          {formatCategoryName(patientRecord.category)}
+                        </Badge>
+                      </TableCell>
+                      {isStaff && (
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 px-2"
+                              >
+                                <Badge className={visConfig.className}>
+                                  {visConfig.label}
+                                </Badge>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                              {visibilityOptions.map((opt) => {
+                                const config = visibilityConfig[opt];
+                                return (
+                                  <DropdownMenuItem 
+                                    key={opt}
+                                    onClick={() => handleVisibilityChange(patientRecord.id, opt)}
+                                    className={visibility === opt ? 'bg-accent' : ''}
+                                  >
+                                    {config.label}
+                                  </DropdownMenuItem>
+                                );
+                              })}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
+                      <TableCell>{new Date(patientRecord.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDownload(patientRecord.id)}
+                        >
+                          <Download className="h-4 w-4" />
+                          Download
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           ) : !error ? (

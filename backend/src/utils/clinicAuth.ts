@@ -124,9 +124,23 @@ export function getClinicScopedPetWhere(req: Request) {
 /**
  * Get clinic-scoped where clause for Document queries
  * Ensures documents belong to pets in the user's clinic
+ * Also filters by visibility based on user type
  */
-export function getClinicScopedDocumentWhere(req: Request) {
+export function getClinicScopedDocumentWhere(req: Request, includeAllVisibility = false) {
   const clinicId = getClinicId(req);
+  
+  // Visibility filter based on user type
+  // Staff sees: "all" and "staff_only"
+  // Pet owners see: "all" and "owner_only"
+  const getVisibilityFilter = () => {
+    if (includeAllVisibility) {
+      return {}; // No visibility filter (for staff editing)
+    }
+    if (req.staff) {
+      return { visibility: { in: ['all', 'staff_only'] } };
+    }
+    return { visibility: { in: ['all', 'owner_only'] } };
+  };
   
   if (!clinicId) {
     // If no clinic, only show documents for pets owned by the user
@@ -134,7 +148,8 @@ export function getClinicScopedDocumentWhere(req: Request) {
       return {
         pet: {
           ownerId: req.petOwner.id
-        }
+        },
+        ...getVisibilityFilter()
       };
     }
     return { id: { in: [] } };
@@ -147,7 +162,8 @@ export function getClinicScopedDocumentWhere(req: Request) {
         petOwner: {
           clinicId: clinicId
         }
-      }
+      },
+      ...getVisibilityFilter()
     };
   }
 
@@ -159,7 +175,8 @@ export function getClinicScopedDocumentWhere(req: Request) {
         petOwner: {
           clinicId: clinicId
         }
-      }
+      },
+      ...getVisibilityFilter()
     };
   }
 

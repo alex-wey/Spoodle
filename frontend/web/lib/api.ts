@@ -299,6 +299,32 @@ export async function downloadDocument(documentId: string, sessionToken: string,
 }
 
 /**
+ * Update document visibility (staff only)
+ * @param documentId - Document ID
+ * @param visibility - New visibility setting ('all' | 'staff_only' | 'owner_only')
+ * @param sessionToken - Clerk session token
+ * @param clinicId - Clinic ID (required for staff)
+ */
+export async function updateDocumentVisibility(
+  documentId: string,
+  visibility: 'all' | 'staff_only' | 'owner_only',
+  sessionToken: string,
+  clinicId?: string | null
+) {
+  const url = clinicId
+    ? `/api/documents/${documentId}/visibility?clinicId=${clinicId}`
+    : `/api/documents/${documentId}/visibility`;
+  return apiRequest<Document>(
+    url,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ visibility }),
+    },
+    sessionToken
+  );
+}
+
+/**
  * Upload a document
  */
 export async function uploadDocument(formData: FormData, sessionToken: string) {
@@ -603,9 +629,13 @@ export async function cancelAppointment(
 export async function updateAppointmentNotes(
   appointmentId: string,
   notes: string | null,
-  sessionToken: string
+  sessionToken: string,
+  clinicId?: string | null
 ) {
-  return apiRequest<Appointment>(`/api/appointments/${appointmentId}/notes`, {
+  const url = clinicId 
+    ? `/api/appointments/${appointmentId}/notes?clinicId=${clinicId}` 
+    : `/api/appointments/${appointmentId}/notes`;
+  return apiRequest<Appointment>(url, {
     method: 'PATCH',
     body: JSON.stringify({ notes }),
   }, sessionToken);

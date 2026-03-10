@@ -266,21 +266,23 @@ export function Hero({ patient, onEdit, onEditClient }: HeroProps) {
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">Email</p>
-                      <p className="font-medium truncate">{patient.client.email || 'N/A'}</p>
+                      <p className={`font-medium truncate ${!patient.client.email ? 'text-muted-foreground' : ''}`}>
+                        {patient.client.email || 'Not provided'}
+                      </p>
                     </div>
                   </div>
                   
-                  {patient.client.phone && (
-                    <div className="flex items-center gap-3 text-sm">
-                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Phone className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs text-muted-foreground">Phone</p>
-                        <p className="font-medium">{patient.client.phone}</p>
-                      </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Phone className="h-4 w-4 text-primary" />
                     </div>
-                  )}
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Phone</p>
+                      <p className={`font-medium ${!patient.client.phone ? 'text-muted-foreground' : ''}`}>
+                        {patient.client.phone || 'Not provided'}
+                      </p>
+                    </div>
+                  </div>
                   
                   <div className="flex items-center gap-3 text-sm">
                     <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">

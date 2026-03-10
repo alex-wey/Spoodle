@@ -152,6 +152,7 @@ export default function PatientProfileView() {
             filePath: doc.filePath,
             fileSize: doc.fileSize,
             mimeType: doc.mimeType,
+            visibility: doc.visibility,
             createdAt: doc.createdAt
           }));
           
@@ -352,6 +353,7 @@ export default function PatientProfileView() {
                         filePath: doc.filePath,
                         fileSize: doc.fileSize,
                         mimeType: doc.mimeType,
+                        visibility: doc.visibility,
                         createdAt: doc.createdAt
                       }));
                       setMedicalRecords(transformedRecords);

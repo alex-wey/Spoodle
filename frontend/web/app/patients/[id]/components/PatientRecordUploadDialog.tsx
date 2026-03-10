@@ -23,6 +23,8 @@ import {
 } from "../../../../components/ui/select";
 import { Textarea } from "../../../../components/ui/textarea";
 import { uploadDocument } from "@/lib/api";
+import { useSessionContext } from "@/components/SessionContext";
+import type { DocumentVisibility } from "./types";
 
 interface PatientRecordUploadDialogProps {
   open: boolean;
@@ -39,16 +41,25 @@ const categories = [
   { id: 'discharge_reports', title: 'Discharge Reports' },
 ];
 
+const visibilityOptions: { id: DocumentVisibility; title: string; description: string }[] = [
+  { id: 'all', title: 'Everyone', description: 'Visible to staff and pet owner' },
+  { id: 'staff_only', title: 'Staff Only', description: 'Only visible to clinic staff' },
+];
+
 export function PatientRecordUploadDialog({ open, onOpenChange, patientId, onSuccess }: PatientRecordUploadDialogProps) {
   const { getToken } = useAuth();
+  const { userType } = useSessionContext();
   const [category, setCategory] = useState<string>('');
   const [fileName, setFileName] = useState('');
   const [customFileName, setCustomFileName] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [notes, setNotes] = useState('');
+  const [visibility, setVisibility] = useState<DocumentVisibility>('all');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isStaff = userType === 'staff';
 
   const resetForm = () => {
     setCategory('');
@@ -56,6 +67,7 @@ export function PatientRecordUploadDialog({ open, onOpenChange, patientId, onSuc
     setCustomFileName('');
     setFile(null);
     setNotes('');
+    setVisibility('all');
     setError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -113,6 +125,9 @@ export function PatientRecordUploadDialog({ open, onOpenChange, patientId, onSuc
       }
       if (notes.trim()) {
         formData.append('notes', notes.trim());
+      }
+      if (isStaff) {
+        formData.append('visibility', visibility);
       }
 
       const result = await uploadDocument(formData, token);
@@ -225,6 +240,28 @@ export function PatientRecordUploadDialog({ open, onOpenChange, patientId, onSuc
               onChange={(e) => setCustomFileName(e.target.value)}
             />
           </div>
+
+          {/* Visibility (Staff only) */}
+          {isStaff && (
+            <div className="space-y-2">
+              <Label htmlFor="visibility">Visibility</Label>
+              <Select value={visibility} onValueChange={(v) => setVisibility(v as DocumentVisibility)}>
+                <SelectTrigger id="visibility">
+                  <SelectValue placeholder="Who can see this record?" />
+                </SelectTrigger>
+                <SelectContent>
+                  {visibilityOptions.map((opt) => (
+                    <SelectItem key={opt.id} value={opt.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{opt.title}</span>
+                        <span className="text-muted-foreground text-xs">- {opt.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Notes */}
           <div className="space-y-2">

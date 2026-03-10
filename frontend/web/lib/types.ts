@@ -52,6 +52,7 @@ export interface Document {
   filePath: string;
   fileSize: number;
   mimeType: string;
+  visibility?: 'all' | 'staff_only' | 'owner_only';
   createdAt: string;
   updatedAt: string;
   pet?: {
