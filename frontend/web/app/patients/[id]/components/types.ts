@@ -20,6 +20,8 @@ export interface PatientData {
   } | null;
 }
 
+export type DocumentVisibility = 'all' | 'staff_only' | 'owner_only';
+
 export interface MedicalRecord {
   id: string;
   patientId: string;
@@ -28,6 +30,7 @@ export interface MedicalRecord {
   filePath?: string;
   fileSize?: number;
   mimeType?: string;
+  visibility?: DocumentVisibility;
   createdAt: string;
 }
 

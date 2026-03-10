@@ -269,7 +269,7 @@ export default function AppointmentDetailView() {
         return;
       }
       
-      const result = await updateAppointmentNotes(apiAppointment.id, notes || null, token);
+      const result = await updateAppointmentNotes(apiAppointment.id, notes || null, token, clinicId);
       
       if (result.success) {
         setOriginalNotes(notes);

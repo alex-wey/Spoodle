@@ -74,16 +74,17 @@ model Pet {
 }
 
 model Document {
-  id        String   @id @default(uuid())
-  category  String
-  fileName  String
-  filePath  String
-  fileSize  Int
-  mimeType  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  petId     String
-  pet       Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  category   String
+  fileName   String
+  filePath   String
+  fileSize   Int
+  mimeType   String
+  visibility String   @default("all") // "all" | "staff_only" | "owner_only"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  petId      String
+  pet        Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
 
   @@map("documents")
 }

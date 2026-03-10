@@ -522,6 +522,13 @@ router.post('/upload',
           : file.originalname;
       }
 
+      // Get visibility from request body (staff can set, defaults to 'all')
+      const { visibility } = req.body;
+      const validVisibilities = ['all', 'staff_only', 'owner_only'];
+      const documentVisibility = req.staff && validVisibilities.includes(visibility) 
+        ? visibility 
+        : 'all';
+
       // Persist only columns that exist in Prisma schema
       const documentData = {
         id: uuidv4(),
@@ -530,8 +537,9 @@ router.post('/upload',
         fileName: storedFileName,
         filePath,
         fileSize: Number(file.size),
-        mimeType: String(file.mimetype)
-      } as const;
+        mimeType: String(file.mimetype),
+        visibility: documentVisibility
+      };
       
       console.log('📝 Creating document with data:', documentData);
       
@@ -640,6 +648,73 @@ router.put('/:id',
         success: false,
         error: 'Server error',
         message: 'Unable to update document'
+      });
+    }
+  }
+);
+
+// Update document visibility (staff only)
+router.patch('/:id/visibility',
+  validateRequest({ 
+    params: z.object({ id: commonSchemas.id }),
+    body: z.object({
+      visibility: z.enum(['all', 'staff_only', 'owner_only'])
+    })
+  }),
+  async (req: Request, res: Response) => {
+    try {
+      if (!req.staff) {
+        return res.status(403).json({
+          success: false,
+          error: 'Staff access required',
+          message: 'Only staff can change document visibility'
+        });
+      }
+
+      const { id } = req.params;
+      const { visibility } = req.body;
+      
+      // Check if document exists and staff has access (use includeAllVisibility=true to find any doc)
+      const existingDocument = await prisma.document.findFirst({
+        where: { 
+          id: id as string,
+          ...getClinicScopedDocumentWhere(req, true)
+        }
+      });
+      
+      if (!existingDocument) {
+        return res.status(404).json({
+          success: false,
+          error: 'Document not found',
+          message: 'The requested document does not exist or you do not have permission to update it'
+        });
+      }
+
+      const updatedDocument = await prisma.document.update({
+        where: { id: id as string },
+        data: { visibility },
+        include: {
+          pet: {
+            select: {
+              id: true,
+              name: true,
+              breed: true
+            }
+          }
+        }
+      });
+      
+      return res.json({
+        success: true,
+        data: updatedDocument,
+        message: 'Document visibility updated successfully'
+      });
+    } catch (error) {
+      console.error('Update document visibility error:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Server error',
+        message: 'Unable to update document visibility'
       });
     }
   }
