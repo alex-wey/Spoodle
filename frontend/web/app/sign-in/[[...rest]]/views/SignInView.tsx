@@ -1,24 +1,26 @@
+import Image from 'next/image';
 import { SignIn as ClerkSignIn } from '@clerk/nextjs';
+import { AnimatedBackground } from '@/components/primitives/AnimatedBackground';
 
 export default function SignInPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <AnimatedBackground className="flex min-h-screen items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">
-            Sign in to Spoodle
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Access your veterinary practice management dashboard
-          </p>
-        </div>
+<Image
+          src="/logo.png"
+          alt="Spoodle"
+          width={360}
+          height={120}
+          className="mx-auto"
+          priority
+        />
         
         <div className="mt-8">
           <ClerkSignIn
             appearance={{
               elements: {
                 rootBox: 'mx-auto',
-                card: 'shadow-lg border border-gray-200 rounded-lg',
+                card: 'shadow-lg border border-gray-200 rounded-lg bg-white/90 backdrop-blur-sm',
                 headerTitle: 'text-xl font-semibold text-gray-900',
                 headerSubtitle: 'text-sm text-gray-600',
                 socialButtonsBlockButton: 'border border-gray-300 hover:bg-gray-50',
@@ -30,7 +32,7 @@ export default function SignInPage() {
                 colorPrimary: '#2563eb',
                 colorText: '#111827',
                 colorTextSecondary: '#6b7280',
-                colorBackground: '#ffffff',
+                colorBackground: 'rgba(255, 255, 255, 0.9)',
                 colorInputBackground: '#ffffff',
                 colorInputText: '#111827',
                 borderRadius: '0.375rem',
@@ -39,6 +41,6 @@ export default function SignInPage() {
           />
         </div>
       </div>
-    </div>
+    </AnimatedBackground>
   );
 }
