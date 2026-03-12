@@ -9,7 +9,7 @@ interface UserButtonProps {
 }
 
 export default function UserButton({
-  afterSignOutUrl = '/',
+  afterSignOutUrl = '/sign-in',
   showName = false,
   appearance,
 }: UserButtonProps) {
