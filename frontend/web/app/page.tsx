@@ -2,37 +2,27 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { useSessionContext } from "../components/SessionContext";
+import { useAuth } from "@clerk/nextjs";
 
 export default function EntryPage() {
   const router = useRouter();
-  const { isLoading, isSignedIn } = useSessionContext();
+  const { isLoaded, isSignedIn } = useAuth();
   
   useEffect(() => {
-    if (isLoading) {
-      return; // Don't redirect while loading
-    }
-
-    if (!isSignedIn) {
-      router.replace("/sign-in");
+    if (!isLoaded) {
       return;
     }
-  
+
     if (isSignedIn) {
       router.replace("/home");
-      return;
+    } else {
+      router.replace("/sign-in");
     }
-  }, [isLoading, isSignedIn, router]);
+  }, [isLoaded, isSignedIn, router]);
 
-  // Show loading state while checking authentication
-  if (isLoading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-      </div>
-    );
-  }
-
-  // This component handles redirects, so it shouldn't render content normally
-  return null;
+  return (
+    <div className="flex h-screen w-full items-center justify-center bg-gray-50">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    </div>
+  );
 }

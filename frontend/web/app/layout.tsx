@@ -36,8 +36,8 @@ export default function RootLayout({
             publishableKey={publishableKey}
             signInUrl="/sign-in"
             signUpUrl="/sign-up"
-            afterSignInUrl="/home"
-            afterSignUpUrl="/home"
+            signInForceRedirectUrl="/home"
+            signUpForceRedirectUrl="/home"
           >
             <SessionProvider>
               {children}
