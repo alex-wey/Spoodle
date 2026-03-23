@@ -1,63 +1,98 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { flushSync } from "react-dom";
 import Image from "next/image";
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  SUGGESTED_QUESTIONS,
-  getMockedResponse,
-  type Message,
-  type Source,
-} from "../lib/mockData";
+import { type Message } from "../lib/mockData";
+import { SUGGESTED_CHIPS, getDemoResponse, demoPlainBody } from "../lib/demoContent";
 import { useVerum } from "./VerumContext";
 import { QuestionBubble } from "./QuestionBubble";
+import { AssistantTurn } from "./AssistantTurn";
+import { ResponseExportFab } from "./ResponseExportFab";
+import { VERUM_SUGGESTION_CHIP_INNER } from "../lib/clinicalNextStepsDemo";
 
-const LOREM_DISCLAIMER =
-  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.";
+const DISCLAIMER =
+  "Spoodle is designed to surface and organize licensed veterinary information. It does not diagnose conditions, recommend treatments, or replace clinical judgment. All medical decisions remain the responsibility of the treating veterinarian.";
 
-interface VerumChatProps {
-  onNavigateToQuestion?: (id: string) => void;
-  loadedEntryId?: string | null;
-  onLoadedEntryCleared?: () => void;
-}
-
-function SourcesBlock({ sources }: { sources: Source[] }) {
+function QuestionComposerBubble({
+  value,
+  onChange,
+  onSend,
+  disabled,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onSend: () => void;
+  disabled: boolean;
+  placeholder: string;
+}) {
   return (
-    <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
-      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Sources</div>
-      <div className="space-y-1.5">
-        {sources.map((s, i) => (
-          <a
-            key={i}
-            href={s.url}
-            className="block text-xs text-primary hover:underline"
-            onClick={(e) => e.preventDefault()}
-          >
-            <span className="font-medium">{s.journal}</span>
-            {" — "}
-            <span>{s.title}</span>
-            {" ("}
-            <span>{s.year}</span>
-            {")"}
-          </a>
-        ))}
-      </div>
+    <div className="relative w-full rounded-2xl border border-sky-200/80 bg-white/90 shadow-sm ring-1 ring-primary/10 dark:border-sky-800/45 dark:bg-gray-900/90 dark:ring-primary/20">
+      <Textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            if (!disabled) onSend();
+          }
+        }}
+        placeholder={placeholder}
+        rows={2}
+        aria-label="Your question"
+        className="min-h-[5.5rem] max-h-[min(40vh,16rem)] w-full resize-none border-0 bg-transparent px-4 pb-14 pt-4 pr-14 text-[15px] leading-relaxed text-pretty text-foreground [overflow-wrap:anywhere] placeholder:text-muted-foreground selection:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-0 dark:bg-transparent dark:selection:bg-primary/25"
+      />
+      <Button
+        type="button"
+        variant="default"
+        size="icon"
+        disabled={disabled}
+        onClick={onSend}
+        className="absolute bottom-3 right-3 h-10 w-10 shrink-0 rounded-full shadow-sm"
+        aria-label="Send question"
+        title="Send"
+      >
+        <Send className="h-4 w-4" />
+      </Button>
     </div>
   );
 }
 
-export function VerumChat({ onNavigateToQuestion, loadedEntryId, onLoadedEntryCleared }: VerumChatProps) {
+interface VerumChatProps {
+  /** Opens this history entry in the main chat (Home), not History */
+  onOpenChat?: (id: string) => void;
+  loadedEntryId?: string | null;
+  onLoadedEntryCleared?: () => void;
+}
+
+export function VerumChat({ onOpenChat, loadedEntryId, onLoadedEntryCleared }: VerumChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { history, addHistoryEntry, getHistoryEntry } = useVerum();
 
+  const turns = useMemo(() => {
+    const out: { q: string; a: Message }[] = [];
+    for (let i = 0; i < messages.length; i++) {
+      const m = messages[i];
+      if (m.role === "user" && messages[i + 1]?.role === "assistant") {
+        out.push({ q: m.content, a: messages[i + 1] });
+        i++;
+      }
+    }
+    return out;
+  }, [messages]);
+
   const isEmpty = messages.length === 0;
-  const mostRecent = history[0];
+  const mostRecent = history.length > 0
+    ? [...history].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+    : undefined;
 
   useEffect(() => {
     if (loadedEntryId) {
@@ -69,22 +104,34 @@ export function VerumChat({ onNavigateToQuestion, loadedEntryId, onLoadedEntryCl
     }
   }, [loadedEntryId, getHistoryEntry, onLoadedEntryCleared]);
 
-  useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  /** Only scroll to the latest answer after the user submits — not when hydrating from History (avoids pinning / jumpy scroll). */
+  const scrollToConversationBottom = useCallback(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      });
+    });
+  }, []);
 
-  const handleSend = () => {
-    const text = input.trim();
-    if (!text || isLoading) return;
-    setInput("");
-    const userMsg: Message = { role: "user", content: text };
-    setMessages((prev) => [...prev, userMsg]);
-    setIsLoading(true);
-    const { content, sources } = getMockedResponse(text);
-    setTimeout(() => {
-      const assistantMsg: Message = { role: "assistant", content, sources };
+  const submitDemoQuestion = useCallback(
+    (raw: string) => {
+      const text = raw.trim();
+      if (!text || isLoading) return;
+      flushSync(() => setInput(text));
+      const userMsg: Message = { role: "user", content: text };
+      setMessages((prev) => [...prev, userMsg]);
+      setIsLoading(true);
+      const r = getDemoResponse(text);
+      const assistantMsg: Message = {
+        role: "assistant",
+        content: r.content,
+        sources: r.sources,
+        ...(r.sections ? { sections: r.sections } : {}),
+        ...(r.followUp ? { followUp: r.followUp } : {}),
+      };
       setMessages((prev) => [...prev, assistantMsg]);
-      const summary = content.length > 120 ? content.slice(0, 120) + "…" : content;
+      const plain = demoPlainBody(r);
+      const summary = plain.length > 120 ? plain.slice(0, 120) + "…" : plain;
       addHistoryEntry({
         question: text,
         summary,
@@ -92,30 +139,21 @@ export function VerumChat({ onNavigateToQuestion, loadedEntryId, onLoadedEntryCl
         messages: [userMsg, assistantMsg],
       });
       setIsLoading(false);
-    }, 600);
+      setInput("");
+      scrollToConversationBottom();
+    },
+    [isLoading, addHistoryEntry, scrollToConversationBottom]
+  );
+
+  const handleSend = () => {
+    submitDemoQuestion(input);
   };
 
   const handleSuggestClick = (q: string) => {
-    if (isLoading) return;
-    const userMsg: Message = { role: "user", content: q };
-    setMessages((prev) => [...prev, userMsg]);
-    setIsLoading(true);
-    const { content, sources } = getMockedResponse(q);
-    setTimeout(() => {
-      const assistantMsg: Message = { role: "assistant", content, sources };
-      setMessages((prev) => [...prev, assistantMsg]);
-      const summary = content.length > 120 ? content.slice(0, 120) + "…" : content;
-      addHistoryEntry({
-        question: q,
-        summary,
-        date: new Date().toISOString(),
-        messages: [userMsg, assistantMsg],
-      });
-      setIsLoading(false);
-    }, 600);
+    submitDemoQuestion(q);
   };
 
-  const suggestedQuestions = SUGGESTED_QUESTIONS.slice(0, 2);
+  const suggestedQuestions = SUGGESTED_CHIPS;
 
   return (
     <div className="flex flex-col h-full relative overflow-hidden">
@@ -127,40 +165,38 @@ export function VerumChat({ onNavigateToQuestion, loadedEntryId, onLoadedEntryCl
 
       <div className="flex-1 flex flex-col relative z-10 min-h-0">
         {isEmpty ? (
-          <div className="flex-1 flex flex-col items-center justify-center px-6 pb-32">
-            <div className="w-full max-w-xl flex flex-col items-center">
-              <div className="w-full flex justify-center mb-[50px]">
-                <div className="w-[80%] relative flex justify-center">
-                  <Image
-                    src="/spoodle-logo.png"
-                    alt="Spoodle"
-                    width={400}
-                    height={137}
-                    className="w-full h-auto object-contain"
-                  />
-                </div>
-              </div>
-              <div className="w-full flex gap-2">
-                <Input
-                  placeholder="Ask a research-oriented question..."
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-                  className="flex-1 bg-white/90 dark:bg-gray-900/90 border shadow-sm"
+          <div className="flex flex-1 flex-col items-center justify-center pb-32">
+            <div className="verum-main-gutter flex w-full max-w-6xl flex-col items-center">
+              <div className="mb-[50px] flex shrink-0 justify-center">
+                <Image
+                  src="/spoodle-logo.png"
+                  alt="Spoodle"
+                  width={400}
+                  height={137}
+                  className="h-auto w-[400px] max-w-full object-contain"
+                  priority
                 />
-                <Button onClick={handleSend} disabled={!input.trim() || isLoading} size="icon" className="shrink-0">
-                  <Send className="h-4 w-4" />
-                </Button>
               </div>
-              <div className="w-full flex flex-col gap-2 mt-6">
+              <div className="w-full min-w-0">
+                <QuestionComposerBubble
+                  value={input}
+                  onChange={setInput}
+                  onSend={handleSend}
+                  disabled={!input.trim() || isLoading}
+                  placeholder="Ask a veterinary medicine question..."
+                />
+              </div>
+              <div className="mt-5 flex w-full flex-col gap-1.5">
                 {suggestedQuestions.map((q, i) => (
                   <button
                     key={i}
                     onClick={() => handleSuggestClick(q)}
-                    className="w-full text-left px-4 py-3 rounded-lg border bg-white/80 dark:bg-gray-900/80 hover:bg-white dark:hover:bg-gray-800 text-sm transition-colors shadow-sm flex gap-3 items-start"
+                    className={`flex w-full min-w-0 items-start gap-2.5 text-left ${VERUM_SUGGESTION_CHIP_INNER}`}
                   >
                     <span className="text-primary shrink-0 mt-0.5">•</span>
-                    <span className="whitespace-normal">{q}</span>
+                    <span className="min-w-0 flex-1 whitespace-normal break-words text-pretty">
+                      {q}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -171,7 +207,7 @@ export function VerumChat({ onNavigateToQuestion, loadedEntryId, onLoadedEntryCl
                   <div className="w-full">
                     <QuestionBubble
                       entry={mostRecent}
-                      onNavigate={onNavigateToQuestion}
+                      onOpenChat={onOpenChat}
                     />
                   </div>
                 </>
@@ -180,51 +216,35 @@ export function VerumChat({ onNavigateToQuestion, loadedEntryId, onLoadedEntryCl
           </div>
         ) : (
           <>
-            <ScrollArea className="flex-1 px-6 pb-2">
-              <div className="max-w-2xl mx-auto py-6 pb-24 space-y-4">
-                {messages.map((m, i) => (
-                  <div
-                    key={i}
-                    className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-                  >
-                    <div className={`max-w-[85%] ${m.role === "user" ? "order-1" : "order-2"}`}>
-                      <div
-                        className={`rounded-lg px-3 py-2 ${
-                          m.role === "user"
-                            ? "bg-primary text-primary-foreground ml-auto"
-                            : "bg-muted"
-                        }`}
-                      >
-                        <p className="text-sm whitespace-pre-wrap">{m.content}</p>
-                        {m.sources && m.sources.length > 0 && (
-                          <SourcesBlock sources={m.sources} />
-                        )}
-                      </div>
-                    </div>
-                  </div>
+            <ScrollArea className="flex-1 pb-2">
+              <div className="verum-main-gutter mx-auto w-full min-w-0 max-w-6xl space-y-8 py-6 pb-24">
+                {turns.map((t, idx) => (
+                  <AssistantTurn
+                    key={idx}
+                    question={t.q}
+                    message={t.a}
+                    onExploreChip={submitDemoQuestion}
+                    exploreDisabled={isLoading}
+                  />
                 ))}
                 {isLoading && (
-                  <div className="flex justify-start">
-                    <div className="rounded-lg px-3 py-2 bg-muted text-sm text-muted-foreground">
-                      Searching sources…
-                    </div>
+                  <div className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+                    Searching sources…
                   </div>
                 )}
+                <ResponseExportFab turns={turns.map((t) => ({ question: t.q, message: t.a }))} />
               </div>
               <div ref={scrollRef} />
             </ScrollArea>
-            <div className="flex justify-center px-6 py-4 pb-24">
-              <div className="w-full max-w-xl flex gap-2">
-                <Input
-                  placeholder="Ask a research-oriented question..."
+            <div className="py-4 pb-24">
+              <div className="verum-main-gutter mx-auto w-full min-w-0 max-w-6xl">
+                <QuestionComposerBubble
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-                  className="flex-1 bg-white/90 dark:bg-gray-900/90 border shadow-sm"
+                  onChange={setInput}
+                  onSend={handleSend}
+                  disabled={!input.trim() || isLoading}
+                  placeholder="Ask a veterinary medicine question..."
                 />
-                <Button onClick={handleSend} disabled={!input.trim() || isLoading} size="icon" className="shrink-0">
-                  <Send className="h-4 w-4" />
-                </Button>
               </div>
             </div>
           </>
@@ -232,7 +252,7 @@ export function VerumChat({ onNavigateToQuestion, loadedEntryId, onLoadedEntryCl
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 p-4 text-center text-xs text-muted-foreground bg-black/5 dark:bg-black/20 backdrop-blur-sm border-t border-black/5">
-        {LOREM_DISCLAIMER}
+        {DISCLAIMER}
       </div>
     </div>
   );

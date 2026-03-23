@@ -10,9 +10,12 @@ export default function VerumPage() {
   const [activeView, setActiveView] = useState<VerumView>("home");
   const [scrollToId, setScrollToId] = useState<string | null>(null);
   const [chatEntryId, setChatEntryId] = useState<string | null>(null);
+  /** Bumps when user chooses Home so VerumChat remounts and clears an in-progress conversation */
+  const [chatShellKey, setChatShellKey] = useState(0);
 
   const handleNavHome = () => {
     setChatEntryId(null);
+    setChatShellKey((k) => k + 1);
     setActiveView("home");
   };
   const handleNavHistory = () => {
@@ -21,11 +24,6 @@ export default function VerumPage() {
     setActiveView("history");
   };
   const handleNavProfile = () => setActiveView("profile");
-
-  const handleNavigateToQuestion = (id: string) => {
-    setScrollToId(id);
-    setActiveView("history");
-  };
 
   const handleOpenChat = (id: string) => {
     setChatEntryId(id);
@@ -40,10 +38,11 @@ export default function VerumPage() {
         onNavHistory={handleNavHistory}
         onNavProfile={handleNavProfile}
       />
-      <main className="flex-1 overflow-hidden flex flex-col min-w-0">
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {activeView === "home" && (
           <VerumChat
-            onNavigateToQuestion={handleNavigateToQuestion}
+            key={chatShellKey}
+            onOpenChat={handleOpenChat}
             loadedEntryId={chatEntryId}
             onLoadedEntryCleared={() => setChatEntryId(null)}
           />

@@ -3,6 +3,21 @@ export interface Source {
   title: string;
   year: number;
   url: string;
+  /** Public asset under `/public`, e.g. `/wiley-logo.png` */
+  logoSrc?: string;
+  /** Short label for citation chips; otherwise journal is truncated */
+  chipLabel?: string;
+}
+
+/** Single turn in chat / history */
+export interface VerumMessage {
+  role: "user" | "assistant";
+  content: string;
+  sources?: Source[];
+  /** Structured response (demo); when set, overrides flat `content` for assistant body */
+  sections?: Array<{ title: string; body: string }>;
+  /** Closing prompt to explore deeper or apply evidence clinically */
+  followUp?: string;
 }
 
 export interface HistoryEntry {
@@ -10,11 +25,7 @@ export interface HistoryEntry {
   question: string;
   summary: string;
   date: string; // ISO
-  messages: Array<{
-    role: "user" | "assistant";
-    content: string;
-    sources?: Source[];
-  }>;
+  messages: VerumMessage[];
 }
 
 export interface VerumFile {

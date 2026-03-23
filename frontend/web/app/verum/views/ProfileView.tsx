@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState, useMemo } from "react";
-import { Settings, Pin, MoreHorizontal, X } from "lucide-react";
+import React, { useState, useMemo, useRef } from "react";
+import { Settings, Pin, MoreHorizontal, X, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,11 +42,9 @@ export function ProfileView() {
     deleteHistoryEntry,
     reorderFiles,
     clearAll,
-    resetToDemo,
+    revokeVerumSession,
   } = useVerum();
   const [fileSearch, setFileSearch] = useState("");
-  const [editing, setEditing] = useState(false);
-  const [editDraft, setEditDraft] = useState(profile);
   const [expandedFileId, setExpandedFileId] = useState<string | null>(null);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
@@ -55,7 +52,6 @@ export function ProfileView() {
   const [createFileIds, setCreateFileIds] = useState<string[] | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const filteredFiles = useMemo(() => {
     if (!fileSearch.trim()) return files;
@@ -73,24 +69,6 @@ export function ProfileView() {
     );
     return [...pinned, ...unpinned];
   }, [filteredFiles]);
-
-  const handleConfirmEdit = () => {
-    updateProfile(editDraft);
-    setEditing(false);
-  };
-
-  const handleDiscardEdit = () => {
-    setEditDraft(profile);
-    setEditing(false);
-  };
-
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setEditDraft((p) => ({ ...p, avatarUrl: reader.result as string }));
-    reader.readAsDataURL(file);
-  };
 
   const togglePin = (fileId: string) => {
     const f = files.find((x) => x.id === fileId);
@@ -138,58 +116,21 @@ export function ProfileView() {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Top section - 1/3 */}
-      <div className="h-[33.333%] min-h-[200px] border-b px-6 py-4 relative flex items-center">
-        <div className="flex gap-6 items-start w-full">
-          <div
-            className="flex-shrink-0 cursor-pointer"
-            onClick={() => editing && fileInputRef.current?.click()}
-          >
-            {editDraft.avatarUrl ? (
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={editDraft.avatarUrl} />
-                <AvatarFallback>?</AvatarFallback>
-              </Avatar>
-            ) : (
-              <div className="h-20 w-20 rounded-full border-2 border-dashed flex items-center justify-center text-muted-foreground text-sm">
-                Upload
-              </div>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleAvatarUpload}
-            />
-          </div>
-          <div className="flex-1 min-w-0 space-y-3">
-            {editing ? (
-              <>
-                <Input
-                  value={editDraft.email}
-                  onChange={(e) => setEditDraft((p) => ({ ...p, email: e.target.value }))}
-                  placeholder="Email"
-                />
-                <Input
-                  value={editDraft.name}
-                  onChange={(e) => setEditDraft((p) => ({ ...p, name: e.target.value }))}
-                  placeholder="Name"
-                />
-                <Input
-                  value={editDraft.phone}
-                  onChange={(e) => setEditDraft((p) => ({ ...p, phone: e.target.value }))}
-                  placeholder="Phone Number"
-                />
-              </>
-            ) : (
-              <>
-                <div className="text-sm font-medium">{profile.email}</div>
-                <div className="text-sm font-medium">{profile.name}</div>
-                <div className="text-sm font-medium">{profile.phone}</div>
-              </>
-            )}
-          </div>
+      {/* Top section - 1/5 */}
+      <div className="relative flex h-[20%] min-h-[120px] items-center justify-center border-b py-4 verum-main-gutter">
+        <div className="w-full max-w-md mx-auto space-y-3">
+          <Input
+            value={profile.email}
+            onChange={(e) => updateProfile({ email: e.target.value })}
+            placeholder="Email"
+            className="text-left"
+          />
+          <Input
+            value={profile.name}
+            onChange={(e) => updateProfile({ name: e.target.value })}
+            placeholder="Name"
+            className="text-left"
+          />
         </div>
 
         <div className="absolute top-4 right-4">
@@ -200,13 +141,10 @@ export function ProfileView() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setEditing(true)}>
-                Edit information
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setChangePasswordOpen(true)}>
                 Change password
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => resetToDemo()}>
+              <DropdownMenuItem onClick={() => revokeVerumSession()}>
                 Log out
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -218,40 +156,31 @@ export function ProfileView() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+      </div>
 
-        {editing && (
-          <div className="absolute bottom-4 left-6 flex gap-2">
+      {/* Thin divider */}
+      <div className="h-px border-b bg-border" />
+
+      {/* Bottom section - 2/3 with file search below divider */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-auto py-6 verum-main-gutter">
+        {!expandedFile && (
+          <div className="w-full max-w-2xl mx-auto mb-4 flex-shrink-0 flex items-center gap-3">
+            <Input
+              placeholder="Search files..."
+              value={fileSearch}
+              onChange={(e) => setFileSearch(e.target.value)}
+              className="flex-1 max-w-md"
+            />
             <Button
-              size="sm"
+              onClick={() => setCreateFileIds([])}
+              className="shrink-0"
               style={{ backgroundColor: CONFIRM_BG, color: BTN_TEXT }}
-              onClick={handleConfirmEdit}
             >
-              Confirm changes
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              style={{ backgroundColor: CANCEL_BG, color: BTN_TEXT, borderColor: CANCEL_BG }}
-              onClick={handleDiscardEdit}
-            >
-              Discard changes
+              <Plus className="h-4 w-4 mr-2" />
+              Create new file
             </Button>
           </div>
         )}
-      </div>
-
-      {/* Divider with file search */}
-      <div className="flex items-center justify-center py-4 border-b bg-muted/30">
-        <Input
-          placeholder="Search files..."
-          value={fileSearch}
-          onChange={(e) => setFileSearch(e.target.value)}
-          className="max-w-xs"
-        />
-      </div>
-
-      {/* Bottom section - 2/3 */}
-      <div className="flex-1 overflow-auto p-6">
         {expandedFile ? (
           <FileExpandedView
             file={expandedFile}
@@ -351,13 +280,13 @@ function FileCard({
       onDrop={onDrop}
       onDragEnd={onDragEnd}
       onClick={onClick}
-      className={`relative rounded-xl border bg-card p-4 cursor-pointer hover:shadow-md transition-all ${
+      className={`relative rounded-xl border border-transparent bg-transparent p-4 cursor-pointer hover:shadow-md transition-all ${
         isDragging ? "opacity-50" : ""
       } ${isDragOver ? "ring-2 ring-primary" : ""}`}
     >
       {file.pinned && (
         <div
-          className="absolute top-2 left-2"
+          className="absolute top-2 left-2 rotate-[-30deg]"
           style={{ color: PIN_COLOR }}
         >
           <Pin className="h-4 w-4 fill-current" />
@@ -388,18 +317,31 @@ function FileExpandedView({
   addFile,
   onCreateFileRequest,
 }: {
-  file: { id: string; name: string; questionIds: string[]; pinned: boolean };
+  file: { id: string; name: string; iconUrl: string | null; questionIds: string[]; pinned: boolean };
   history: HistoryEntry[];
   files: Array<{ id: string; name: string; questionIds: string[] }>;
   onClose: () => void;
   onDelete: () => void;
   onTogglePin: () => void;
-  updateFile: (id: string, updates: Partial<{ questionIds: string[] }>) => void;
+  updateFile: (id: string, updates: Partial<{ questionIds: string[]; iconUrl: string | null; name: string }>) => void;
   deleteHistoryEntry: (id: string) => void;
   addFile: (file: { name: string; iconUrl: string | null; questionIds: string[] }) => void;
   onCreateFileRequest: (questionIds: string[]) => void;
 }) {
   const [search, setSearch] = useState("");
+  const iconInputRef = useRef<HTMLInputElement>(null);
+
+  const handleIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const uploaded = e.target.files?.[0];
+    if (!uploaded) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      updateFile(file.id, { iconUrl: reader.result as string });
+    };
+    reader.readAsDataURL(uploaded);
+    e.target.value = "";
+  };
+
   const entries = file.questionIds
     .map((id) => history.find((e) => e.id === id))
     .filter((e): e is HistoryEntry => !!e);
@@ -411,13 +353,46 @@ function FileExpandedView({
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4">
-        <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="h-5 w-5" />
-        </Button>
+      <div className="flex items-center justify-between mb-4 gap-3">
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-5 w-5" />
+          </Button>
+          {file.pinned && (
+            <div className="rotate-[-30deg]" style={{ color: PIN_COLOR }}>
+              <Pin className="h-5 w-5 fill-current" />
+            </div>
+          )}
+        </div>
+        <div className="flex-1 flex items-center justify-center gap-3 min-w-0">
+          <button
+            type="button"
+            onClick={() => iconInputRef.current?.click()}
+            className="w-14 h-14 rounded-lg border bg-muted flex items-center justify-center overflow-hidden shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            {file.iconUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={file.iconUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-2xl text-muted-foreground">📄</span>
+            )}
+          </button>
+          <input
+            ref={iconInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleIconUpload}
+          />
+          <Input
+            value={file.name}
+            onChange={(e) => updateFile(file.id, { name: e.target.value })}
+            className="text-lg font-semibold w-48"
+          />
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="shrink-0">
               <MoreHorizontal className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
@@ -431,12 +406,14 @@ function FileExpandedView({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <Input
-        placeholder="Search questions..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="mb-4 max-w-sm"
-      />
+      <div className="flex justify-center mb-4">
+        <Input
+          placeholder="Search questions..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm w-full"
+        />
+      </div>
       <div className="flex-1 overflow-auto space-y-3">
         {filtered.map((e) => (
           <QuestionBubble

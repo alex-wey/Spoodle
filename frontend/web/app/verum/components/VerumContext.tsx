@@ -3,12 +3,13 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import type { HistoryEntry, VerumFile, Profile } from "../lib/types";
 import { getDemoSeed } from "../lib/demoSeed";
+import { clearVerumAccessSession } from "../lib/verumAccessSession";
 
-const STORAGE_KEY = "verum-mockup-state";
+const STORAGE_KEY = "verum-mockup-state-v4";
 
 const defaultProfile: Profile = {
-  email: "vet@example.com",
-  name: "Dr. Smith",
+  email: "dr.chen@westsidevet.com",
+  name: "Dr. Sarah Chen",
   phone: "(555) 123-4567",
   avatarUrl: null,
 };
@@ -55,6 +56,8 @@ interface VerumContextValue {
   updateProfile: (updates: Partial<Profile>) => void;
   clearAll: () => void;
   resetToDemo: () => void;
+  /** End Verum session (access gate); reloads to show access request again */
+  revokeVerumSession: () => void;
 }
 
 const VerumContext = createContext<VerumContextValue | null>(null);
@@ -168,7 +171,15 @@ export function VerumProvider({ children }: { children: React.ReactNode }) {
     const { history: h, files: f } = getDemoSeed();
     setHistory(h);
     setFiles(f);
+    setProfile(defaultProfile);
     saveState(h, f, defaultProfile);
+  }, []);
+
+  const revokeVerumSession = useCallback(() => {
+    clearVerumAccessSession();
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
   }, []);
 
   const value: VerumContextValue = {
@@ -185,6 +196,7 @@ export function VerumProvider({ children }: { children: React.ReactNode }) {
     updateProfile,
     clearAll,
     resetToDemo,
+    revokeVerumSession,
   };
 
   return (

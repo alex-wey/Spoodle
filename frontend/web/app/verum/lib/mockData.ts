@@ -1,15 +1,7 @@
-export interface Source {
-  journal: string;
-  title: string;
-  year: number;
-  url: string;
-}
+import type { Source, VerumMessage } from "./types";
 
-export interface Message {
-  role: "user" | "assistant";
-  content: string;
-  sources?: Source[];
-}
+export type { Source };
+export type Message = VerumMessage;
 
 export interface Conversation {
   id: string;
@@ -38,7 +30,7 @@ const MOCK_RESPONSES: Array<{
   {
     keywords: ["pain", "orthopedic", "surgery", "dog"],
     content:
-      "Published literature emphasizes multimodal analgesia for post-operative pain in dogs following orthopedic procedures. Opioids such as fentanyl or hydromorphone are commonly used initially, with transition to NSAIDs like carprofen or meloxicam once hemostasis is achieved. Local/regional blocks (e.g., epidural, peripheral nerve blocks) when applicable may reduce systemic opioid requirements. Evidence suggests individual assessment of pain and titration of therapy is important.",
+      "Published literature emphasizes multimodal analgesia for post-operative pain in dogs following orthopedic procedures [1]. Opioids such as fentanyl or hydromorphone are commonly used initially [2], with transition to NSAIDs like carprofen or meloxicam once hemostasis is achieved [1]. Local/regional blocks (e.g., epidural, peripheral nerve blocks) when applicable may reduce systemic opioid requirements [3]. Evidence suggests individual assessment of pain and titration of therapy is important [2].",
     sources: [
       { journal: "Veterinary Surgery", title: "Multimodal analgesia in small animal orthopedic surgery", year: 2022, url: "#" },
       { journal: "JAVMA", title: "AAHA/AAFP Pain Management Guidelines", year: 2020, url: "#" },
@@ -48,7 +40,7 @@ const MOCK_RESPONSES: Array<{
   {
     keywords: ["hyperthyroid", "methimazole", "monitoring", "feline", "cat"],
     content:
-      "Guidelines generally recommend monitoring serum T4 at 2–4 weeks after initiating methimazole, then at 4–6 week intervals until stable. CBC and chemistry panels are suggested before treatment and at regular intervals to screen for hematologic or hepatic adverse effects. Blood pressure assessment is often recommended given the cardiovascular effects of hyperthyroidism.",
+      "Guidelines generally recommend monitoring serum T4 at 2–4 weeks after initiating methimazole, then at 4–6 week intervals until stable [1]. CBC and chemistry panels are suggested before treatment and at regular intervals to screen for hematologic or hepatic adverse effects [2]. Blood pressure assessment is often recommended given the cardiovascular effects of hyperthyroidism [1].",
     sources: [
       { journal: "J Feline Med Surg", title: "ACVIM consensus statement on feline hyperthyroidism", year: 2023, url: "#" },
       { journal: "JAVMA", title: "Methimazole use and monitoring in cats", year: 2021, url: "#" },
@@ -57,7 +49,7 @@ const MOCK_RESPONSES: Array<{
   {
     keywords: ["fluid", "pancreatitis", "canine"],
     content:
-      "Evidence suggests balanced crystalloids (e.g., lactated Ringer's, Plasmalyte) are commonly used. Aggressive fluid resuscitation to restore perfusion, followed by maintenance with ongoing assessment of electrolytes and hydration, is a standard approach. Colloid use remains debated; crystalloid-first strategies are widely described. Close monitoring of volume status and response is emphasized.",
+      "Evidence suggests balanced crystalloids (e.g., lactated Ringer's, Plasmalyte) are commonly used [1]. Aggressive fluid resuscitation to restore perfusion, followed by maintenance with ongoing assessment of electrolytes and hydration, is a standard approach [2]. Colloid use remains debated; crystalloid-first strategies are widely described [1,3]. Close monitoring of volume status and response is emphasized [2].",
     sources: [
       { journal: "J Vet Emerg Crit Care", title: "Fluid therapy in acute pancreatitis", year: 2022, url: "#" },
       { journal: "Vet Clin North Am", title: "Canine acute pancreatitis: current concepts", year: 2021, url: "#" },
@@ -67,7 +59,7 @@ const MOCK_RESPONSES: Array<{
   {
     keywords: ["carprofen", "adverse", "effects", "side"],
     content:
-      "Carprofen is an NSAID; reported adverse effects include gastrointestinal signs (vomiting, anorexia, melena), hepatopathy, and renal effects. Published studies suggest GI adverse events in a minority of patients; frequency varies by study design and population. Hepatotoxicity is uncommon but well-documented. Renal effects may be of concern in hypovolemic or compromised patients. Product labeling and published reviews provide further detail on incidence.",
+      "Carprofen is an NSAID; reported adverse effects include gastrointestinal signs (vomiting, anorexia, melena), hepatopathy, and renal effects [1]. Published studies suggest GI adverse events in a minority of patients; frequency varies by study design and population [2]. Hepatotoxicity is uncommon but well-documented [1]. Renal effects may be of concern in hypovolemic or compromised patients [3]. Product labeling and published reviews provide further detail on incidence.",
     sources: [
       { journal: "JAVMA", title: "NSAID safety in dogs: a systematic review", year: 2021, url: "#" },
       { journal: "Vet J", title: "Adverse effects of carprofen in clinical use", year: 2019, url: "#" },
@@ -77,7 +69,7 @@ const MOCK_RESPONSES: Array<{
   {
     keywords: ["kidney", "CKD", "staging", "monitoring", "cat"],
     content:
-      "IRIS staging uses creatinine and SDMA to classify CKD into stages 1–4. Sub-staging by blood pressure and proteinuria is recommended. Monitoring typically includes serial creatinine/SDMA, electrolytes, blood pressure, urinalysis, and UPC. Frequency depends on stage and stability. Consensus guidelines recommend individualized plans based on patient factors.",
+      "IRIS staging uses creatinine and SDMA to classify CKD into stages 1–4 [1]. Sub-staging by blood pressure and proteinuria is recommended [1,2]. Monitoring typically includes serial creatinine/SDMA, electrolytes, blood pressure, urinalysis, and UPC [2]. Frequency depends on stage and stability. Consensus guidelines recommend individualized plans based on patient factors [1].",
     sources: [
       { journal: "IRIS", title: "IRIS staging of CKD guidelines", year: 2023, url: "#" },
       { journal: "J Feline Med Surg", title: "Chronic kidney disease in cats: guidelines", year: 2022, url: "#" },
@@ -86,7 +78,7 @@ const MOCK_RESPONSES: Array<{
   {
     keywords: ["sepsis", "consensus", "small animal"],
     content:
-      "Consensus definitions for sepsis in small animals typically describe a dysregulated host response to infection associated with organ dysfunction. Criteria may include suspected infection plus changes in vital signs, lactate, or other markers. Definitions continue to evolve; multiple working groups have proposed criteria. Refer to current consensus statements for the most up-to-date diagnostic criteria.",
+      "Consensus definitions for sepsis in small animals typically describe a dysregulated host response to infection associated with organ dysfunction [1]. Criteria may include suspected infection plus changes in vital signs, lactate, or other markers [2]. Definitions continue to evolve; multiple working groups have proposed criteria. Refer to current consensus statements for the most up-to-date diagnostic criteria [1,2].",
     sources: [
       { journal: "J Vet Emerg Crit Care", title: "RECOVER sepsis consensus in small animals", year: 2023, url: "#" },
       { journal: "ACVECC", title: "Sepsis definition and recognition in veterinary medicine", year: 2022, url: "#" },
@@ -95,7 +87,7 @@ const MOCK_RESPONSES: Array<{
   {
     keywords: ["antibiotic", "pyoderma", "canine", "selection"],
     content:
-      "Literature emphasizes culture and susceptibility when possible, especially for recurrent or deep pyoderma. First-line empirical choices often include beta-lactams or cephalosporins with narrow spectra. Avoidance of fluoroquinolones as first-line for routine superficial pyoderma is commonly recommended. Duration and topical therapy may vary by case. Guidelines stress antimicrobial stewardship.",
+      "Literature emphasizes culture and susceptibility when possible, especially for recurrent or deep pyoderma [1]. First-line empirical choices often include beta-lactams or cephalosporins with narrow spectra [2]. Avoidance of fluoroquinolones as first-line for routine superficial pyoderma is commonly recommended [1]. Duration and topical therapy may vary by case. Guidelines stress antimicrobial stewardship [2].",
     sources: [
       { journal: "Vet Dermatol", title: "Antimicrobial use in canine pyoderma", year: 2022, url: "#" },
       { journal: "JAVMA", title: "Guidelines for antimicrobial use in companion animals", year: 2021, url: "#" },
@@ -104,7 +96,7 @@ const MOCK_RESPONSES: Array<{
   {
     keywords: ["vaccination", "protocol", "adult", "cat", "unknown"],
     content:
-      "For adult cats with unknown vaccination history, guidelines generally recommend a full primary series as for an unvaccinated adult. Core vaccines (e.g., panleukopenia, herpesvirus, calicivirus, rabies) are typically administered according to label; a booster may be given 3–4 weeks after the first dose. Lifestyle and exposure risk guide non-core vaccine decisions.",
+      "For adult cats with unknown vaccination history, guidelines generally recommend a full primary series as for an unvaccinated adult [1]. Core vaccines (e.g., panleukopenia, herpesvirus, calicivirus, rabies) are typically administered according to label; a booster may be given 3–4 weeks after the first dose [2]. Lifestyle and exposure risk guide non-core vaccine decisions [1].",
     sources: [
       { journal: "AAFP", title: "Feline vaccination guidelines", year: 2023, url: "#" },
       { journal: "J Feline Med Surg", title: "Adult cat vaccination recommendations", year: 2022, url: "#" },

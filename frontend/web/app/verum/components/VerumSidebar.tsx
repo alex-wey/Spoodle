@@ -1,7 +1,8 @@
 'use client';
 
-import React from "react";
-import { Home, History, User } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Home, History, User, Sun, Moon } from "lucide-react";
+import { useTheme } from "next-themes";
 import {
   Sidebar as SidebarComponent,
   SidebarContent,
@@ -12,6 +13,41 @@ import {
 } from "@/components/ui/sidebar";
 
 export type VerumView = "home" | "history" | "profile";
+
+function ThemeToggle() {
+  const { setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) {
+    return (
+      <button className="w-full flex items-center gap-3 rounded-lg transition-colors py-2 px-3 text-white hover:bg-white/20">
+        <Sun className="h-5 w-5 flex-shrink-0 opacity-50" />
+        <span className="text-sm font-medium leading-tight">Theme</span>
+      </button>
+    );
+  }
+
+  const isDark = resolvedTheme === "dark";
+
+  return (
+    <button
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className="w-full flex items-center gap-3 rounded-lg transition-colors py-2 px-3 text-white hover:text-white hover:bg-white/20 dark:hover:bg-white/10"
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+    >
+      {isDark ? (
+        <Sun className="h-5 w-5 flex-shrink-0" />
+      ) : (
+        <Moon className="h-5 w-5 flex-shrink-0" />
+      )}
+      <span className="text-sm font-medium leading-tight">
+        {isDark ? "Light mode" : "Dark mode"}
+      </span>
+    </button>
+  );
+}
 
 interface VerumSidebarProps {
   activeView: VerumView;
@@ -28,21 +64,17 @@ export function VerumSidebar({
 }: VerumSidebarProps) {
   return (
     <SidebarComponent collapsible="none" style={{ "--sidebar-width": "11rem" } as React.CSSProperties}>
-      <SidebarContent className="bg-primary flex flex-col">
-        <div className="py-[9px] border-b border-white/20 px-3">
-          <span className="text-white font-semibold text-sm">Verum</span>
-        </div>
-
-        <SidebarGroup className="flex-shrink-0">
+      <SidebarContent className="bg-primary dark:bg-[hsl(224,22%,15%)] flex flex-col">
+        <SidebarGroup className="flex-shrink-0 px-3 pt-3">
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
               <SidebarMenuItem>
                 <button
                   onClick={onNavHome}
-                  className={`w-full flex items-center gap-3 rounded-lg transition-colors p-2 mx-2 ${
+                  className={`w-full flex items-center gap-3 rounded-lg transition-colors py-2 px-3 ${
                     activeView === "home"
-                      ? "bg-white text-primary font-medium shadow-sm"
-                      : "text-white hover:text-white hover:bg-white/20"
+                      ? "bg-white text-primary font-medium shadow-sm dark:bg-white/15 dark:text-white"
+                      : "text-white hover:text-white hover:bg-white/20 dark:hover:bg-white/10"
                   }`}
                 >
                   <Home className="h-5 w-5 flex-shrink-0" />
@@ -52,10 +84,10 @@ export function VerumSidebar({
               <SidebarMenuItem>
                 <button
                   onClick={onNavHistory}
-                  className={`w-full flex items-center gap-3 rounded-lg transition-colors p-2 mx-2 ${
+                  className={`w-full flex items-center gap-3 rounded-lg transition-colors py-2 px-3 ${
                     activeView === "history"
-                      ? "bg-white text-primary font-medium shadow-sm"
-                      : "text-white hover:text-white hover:bg-white/20"
+                      ? "bg-white text-primary font-medium shadow-sm dark:bg-white/15 dark:text-white"
+                      : "text-white hover:text-white hover:bg-white/20 dark:hover:bg-white/10"
                   }`}
                 >
                   <History className="h-5 w-5 flex-shrink-0" />
@@ -63,12 +95,22 @@ export function VerumSidebar({
                 </button>
               </SidebarMenuItem>
               <SidebarMenuItem>
+                <ThemeToggle />
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup className="mt-auto flex-shrink-0 px-3">
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
                 <button
                   onClick={onNavProfile}
-                  className={`w-full flex items-center gap-3 rounded-lg transition-colors p-2 mx-2 ${
+                  className={`w-full flex items-center gap-3 rounded-lg transition-colors py-2 px-3 ${
                     activeView === "profile"
-                      ? "bg-white text-primary font-medium shadow-sm"
-                      : "text-white hover:text-white hover:bg-white/20"
+                      ? "bg-white text-primary font-medium shadow-sm dark:bg-white/15 dark:text-white"
+                      : "text-white hover:text-white hover:bg-white/20 dark:hover:bg-white/10"
                   }`}
                 >
                   <User className="h-5 w-5 flex-shrink-0" />

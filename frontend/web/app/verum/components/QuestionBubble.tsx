@@ -28,7 +28,7 @@ interface QuestionBubbleProps {
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
+    month: "long",
     day: "numeric",
     year: "numeric",
   });
@@ -59,16 +59,16 @@ export function QuestionBubble({
       }`}
       onClick={isClickable ? handleClick : undefined}
     >
-      <div className="p-4 relative">
-        <div className="absolute top-3 right-3 text-xs text-muted-foreground">
+      <div className="relative px-3 py-3">
+        <div className="absolute top-2.5 right-2.5 text-xs text-muted-foreground">
           {formatDate(entry.date)}
         </div>
-        <div className="font-bold text-sm pr-12">{entry.question}</div>
-        <div className="text-sm text-muted-foreground mt-1 pr-12 line-clamp-3">
+        <div className="pr-11 text-sm font-bold">{entry.question}</div>
+        <div className="mt-0.5 pr-11 line-clamp-3 text-sm text-muted-foreground">
           ~ {entry.summary}
         </div>
         {(onDelete || onAddToFile || onCreateFile) && (
-          <div className="absolute bottom-3 right-3" onClick={(e) => e.stopPropagation()}>
+          <div className="absolute bottom-2.5 right-2.5" onClick={(e) => e.stopPropagation()}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                 <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -102,6 +102,7 @@ export function QuestionBubble({
                             e.stopPropagation();
                             onCreateFile([entry.id]);
                           }}
+                          className="font-bold"
                         >
                           Create new file
                         </DropdownMenuItem>

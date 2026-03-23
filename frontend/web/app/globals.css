@@ -104,6 +104,8 @@
     --ring: 210 82% 65%;
     --sidebar-background: 222 47% 6%;
     --sidebar-foreground: 210 20% 98%;
+    --popover: 222 47% 10%;
+    --popover-foreground: 210 20% 98%;
   }
 }
 
@@ -136,5 +138,14 @@
   }
   .animation-delay-4000 {
     animation-delay: 4s;
+  }
+
+  /**
+   * Verum main column: ~2 finger-widths from each screen edge, fixed at any viewport size.
+   * Safe-area insets added on notched devices so margin is never less than the finger gutter.
+   */
+  .verum-main-gutter {
+    padding-left: max(2.5rem, env(safe-area-inset-left, 0px));
+    padding-right: max(2.5rem, env(safe-area-inset-right, 0px));
   }
 }

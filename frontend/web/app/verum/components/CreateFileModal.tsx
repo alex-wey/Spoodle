@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +39,15 @@ export function CreateFileModal({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(initialQuestionIds));
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (open) {
+      setName("");
+      setIconUrl(null);
+      setSelectedIds(new Set(initialQuestionIds));
+      setSearch("");
+    }
+  }, [open, initialQuestionIds]);
+
   const filtered = useMemo(() => {
     if (!search.trim()) return allQuestions;
     return allQuestions.filter(
@@ -74,22 +83,14 @@ export function CreateFileModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg w-[95vw] max-w-lg overflow-visible">
         <DialogHeader>
           <DialogTitle>Create new file</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="space-y-4 w-full min-w-0 overflow-visible">
           <div>
-            <label className="text-sm font-medium mb-2 block">File name</label>
-            <Input
-              placeholder="Enter file name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium mb-2 block">File icon</label>
-            <div className="flex gap-3 items-center">
+            <label className="text-sm font-medium mb-2 block text-center">File icon</label>
+            <div className="flex justify-center">
               <div
                 className="w-16 h-16 rounded-lg border bg-muted flex items-center justify-center overflow-hidden cursor-pointer"
                 onClick={() => fileInputRef.current?.click()}
@@ -110,15 +111,24 @@ export function CreateFileModal({
               />
             </div>
           </div>
-          <div>
-            <label className="text-sm font-medium mb-2 block">Add questions</label>
+          <div className="w-full min-w-0 overflow-visible">
+            <label className="text-sm font-medium mb-2 block text-center">File name</label>
+            <Input
+              className="w-full"
+              placeholder="Enter file name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="w-full min-w-0">
+            <label className="text-sm font-medium mb-2 block text-center">Add questions</label>
             <Input
               placeholder="Search questions..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="mb-2"
+              className="mb-2 w-full"
             />
-            <ScrollArea className="h-48 rounded border p-2">
+            <ScrollArea className="h-48 w-full min-w-0 rounded border p-2">
               <div className="space-y-2">
                 {filtered.map((q) => (
                   <label
@@ -141,7 +151,7 @@ export function CreateFileModal({
             </ScrollArea>
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="justify-center gap-4 sm:justify-center sm:space-x-0 sm:gap-4">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
