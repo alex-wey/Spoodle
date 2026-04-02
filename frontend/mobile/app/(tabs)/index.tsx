@@ -11,7 +11,7 @@ export default function Index() {
 
   // Redirect based on authentication status
   if (isSignedIn) {
-    return <Redirect href="/(tabs)/pets" />;
+    return <Redirect href="/(tabs)/home" />;
   }
   
   return <Redirect href="/(auth)/landing" />;

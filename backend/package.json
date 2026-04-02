@@ -26,6 +26,7 @@
     "@aws-sdk/s3-request-presigner": "^3.919.0",
     "@clerk/backend": "^2.19.0",
     "@prisma/client": "^6.17.1",
+    "@railway/cli": "^4.36.0",
     "@types/nodemailer": "^7.0.2",
     "@types/pg": "^8.15.5",
     "@types/uuid": "^10.0.0",
@@ -39,11 +40,11 @@
     "multer-s3": "^3.0.1",
     "nodemailer": "^7.0.9",
     "openai": "^6.6.0",
+    "pdfkit": "^0.15.0",
     "pg": "^8.16.3",
     "resend": "^6.2.2",
     "uuid": "^13.0.0",
-    "zod": "^3.22.4",
-    "pdfkit": "^0.15.0"
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -52,6 +53,7 @@
     "@types/multer": "^1.4.11",
     "@types/multer-s3": "^3.0.3",
     "@types/node": "^22.0.0",
+    "@types/pdfkit": "^0.13.6",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.56.0",
@@ -60,8 +62,7 @@
     "prettier": "^3.1.0",
     "prisma": "^6.17.1",
     "tsx": "^4.7.0",
-    "typescript": "^5.3.0",
-    "@types/pdfkit": "^0.13.6"
+    "typescript": "^5.3.0"
   },
   "engines": {
     "node": ">=22.0.0"

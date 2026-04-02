@@ -1,5 +1,5 @@
 import { Tabs, Redirect } from "expo-router";
-import { Dog, BotMessageSquare, User, Calendar } from "lucide-react-native";
+import { Dog, BotMessageSquare, User, Calendar, Home } from "lucide-react-native";
 import { useAuth } from '@clerk/clerk-expo';
 import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -36,6 +36,14 @@ export default function TabLayout() {
         tabBarShowLabel: true,
       }}
     >
+      <Tabs.Screen
+        name="home"
+        options={{
+          title: "Home",
+          href: "/(tabs)/home",
+          tabBarIcon: ({ color }) => <Home size={24} color={color} />,
+        }}
+      />
       <Tabs.Screen
         name="pets/index"
         options={{

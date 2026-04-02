@@ -1,0 +1,151 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Veterinary Management Software Design System */
+
+@layer base {
+  :root {
+    /* Core veterinary brand colors */
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
+
+    /* Custom blue primary #4559A7 */
+    --primary: 229 39% 47%;
+    --primary-foreground: 210 20% 98%;
+    --primary-light: 229 39% 60%;
+    --primary-dark: 229 39% 35%;
+
+    /* Custom green secondary #3BB272 */
+    --secondary: 145 51% 47%;
+    --secondary-foreground: 210 20% 98%;
+    --secondary-light: 145 51% 60%;
+
+    /* Neutral accent */
+    --accent: 0 0% 75%;
+    --accent-foreground: 210 20% 98%;
+    --accent-light: 0 0% 85%;
+
+    /* Pink accent for special highlights */
+    --pink: 330 81% 60%;
+    --pink-foreground: 210 20% 98%;
+
+    /* Professional card system */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --card-hover: 210 20% 96%;
+
+    /* Muted backgrounds for sections */
+    --muted: 210 20% 94%;
+    --muted-foreground: 215 16% 47%;
+
+    /* Status colors for appointments */
+    --success: 142 76% 36%;
+    --success-foreground: 210 20% 98%;
+    --warning: 32 95% 44%;
+    --warning-foreground: 210 20% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 20% 98%;
+
+    /* Interactive elements */
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 210 82% 51%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Professional spacing and typography */
+    --radius: 0.75rem;
+    --header-height: 4rem;
+
+    /* Sidebar colors for vet software navigation */
+    --sidebar-background: 210 20% 96%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 210 82% 51%;
+    --sidebar-primary-foreground: 210 20% 98%;
+    --sidebar-accent: 210 20% 92%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 210 82% 51%;
+
+    /* Professional gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-dark)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--secondary-light)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+    
+    /* Appointment status gradients */
+    --gradient-booked: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-light)) 100%);
+    --gradient-pending: linear-gradient(135deg, hsl(var(--warning)) 0%, hsl(var(--accent-light)) 100%);
+    --gradient-discharged: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(var(--secondary-light)) 100%);
+
+    /* Professional shadows */
+    --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-hover: 0 8px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-focus: 0 0 0 3px hsl(var(--ring) / 0.1);
+  }
+
+  /* Dark mode - professional medical theme */
+  .dark {
+    --background: 222 47% 8%;
+    --foreground: 210 20% 98%;
+    --card: 222 47% 10%;
+    --card-foreground: 210 20% 98%;
+    --card-hover: 222 47% 12%;
+    --primary: 210 82% 65%;
+    --primary-foreground: 222 47% 8%;
+    --secondary: 142 76% 50%;
+    --secondary-foreground: 222 47% 8%;
+    --muted: 222 47% 12%;
+    --muted-foreground: 215 16% 65%;
+    --accent: 0 0% 80%;
+    --accent-foreground: 222 47% 8%;
+    --border: 222 47% 15%;
+    --input: 222 47% 15%;
+    --ring: 210 82% 65%;
+    --sidebar-background: 222 47% 6%;
+    --sidebar-foreground: 210 20% 98%;
+    --popover: 222 47% 10%;
+    --popover-foreground: 210 20% 98%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+
+  /* Professional typography hierarchy */
+  h1 {
+    @apply text-2xl font-semibold tracking-tight;
+  }
+
+  h2 {
+    @apply text-xl font-semibold tracking-tight;
+  }
+
+  h3 {
+    @apply text-lg font-medium;
+  }
+}
+
+@layer utilities {
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+
+  /**
+   * Verum main column: ~2 finger-widths from each screen edge, fixed at any viewport size.
+   * Safe-area insets added on notched devices so margin is never less than the finger gutter.
+   */
+  .verum-main-gutter {
+    padding-left: max(2.5rem, env(safe-area-inset-left, 0px));
+    padding-right: max(2.5rem, env(safe-area-inset-right, 0px));
+  }
+}
