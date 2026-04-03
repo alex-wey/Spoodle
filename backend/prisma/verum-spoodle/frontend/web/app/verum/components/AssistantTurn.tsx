@@ -165,8 +165,9 @@ function SourcesFooter({
             <li key={i}>
               <a
                 href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
                 data-source={String(n)}
-                onClick={(e) => e.preventDefault()}
                 onPointerEnter={() => setHighlightedSource(n)}
                 className={[
                   "flex items-start gap-3 rounded-xl border px-3 py-2.5 text-left text-xs transition-all duration-150",
