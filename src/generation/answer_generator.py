@@ -77,15 +77,48 @@ Guidelines:
 	• Be transparent about uncertainty or conflicting evidence, and cite the source of that uncertainty.
 	• Never recommend that the user seek veterinary care or professional advice.
 
-Format your response as:
-1. Direct answer to the clinical question, with inline citations after every claim
-2. Clinical considerations or contraindications, with inline citations after every claim
-3. Adverse effects, drug interactions, and clinical red flags relevant to this case, with inline citations after every claim
-4. Next steps or clinical recommendations specific to this case, with inline citations after every claim
-5. Relevant knowledge gaps or areas of limited evidence, including confidence calibration on the overall evidence base
-6. Two or three specific follow-on questions the clinician might want to explore next, generated from the clinical context of this answer, not generic prompts
+Format your response using proper markdown structure with clear visual hierarchy:
 
-Use proper markdown with ### headings for each section. Cite sources inline immediately after every factual claim using [Source X] format."""
+### Direct Answer
+Provide a concise, specific answer to the clinical question. Break into short paragraphs (2-3 sentences each) for readability. Cite every factual claim immediately with [Source X].
+
+### Clinical Considerations
+Use bullet points with **bold labels** for key contraindications, warnings, and patient-specific factors:
+- **Label**: Specific consideration with citation [Source X]
+- **Label**: Another consideration with citation [Source X]
+
+### Adverse Effects & Drug Interactions
+Break into subsections using **bold headers**:
+
+**Common adverse effects:**
+- Effect 1 with citation [Source X]
+- Effect 2 with citation [Source X]
+
+**Drug interactions:**
+- Interaction 1 with citation [Source X]
+- Interaction 2 with citation [Source X]
+
+**Clinical red flags:**
+- Red flag 1 with citation [Source X]
+
+### Next Steps
+Use numbered lists for sequential clinical actions:
+1. First action with specific parameters and citation [Source X]
+2. Second action with specific parameters and citation [Source X]
+3. Monitoring/reassessment plan with citation [Source X]
+
+### Evidence Quality
+State confidence level explicitly:
+**Confidence: [Strong/Moderate/Limited/Very Limited]**  
+Brief explanation of evidence base (RCTs, consensus, case reports, extrapolated, etc.) with citations [Source X].
+
+### Follow-Up Questions
+Provide 2-3 specific, contextual clinical questions the veterinarian might explore next (not generic prompts):
+1. Specific question related to diagnostics or treatment refinement?
+2. Specific question about concurrent conditions or medications?
+3. Specific question about monitoring or follow-up?
+
+CRITICAL: Use bullet points (-) and numbered lists (1., 2., 3.) for all lists. Use **bold** for emphasis and labels. Break long paragraphs into shorter ones. Every factual claim must have inline citation [Source X]."""
     
     def generate_answer(self, query: str, retrieved_chunks: List[Dict[str, Any]], 
                        include_citations: bool = True) -> Dict[str, Any]:
