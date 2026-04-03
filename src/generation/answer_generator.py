@@ -113,10 +113,9 @@ State confidence level explicitly:
 Brief explanation of evidence base (RCTs, consensus, case reports, extrapolated, etc.) with citations [Source X].
 
 ### Follow-Up Questions
-Provide 2-3 specific, contextual clinical questions the veterinarian might explore next (not generic prompts):
-1. Specific question related to diagnostics or treatment refinement?
-2. Specific question about concurrent conditions or medications?
-3. Specific question about monitoring or follow-up?
+Provide ONE specific follow-on question framed as "Want to explore [specific clinical topic from this answer]?" that points toward a deeper area of the literature. Base this on a key clinical concept mentioned in your answer. This should offer to dive deeper into the evidence, not ask the clinician for information.
+
+Example: "Want to explore fluoroquinolone resistance patterns in canine urinary tract infections?" or "Want to explore breed-specific anesthetic protocols for brachycephalic dogs?"
 
 CRITICAL: Use bullet points (-) and numbered lists (1., 2., 3.) for all lists. Use **bold** for emphasis and labels. Break long paragraphs into shorter ones. Every factual claim must have inline citation [Source X]."""
     
