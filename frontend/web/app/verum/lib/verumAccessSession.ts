@@ -12,8 +12,15 @@ export type VerumAccessPayload =
       fullName: string;
     };
 
+// List of approved emails that can access Verum
+const APPROVED_EMAILS = [
+  "woof@spoodle.ai",
+  // Add more approved emails here
+];
+
 export function isBypassEmail(email: string): boolean {
-  return email.trim().toLowerCase() === "woof@spoodle.ai";
+  const normalizedEmail = email.trim().toLowerCase();
+  return APPROVED_EMAILS.includes(normalizedEmail);
 }
 
 export function writeVerumBypassSession(): void {

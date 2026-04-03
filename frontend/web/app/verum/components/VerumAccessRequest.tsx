@@ -69,9 +69,9 @@ export default function VerumAccessRequest({ onGranted }: { onGranted: () => voi
 
   const [studentEmailError, setStudentEmailError] = useState("");
 
-  const eduValid = useMemo(() => isEduEmail(stuEmail) || stuEmail.includes('@'), [stuEmail]);
+  const eduValid = useMemo(() => isBypassEmail(stuEmail), [stuEmail]);
   const studentBypassReady = useMemo(() => isBypassEmail(stuEmail), [stuEmail]);
-  const studentCanSubmit = stuEmail.includes('@') && stuEmail.length > 3;
+  const studentCanSubmit = isBypassEmail(stuEmail) && stuName.trim() && stuSchool && stuYear.trim();
 
   const handleRoleSelect = (r: NonNullable<Role>) => {
     setRole(r);
@@ -103,13 +103,14 @@ export default function VerumAccessRequest({ onGranted }: { onGranted: () => voi
       onGranted();
       return;
     }
-    // Allow any valid email format (simplified for demo/development)
+    // Only approved emails can access
     if (!stuEmail.includes('@') || stuEmail.length < 3) {
       setStudentEmailError("Please enter a valid email address");
       return;
     }
-    if (!stuName.trim() || !stuSchool || !stuYear.trim()) return;
-    setStep("confirm_student");
+    // Block access for non-approved emails
+    setStudentEmailError("This email is not authorized. Please contact support for access.");
+    return;
   };
 
   const handleStudentContinue = () => {
@@ -331,7 +332,7 @@ export default function VerumAccessRequest({ onGranted }: { onGranted: () => voi
                 <div className="flex items-start justify-between gap-3 border-b border-white/10 pb-4">
                   <div>
                     <h2 className="text-lg font-semibold text-white">Student access</h2>
-                    <p className="mt-1 text-xs text-white/45">Use any valid email address to register.</p>
+                    <p className="mt-1 text-xs text-white/45">Access is restricted to approved emails only.</p>
                   </div>
                   <Button
                     type="button"
@@ -373,7 +374,7 @@ export default function VerumAccessRequest({ onGranted }: { onGranted: () => voi
                     {stuEmail && (
                       <p
                         className={`flex items-center gap-1.5 text-xs ${
-                          studentBypassReady || eduValid ? "text-emerald-400/90" : "text-red-400/90"
+                          studentBypassReady ? "text-emerald-400/90" : "text-red-400/90"
                         }`}
                       >
                         {studentBypassReady ? (
@@ -381,13 +382,8 @@ export default function VerumAccessRequest({ onGranted }: { onGranted: () => voi
                             <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
                             Email accepted
                           </>
-                        ) : eduValid ? (
-                          <>
-                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                            Valid email address
-                          </>
                         ) : (
-                          "Must end in .edu"
+                          "This email is not authorized"
                         )}
                       </p>
                     )}
