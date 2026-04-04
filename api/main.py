@@ -114,7 +114,7 @@ async def ask_verum(request: AskRequest):
             return AskResponse(
                 success=True,
                 data={
-                    "content": "I couldn't find relevant information in the veterinary literature database to answer this question. Please try rephrasing your question or contact your veterinarian for guidance.",
+                    "content": "No relevant veterinary literature was found for this query. This may indicate:\n\n1. The indexed literature doesn't cover this specific topic\n2. The question needs to be rephrased for better matching\n3. This is a knowledge gap in the current database\n\nTry rephrasing your question with more specific clinical terms (e.g., 'canine lymphoma', 'osteosarcoma in dogs', 'mast cell tumors').",
                     "sources": []
                 },
                 message="No relevant sources found"
@@ -197,6 +197,30 @@ async def ask_verum(request: AskRequest):
         )
 
 
+@app.get("/api/debug/test-retrieval")
+async def test_retrieval(query: str = "cancer"):
+    """Debug endpoint to test vector search retrieval"""
+    try:
+        # Test retrieval
+        results = retriever.retrieve(query, top_k=3)
+        
+        return {
+            "query": query,
+            "num_results": len(results),
+            "results": [
+                {
+                    "similarity": r.get("similarity"),
+                    "journal": r.get("journal"),
+                    "pmid": r.get("pmid"),
+                    "text_preview": r.get("text", "")[:200]
+                }
+                for r in results
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error testing retrieval: {str(e)}")
+
+
 @app.get("/api/stats")
 async def get_stats():
     """Get statistics about the RAG database"""
@@ -209,18 +233,29 @@ async def get_stats():
         total_chunks = cursor.fetchone()[0]
         
         # Get unique papers
-        cursor.execute("SELECT COUNT(DISTINCT pmc_id) FROM document_chunks")
+        cursor.execute("SELECT COUNT(DISTINCT pmc_id) FROM document_chunks WHERE pmc_id IS NOT NULL")
         total_papers = cursor.fetchone()[0]
         
         # Get journals
-        cursor.execute("SELECT COUNT(DISTINCT journal) FROM document_chunks")
+        cursor.execute("SELECT COUNT(DISTINCT journal) FROM document_chunks WHERE journal IS NOT NULL")
         total_journals = cursor.fetchone()[0]
+        
+        # Check embeddings
+        cursor.execute("SELECT COUNT(*) FROM document_chunks WHERE embedding IS NOT NULL")
+        chunks_with_embeddings = cursor.fetchone()[0]
+        
+        # Get sample journals
+        cursor.execute("SELECT DISTINCT journal FROM document_chunks WHERE journal IS NOT NULL LIMIT 5")
+        sample_journals = [row[0] for row in cursor.fetchall()]
         
         return {
             "total_chunks": total_chunks,
             "total_papers": total_papers,
             "total_journals": total_journals,
-            "status": "operational"
+            "chunks_with_embeddings": chunks_with_embeddings,
+            "embedding_coverage": f"{(chunks_with_embeddings/total_chunks*100) if total_chunks > 0 else 0:.1f}%",
+            "sample_journals": sample_journals,
+            "status": "operational" if total_chunks > 0 and chunks_with_embeddings > 0 else "empty_database"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching stats: {str(e)}")
