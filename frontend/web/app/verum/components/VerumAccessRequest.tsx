@@ -34,13 +34,6 @@ const SPOODLE_GREEN = "#3BB272";
 type Role = "veterinarian" | "student" | null;
 type Step = "role" | "vet_form" | "student_form" | "confirm_student" | "confirm_pending";
 
-function isEduEmail(email: string): boolean {
-  const t = email.trim().toLowerCase();
-  const at = t.lastIndexOf("@");
-  if (at < 0) return false;
-  return t.slice(at).endsWith(".edu");
-}
-
 const inputClass =
   "h-11 rounded-xl border-white/10 bg-white/[0.06] text-[15px] text-white shadow-inner placeholder:text-white/40 " +
   "focus-visible:border-[#4559A7]/60 focus-visible:ring-2 focus-visible:ring-[#4559A7]/30 transition-[border-color,box-shadow]";
@@ -69,7 +62,6 @@ export default function VerumAccessRequest({ onGranted }: { onGranted: () => voi
 
   const [studentEmailError, setStudentEmailError] = useState("");
 
-  const eduValid = useMemo(() => isBypassEmail(stuEmail), [stuEmail]);
   const studentBypassReady = useMemo(() => isBypassEmail(stuEmail), [stuEmail]);
   const studentCanSubmit = isBypassEmail(stuEmail) && stuName.trim() && stuSchool && stuYear.trim();
 
@@ -449,7 +441,7 @@ export default function VerumAccessRequest({ onGranted }: { onGranted: () => voi
                   className={primaryButtonClass}
                   style={{ backgroundColor: SPOODLE_GREEN, color: "#fff" }}
                 >
-                  Continue to Spoodle
+                  Continue to Verum
                 </Button>
               </div>
             )}
@@ -465,7 +457,7 @@ export default function VerumAccessRequest({ onGranted }: { onGranted: () => voi
                   </h2>
                   <p className="mt-3 text-left text-sm leading-relaxed text-white/55">
                     Your license details are with our team for verification with your state board. We&apos;ll email{" "}
-                    <span className="font-medium text-white/85">{vetEmail}</span> when your Spoodle access is approved —
+                    <span className="font-medium text-white/85">{vetEmail}</span> when your Verum access is approved —
                     usually within <span className="text-white/70">1–2 business days</span>.
                   </p>
                 </div>
@@ -482,7 +474,7 @@ export default function VerumAccessRequest({ onGranted }: { onGranted: () => voi
           </div>
 
               <p className="pb-2 text-center text-[11px] leading-relaxed text-white/35 sm:pb-0">
-                Spoodle surfaces licensed veterinary literature for research workflows. It does not replace clinical judgment.
+                Verum surfaces licensed veterinary literature for research workflows. It does not replace clinical judgment.
               </p>
             </div>
           </div>

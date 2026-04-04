@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { ThemeProvider } from "next-themes";
+import { useRouter } from "next/navigation";
 import { hasVerumAccessGrant } from "../lib/verumAccessSession";
-import VerumAccessRequest from "./VerumAccessRequest";
 
-function VerumAuthLoader() {
+export function VerumAuthLoader() {
   return (
     <div className="relative flex h-dvh w-full min-h-0 items-center justify-center overflow-hidden bg-[hsl(222,47%,8%)] text-foreground">
       <div className="pointer-events-none absolute inset-0">
@@ -18,32 +17,28 @@ function VerumAuthLoader() {
           className="h-10 w-10 rounded-full border-2 border-[#4559A7]/40 border-t-[#F47721] animate-spin"
           aria-hidden
         />
-        <p className="text-sm font-medium tracking-wide text-white/70">Opening Spoodle…</p>
+        <p className="text-sm font-medium tracking-wide text-white/70">Opening Verum…</p>
       </div>
     </div>
   );
 }
 
 export function VerumAccessGate({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [allowed, setAllowed] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Check if user has already logged in
     setAllowed(hasVerumAccessGrant());
   }, []);
 
-  if (allowed === null) {
-    return <VerumAuthLoader />;
-  }
+  useEffect(() => {
+    if (allowed === false) {
+      router.replace("/");
+    }
+  }, [allowed, router]);
 
-  if (!allowed) {
-    return (
-      <div className="flex h-dvh w-full min-h-0 flex-col overflow-hidden">
-        <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark" enableSystem={false}>
-          <VerumAccessRequest onGranted={() => setAllowed(true)} />
-        </ThemeProvider>
-      </div>
-    );
+  if (allowed === null || allowed === false) {
+    return <VerumAuthLoader />;
   }
 
   return <>{children}</>;

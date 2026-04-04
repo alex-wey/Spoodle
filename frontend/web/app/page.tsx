@@ -1,28 +1,39 @@
-'use client';
+"use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { ThemeProvider } from "next-themes";
+import { hasVerumAccessGrant } from "@/app/verum/lib/verumAccessSession";
+import VerumAccessRequest from "@/app/verum/components/VerumAccessRequest";
+import { VerumAuthLoader } from "@/app/verum/components/VerumAccessGate";
 
-export default function EntryPage() {
+export default function SignInPage() {
   const router = useRouter();
-  const { isLoaded, isSignedIn } = useAuth();
-  
-  useEffect(() => {
-    if (!isLoaded) {
-      return;
-    }
+  const [ready, setReady] = useState(false);
+  const [hasGrant, setHasGrant] = useState(false);
 
-    if (isSignedIn) {
-      router.replace("/home");
-    } else {
-      router.replace("/sign-in");
+  useEffect(() => {
+    const ok = hasVerumAccessGrant();
+    setHasGrant(ok);
+    setReady(true);
+    if (ok) {
+      router.replace("/verum");
     }
-  }, [isLoaded, isSignedIn, router]);
+  }, [router]);
+
+  if (!ready || hasGrant) {
+    return <VerumAuthLoader />;
+  }
 
   return (
-    <div className="flex h-screen w-full items-center justify-center bg-gray-50">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    <div className="flex h-dvh w-full min-h-0 flex-col overflow-hidden">
+      <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark" enableSystem={false}>
+        <VerumAccessRequest
+          onGranted={() => {
+            router.replace("/verum");
+          }}
+        />
+      </ThemeProvider>
     </div>
   );
 }

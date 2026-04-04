@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { VerumProviderWrapper } from "@/components/VerumProviderWrapper";
 import "./globals.css";
 
 const inter = Inter({
@@ -21,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
-        {children}
+        <VerumProviderWrapper>{children}</VerumProviderWrapper>
       </body>
     </html>
   );

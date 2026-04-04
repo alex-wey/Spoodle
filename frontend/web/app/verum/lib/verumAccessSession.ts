@@ -1,4 +1,4 @@
-/** Verum-only access (separate from main Spoodle / Clerk). */
+/** Verum access gate (localStorage); separate from any external auth. */
 export const VERUM_ACCESS_KEY = "verum_mockup_access_v1";
 
 export type VerumAccessPayload =
@@ -12,7 +12,7 @@ export type VerumAccessPayload =
       fullName: string;
     };
 
-// List of approved emails that can access Verum
+// Approved emails bypass the student flow (e.g. internal / demo accounts)
 const APPROVED_EMAILS = [
   "woof@spoodle.ai",
   // Add more approved emails here
