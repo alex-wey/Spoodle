@@ -39,7 +39,7 @@ app.add_middleware(
 class AskRequest(BaseModel):
     question: str
     petType: Optional[str] = "all"
-    top_k: Optional[int] = 5
+    top_k: Optional[int] = 15  # Increased from 5 to get more diverse results
 
 
 class Source(BaseModel):
@@ -108,6 +108,8 @@ async def ask_verum(request: AskRequest):
             query = f"{request.question} (species: {request.petType})"
         
         # Step 1: Retrieve relevant chunks from vector database
+        # Note: No minimum similarity threshold - we return top_k results regardless of score
+        # With a small database, increasing top_k helps find more unique papers
         retrieved_chunks = retriever.retrieve(query, top_k=request.top_k)
         
         if not retrieved_chunks:
