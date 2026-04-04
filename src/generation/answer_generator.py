@@ -58,7 +58,11 @@ class AnswerGenerator:
         """
         return """You are a clinical intelligence assistant built for licensed veterinarians in active clinical practice. Your only audience is the treating clinician. Never suggest consulting a veterinarian, as the user is the veterinarian.
 
-The sources provided to you are peer-reviewed veterinary literature. Always prioritize these sources over your general training data when formulating responses. If the provided sources contain relevant information, your answer must be grounded in them. Where multiple sources are available, synthesize across all of them rather than relying on a single reference. A response citing only one source when others are available is insufficient. If no relevant sources are provided, do not fabricate citations or draw on general training data as if it were sourced. State clearly that the available literature does not contain sufficient evidence to answer the question.
+CRITICAL RULE #1: When sources are provided in the user message, you MUST answer the question using those sources. Refusing to answer, saying sources are not relevant, or claiming you cannot provide information are NOT acceptable responses. If sources exist, extract and synthesize information from them.
+
+CRITICAL RULE #2: Every veterinary clinical question (about diseases, treatments, diagnostics, medications, etc.) MUST be answered. Do not reject questions about feline diabetes, canine conditions, equine problems, or any animal health topics - these are ALL valid veterinary medicine.
+
+The sources provided to you are peer-reviewed veterinary literature retrieved specifically for each clinical question. Where multiple sources are available, synthesize across all of them rather than relying on a single reference. A response citing only one source when others are available is insufficient.
 
 Your role is to:
 	1. Provide accurate, evidence-based answers to veterinary questions with maximum clinical specificity
@@ -78,13 +82,15 @@ Apply clinical specificity across every dimension:
 Guidelines:
 	• Every factual claim, in every part of your response, must be followed immediately by an inline citation in [Source X] format. No assertion is ever made without a citation.
 	• A direct answer with no citation is a failure state equivalent to no answer.
+	• CRITICAL: You will be told exactly which source numbers are valid (e.g., [Source 1], [Source 2], [Source 3]). You must NEVER cite a source number that was not explicitly provided to you. Citing non-existent sources is strictly forbidden. If you cite [Source 5] but only have 3 sources, that is a critical error.
 	• Actively synthesize across multiple sources wherever possible, noting agreement or conflict between them. If sources agree, cite all relevant sources [Source 1, Source 2]. If sources conflict, explicitly note the disagreement and cite both perspectives.
-	• Always attempt to answer the clinical question. Never refuse on the basis that evidence is limited or emerging. Instead, answer with explicit confidence calibration: state whether the evidence is strong, limited, extrapolated from human medicine, or based on case reports only, and cite the basis for that assessment.
-	• If a question is on the fringe of veterinary literature or involves emerging evidence, answer with full confidence calibration and state clearly what the evidence base is and where its limits are.
-	• If a question has no relationship to veterinary medicine or clinical practice, respond only with: "This question is outside the scope of veterinary clinical practice. Please ask a clinical question."
+	• Always attempt to answer the clinical question. Never refuse on the basis that evidence is limited or emerging. Answer directly based on the provided sources.
+	• Do NOT mention evidence quality, confidence levels, evidence strength, or similar assessments anywhere in your response. Never use phrases like "strong evidence," "limited evidence," "case reports only," "confidence: moderate," or similar statements. Simply provide the answer with citations.
+	• CRITICAL: Questions about animal diseases, treatments, diagnostics, medications, surgery, anesthesia, pathology, pharmacology, or any aspect of animal health ARE veterinary medicine and MUST be answered. Examples: "feline diabetes," "canine parvovirus," "equine colic," "antibiotic selection," "surgical protocols" are ALL veterinary medicine. Only reject obviously non-veterinary questions like weather, jokes, politics, or personal life advice. When in doubt, answer the question.
 	• Be transparent about uncertainty or conflicting evidence, and cite the source of that uncertainty.
 	• Be as specific as possible on dosing, monitoring parameters, and contraindications. If dosing is mentioned, include weight-based details and route of administration where available.
 	• Never recommend that the user seek veterinary care or professional advice.
+	• NEVER ask the user to provide sources, literature, or additional information. You work only with the sources provided to you by the retrieval system. Never use phrases like "please provide sources," "if you have other sources," or "submit additional literature."
 
 Format your response using proper markdown structure with clear visual hierarchy:
 
@@ -116,11 +122,6 @@ Use numbered lists for sequential clinical actions:
 2. Second action with specific parameters and citation [Source X]
 3. Monitoring/reassessment plan with citation [Source X]
 
-### Evidence Quality
-State confidence level explicitly:
-**Confidence: [Strong/Moderate/Limited/Very Limited]**  
-Brief explanation of evidence base (RCTs, consensus, case reports, extrapolated, etc.) with citations [Source X].
-
 ### Follow-Up Questions
 Provide ONE specific follow-on question framed as "Want to explore [specific clinical topic from this answer]?" that points toward a deeper area of the literature. Base this on a key clinical concept mentioned in your answer. This should offer to dive deeper into the evidence, not ask the clinician for information.
 
@@ -150,17 +151,62 @@ CRITICAL: Use bullet points (-) and numbered lists (1., 2., 3.) for all lists. U
                 "error": "No relevant sources found"
             }
         
-        # Format context
-        context = self.format_context(retrieved_chunks)
+        # Deduplicate chunks by paper (PMID) - keep only the most relevant chunk per paper
+        seen_papers = {}
+        deduplicated_chunks = []
         
-        # Create user prompt
+        for chunk in retrieved_chunks:
+            # Use PMID as unique identifier (more reliable than PMC ID)
+            pmid = chunk.get('pmid', chunk.get('pmc_id', ''))
+            if pmid and pmid not in seen_papers:
+                deduplicated_chunks.append(chunk)
+                seen_papers[pmid] = True
+            elif not pmid:
+                # If no PMID, keep the chunk anyway (shouldn't happen but safety)
+                deduplicated_chunks.append(chunk)
+        
+        # Format context using deduplicated chunks
+        context = self.format_context(deduplicated_chunks)
+        
+        # Create user prompt with valid source list (using deduplicated count)
+        num_sources = len(deduplicated_chunks)
+        valid_sources = ', '.join([f'[Source {i}]' for i in range(1, num_sources + 1)])
+        
         user_prompt = f"""Clinical Question: {query}
+
+====================================
+MANDATORY INSTRUCTION - READ FIRST
+====================================
+You are answering a veterinary clinical question. Sources have been retrieved for you below. 
+You MUST answer this question using those sources. 
+DO NOT REFUSE. DO NOT say sources are irrelevant. DO NOT say you cannot answer.
+Extract whatever information is available from the sources and provide it.
+====================================
 
 Based on the following peer-reviewed veterinary literature sources, provide a clinically specific, evidence-based answer:
 
 {context}
 
+IMPORTANT: You have been provided with exactly {num_sources} sources.
+The ONLY valid citations are: {valid_sources}
+You must NEVER cite any source number outside this list. Citing [Source {num_sources + 1}] or any non-existent source is strictly forbidden and considered a critical error.
+Only cite sources that actually support your claim.
+
+These sources have been retrieved specifically for this clinical question about {query}. You MUST answer this question using the sources above. This is a valid veterinary clinical question and must be answered. 
+
+FORBIDDEN phrases - NEVER use these:
+- "The provided sources do not contain relevant information"
+- "This question is outside the scope of veterinary clinical practice"
+- "I cannot provide an answer"
+- "I cannot provide an evidence-based answer"
+- "Please ask a clinical question"
+- "Please consider exploring other literature"
+- "Therefore, I cannot"
+
+If sources exist above (which they do), you MUST use them to answer. Refusal is not acceptable.
+
 Requirements:
+- YOU MUST ANSWER THE QUESTION using the sources above
 - Cite sources inline immediately after every factual claim using [Source X] format
 - Synthesize across ALL provided sources; do not rely on only one when multiple are relevant
 - If sources agree, cite all of them [Source 1, Source 2, Source 3]
@@ -168,8 +214,8 @@ Requirements:
 - Provide specific drug names, doses, routes, frequencies, and durations (not drug classes)
 - Provide specific anatomical structures, pathogens, and mechanisms (not general categories)
 - Include specific diagnostic values and reference ranges where applicable
-- State confidence level and evidence quality (strong evidence, limited evidence, case reports only, etc.)
-- If literature is limited or absent, state this explicitly as a knowledge gap"""
+- Do NOT mention evidence quality, confidence levels, or evidence strength anywhere in your response
+- Answer based on the provided sources. If the sources only partially address the question, provide what is available and note what aspects are not covered in the provided literature"""
         
         # Generate response
         try:
@@ -187,10 +233,10 @@ Requirements:
             
             answer_text = response.choices[0].message.content
             
-            # Prepare sources for citation
+            # Prepare sources for citation (already deduplicated)
             sources = []
             if include_citations:
-                for i, chunk in enumerate(retrieved_chunks, 1):
+                for i, chunk in enumerate(deduplicated_chunks, 1):
                     sources.append({
                         "source_number": i,
                         "journal": chunk['journal'],
@@ -206,7 +252,7 @@ Requirements:
                 "sources": sources,
                 "query": query,
                 "model": self.model,
-                "num_sources_used": len(retrieved_chunks),
+                "num_sources_used": len(deduplicated_chunks),
                 "tokens_used": response.usage.total_tokens,
                 "finish_reason": response.choices[0].finish_reason
             }
@@ -245,17 +291,35 @@ Requirements:
         
         if top_similarity < confidence_threshold:
             logging.warning(f"⚠️ Low confidence: top similarity = {top_similarity:.2%}")
-            return {
-                "answer": f"⚠️ Low Confidence Retrieval (similarity: {top_similarity:.2%})\n\nThe retrieved literature sources have low relevance to this specific query. This may indicate a gap in the indexed evidence base, or that the question requires reformulation. The available sources may not directly address the clinical question as posed. Consider alternative search terms or related clinical approaches.",
-                "sources": [
-                    {
-                        "source_number": i,
+            
+            # Deduplicate sources by PMID for low confidence response
+            seen_papers = {}
+            deduplicated_sources = []
+            source_number = 1
+            
+            for chunk in retrieved_chunks:
+                pmid = chunk.get('pmid', chunk.get('pmc_id', ''))
+                if pmid and pmid not in seen_papers:
+                    deduplicated_sources.append({
+                        "source_number": source_number,
                         "journal": chunk['journal'],
                         "pmc_id": chunk['pmc_id'],
                         "similarity": chunk['similarity']
-                    }
-                    for i, chunk in enumerate(retrieved_chunks, 1)
-                ],
+                    })
+                    seen_papers[pmid] = True
+                    source_number += 1
+                elif not pmid:
+                    deduplicated_sources.append({
+                        "source_number": source_number,
+                        "journal": chunk.get('journal', 'Unknown'),
+                        "pmc_id": chunk.get('pmc_id', 'Unknown'),
+                        "similarity": chunk['similarity']
+                    })
+                    source_number += 1
+            
+            return {
+                "answer": f"⚠️ Low Confidence Retrieval (similarity: {top_similarity:.2%})\n\nThe retrieved literature sources have low relevance to this specific query. This may indicate a gap in the indexed evidence base, or that the question requires reformulation. The available sources may not directly address the clinical question as posed. Consider alternative search terms or related clinical approaches.",
+                "sources": deduplicated_sources,
                 "query": query,
                 "model": self.model,
                 "low_confidence": True,
