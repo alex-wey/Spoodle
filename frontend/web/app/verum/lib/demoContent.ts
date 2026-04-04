@@ -1,9 +1,8 @@
 import type { Source } from "./types";
 
 /** The two suggested question chips */
-export const SUGGESTED_CHIPS = [
-  "What does current literature say about corticosteroid use in feline asthma vs. chronic bronchitis?",
-  "What are evidence-based first-line diagnostics for a dog presenting with acute vestibular syndrome?",
+export const SUGGESTED_CHIPS: string[] = [
+  // No suggested questions - users will ask their own clinical questions
 ];
 
 /** The five demo questions (exact match required) */

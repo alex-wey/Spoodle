@@ -160,6 +160,43 @@ function BodyWithCitationChips({
   );
 }
 
+// Custom component to render text with citation chips inside ReactMarkdown
+function TextWithCitations({
+  children,
+  sources,
+  highlightedSource,
+  setHighlightedSource,
+}: {
+  children: string;
+  sources: Source[];
+  highlightedSource: number | null;
+  setHighlightedSource: (n: number | null) => void;
+}) {
+  const parts = useMemo(() => parseCitationParts(children, sources.length), [children, sources.length]);
+
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.type === "text" ? (
+          <React.Fragment key={i}>{p.value}</React.Fragment>
+        ) : (
+          <span key={i} className="inline align-middle">
+            {p.indices.map((idx) => (
+              <CitationChip
+                key={`${i}-${idx}`}
+                sourceIndex={idx}
+                source={sources[idx - 1]}
+                highlightedSource={highlightedSource}
+                setHighlightedSource={setHighlightedSource}
+              />
+            ))}
+          </span>
+        )
+      )}
+    </>
+  );
+}
+
 function SourcesFooter({
   sources,
   highlightedSource,
@@ -268,7 +305,68 @@ export function AssistantTurn({
           </div>
         ) : (
           <div className="prose prose-sm max-w-none dark:prose-invert prose-h3:text-[17px] prose-h3:font-bold prose-h3:mt-5 prose-h3:mb-3 prose-h3:text-foreground prose-p:text-[15px] prose-p:leading-relaxed prose-li:text-[15px] prose-strong:font-bold prose-strong:text-foreground">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown 
+              remarkPlugins={[remarkGfm]}
+              components={{
+                // Custom component to parse citations in text nodes
+                p: ({ children }) => {
+                  const textContent = typeof children === 'string' ? children : 
+                    React.Children.toArray(children).map(child => 
+                      typeof child === 'string' ? child : ''
+                    ).join('');
+                  
+                  if (typeof children === 'string' && /\[Source \d+/.test(children)) {
+                    return (
+                      <p>
+                        <TextWithCitations
+                          sources={sources}
+                          highlightedSource={highlightedSource}
+                          setHighlightedSource={setHl}
+                        >
+                          {children}
+                        </TextWithCitations>
+                      </p>
+                    );
+                  }
+                  
+                  // For complex children, process each text node
+                  const processChildren = (child: React.ReactNode): React.ReactNode => {
+                    if (typeof child === 'string' && /\[Source \d+/.test(child)) {
+                      return (
+                        <TextWithCitations
+                          sources={sources}
+                          highlightedSource={highlightedSource}
+                          setHighlightedSource={setHl}
+                        >
+                          {child}
+                        </TextWithCitations>
+                      );
+                    }
+                    return child;
+                  };
+                  
+                  return <p>{React.Children.map(children, processChildren)}</p>;
+                },
+                li: ({ children }) => {
+                  const processChildren = (child: React.ReactNode): React.ReactNode => {
+                    if (typeof child === 'string' && /\[Source \d+/.test(child)) {
+                      return (
+                        <TextWithCitations
+                          sources={sources}
+                          highlightedSource={highlightedSource}
+                          setHighlightedSource={setHl}
+                        >
+                          {child}
+                        </TextWithCitations>
+                      );
+                    }
+                    return child;
+                  };
+                  
+                  return <li>{React.Children.map(children, processChildren)}</li>;
+                },
+              }}
+            >
               {message.content}
             </ReactMarkdown>
           </div>
