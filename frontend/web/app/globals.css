@@ -137,4 +137,20 @@
   .animation-delay-4000 {
     animation-delay: 4s;
   }
+  
+  /* Pulse animation for clicked citations */
+  @keyframes pulse-once {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.9;
+      transform: scale(1.02);
+    }
+  }
+  
+  .animate-pulse-once {
+    animation: pulse-once 1.5s ease-in-out;
+  }
 }

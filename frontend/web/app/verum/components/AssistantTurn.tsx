@@ -89,18 +89,33 @@ function CitationChip({
 }) {
   if (!source) return null;
   const isRowLit = highlightedSource === sourceIndex;
+  
+  const handleClick = () => {
+    const sourceElement = document.getElementById(`source-${sourceIndex}`);
+    if (sourceElement) {
+      sourceElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      // Trigger a highlight animation
+      sourceElement.classList.add("animate-pulse-once");
+      setTimeout(() => {
+        sourceElement.classList.remove("animate-pulse-once");
+      }, 1500);
+    }
+  };
+  
   return (
     <button
       type="button"
       data-source={String(sourceIndex)}
+      onClick={handleClick}
       onPointerEnter={() => setHighlightedSource(sourceIndex)}
       className={[
         "mx-0.5 inline-flex max-w-[min(100%,12rem)] items-center gap-1 rounded-md border align-middle",
         "border-border/55 bg-muted/45 px-1 py-0.5 text-xs transition-all duration-150",
-        "hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4DB8A4]/40",
+        "hover:brightness-110 hover:cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4DB8A4]/40",
         isRowLit ? "brightness-110 ring-1 ring-[#4DB8A4]/50" : "",
       ].join(" ")}
       style={{ verticalAlign: "middle" }}
+      title="Click to view source"
     >
       <SourceLogo src={source.logoSrc} />
       <span className="min-w-0 truncate font-medium text-foreground/95">{chipJournalLabel(source)}</span>
@@ -162,7 +177,7 @@ function SourcesFooter({
           const n = i + 1;
           const lit = highlightedSource === n;
           return (
-            <li key={i}>
+            <li key={i} id={`source-${n}`}>
               <a
                 href={s.url}
                 target="_blank"
