@@ -160,40 +160,106 @@ function BodyWithCitationChips({
   );
 }
 
-// Custom component to render text with citation chips inside ReactMarkdown
-function TextWithCitations({
-  children,
+// Component to render markdown with inline citation chips - simple approach
+function MarkdownWithCitations({
+  content,
   sources,
   highlightedSource,
   setHighlightedSource,
 }: {
-  children: string;
+  content: string;
   sources: Source[];
   highlightedSource: number | null;
   setHighlightedSource: (n: number | null) => void;
 }) {
-  const parts = useMemo(() => parseCitationParts(children, sources.length), [children, sources.length]);
-
+  // Parse all citations in the entire content first
+  const parts = parseCitationParts(content, sources.length);
+  
+  // Reconstruct content with placeholders for citations
+  let processedContent = '';
+  const citationMap: { [key: string]: CitePart } = {};
+  
+  parts.forEach((part, idx) => {
+    if (part.type === 'text') {
+      processedContent += part.value;
+    } else {
+      const placeholder = `__CITATION_${idx}__`;
+      citationMap[placeholder] = part;
+      processedContent += placeholder;
+    }
+  });
+  
+  // Now render with ReactMarkdown, then replace placeholders
   return (
-    <>
-      {parts.map((p, i) =>
-        p.type === "text" ? (
-          <React.Fragment key={i}>{p.value}</React.Fragment>
-        ) : (
-          <span key={i} className="inline align-middle">
-            {p.indices.map((idx) => (
-              <CitationChip
-                key={`${i}-${idx}`}
-                sourceIndex={idx}
-                source={sources[idx - 1]}
-                highlightedSource={highlightedSource}
-                setHighlightedSource={setHighlightedSource}
-              />
-            ))}
-          </span>
-        )
-      )}
-    </>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        // Intercept text rendering to replace placeholders with citation chips
+        p: ({ children, ...props }) => {
+          const processedChildren = React.Children.map(children, (child) => {
+            if (typeof child === 'string') {
+              // Split by placeholders and render citations
+              const segments = child.split(/(__CITATION_\d+__)/);
+              return segments.map((segment, i) => {
+                if (segment.match(/^__CITATION_\d+__$/)) {
+                  const citePart = citationMap[segment];
+                  if (citePart && citePart.type === 'cite') {
+                    return (
+                      <span key={i} className="inline align-middle">
+                        {citePart.indices.map((idx) => (
+                          <CitationChip
+                            key={`cite-${i}-${idx}`}
+                            sourceIndex={idx}
+                            source={sources[idx - 1]}
+                            highlightedSource={highlightedSource}
+                            setHighlightedSource={setHighlightedSource}
+                          />
+                        ))}
+                      </span>
+                    );
+                  }
+                }
+                return <React.Fragment key={i}>{segment}</React.Fragment>;
+              });
+            }
+            return child;
+          });
+          return <p {...props}>{processedChildren}</p>;
+        },
+        li: ({ children, ...props }) => {
+          const processedChildren = React.Children.map(children, (child) => {
+            if (typeof child === 'string') {
+              const segments = child.split(/(__CITATION_\d+__)/);
+              return segments.map((segment, i) => {
+                if (segment.match(/^__CITATION_\d+__$/)) {
+                  const citePart = citationMap[segment];
+                  if (citePart && citePart.type === 'cite') {
+                    return (
+                      <span key={i} className="inline align-middle">
+                        {citePart.indices.map((idx) => (
+                          <CitationChip
+                            key={`cite-${i}-${idx}`}
+                            sourceIndex={idx}
+                            source={sources[idx - 1]}
+                            highlightedSource={highlightedSource}
+                            setHighlightedSource={setHighlightedSource}
+                          />
+                        ))}
+                      </span>
+                    );
+                  }
+                }
+                return <React.Fragment key={i}>{segment}</React.Fragment>;
+              });
+            }
+            return child;
+          });
+          return <li {...props}>{processedChildren}</li>;
+        },
+      }}
+    >
+      {processedContent}
+    </ReactMarkdown>
   );
 }
 
@@ -305,70 +371,12 @@ export function AssistantTurn({
           </div>
         ) : (
           <div className="prose prose-sm max-w-none dark:prose-invert prose-h3:text-[17px] prose-h3:font-bold prose-h3:mt-5 prose-h3:mb-3 prose-h3:text-foreground prose-p:text-[15px] prose-p:leading-relaxed prose-li:text-[15px] prose-strong:font-bold prose-strong:text-foreground">
-            <ReactMarkdown 
-              remarkPlugins={[remarkGfm]}
-              components={{
-                // Custom component to parse citations in text nodes
-                p: ({ children }) => {
-                  const textContent = typeof children === 'string' ? children : 
-                    React.Children.toArray(children).map(child => 
-                      typeof child === 'string' ? child : ''
-                    ).join('');
-                  
-                  if (typeof children === 'string' && /\[Source \d+/.test(children)) {
-                    return (
-                      <p>
-                        <TextWithCitations
-                          sources={sources}
-                          highlightedSource={highlightedSource}
-                          setHighlightedSource={setHl}
-                        >
-                          {children}
-                        </TextWithCitations>
-                      </p>
-                    );
-                  }
-                  
-                  // For complex children, process each text node
-                  const processChildren = (child: React.ReactNode): React.ReactNode => {
-                    if (typeof child === 'string' && /\[Source \d+/.test(child)) {
-                      return (
-                        <TextWithCitations
-                          sources={sources}
-                          highlightedSource={highlightedSource}
-                          setHighlightedSource={setHl}
-                        >
-                          {child}
-                        </TextWithCitations>
-                      );
-                    }
-                    return child;
-                  };
-                  
-                  return <p>{React.Children.map(children, processChildren)}</p>;
-                },
-                li: ({ children }) => {
-                  const processChildren = (child: React.ReactNode): React.ReactNode => {
-                    if (typeof child === 'string' && /\[Source \d+/.test(child)) {
-                      return (
-                        <TextWithCitations
-                          sources={sources}
-                          highlightedSource={highlightedSource}
-                          setHighlightedSource={setHl}
-                        >
-                          {child}
-                        </TextWithCitations>
-                      );
-                    }
-                    return child;
-                  };
-                  
-                  return <li>{React.Children.map(children, processChildren)}</li>;
-                },
-              }}
-            >
-              {message.content}
-            </ReactMarkdown>
+            <MarkdownWithCitations
+              content={message.content}
+              sources={sources}
+              highlightedSource={highlightedSource}
+              setHighlightedSource={setHl}
+            />
           </div>
         )}
 

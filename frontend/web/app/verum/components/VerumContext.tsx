@@ -5,7 +5,7 @@ import type { HistoryEntry, VerumFile, Profile } from "../lib/types";
 import { getDemoSeed } from "../lib/demoSeed";
 import { clearVerumAccessSession } from "../lib/verumAccessSession";
 
-const STORAGE_KEY = "verum-mockup-state-v4";
+const STORAGE_KEY = "verum-mockup-state-v5"; // Bumped to clear old demo data
 
 const defaultProfile: Profile = {
   email: "dr.chen@westsidevet.com",
