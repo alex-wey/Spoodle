@@ -133,51 +133,52 @@ async def ask_verum(request: AskRequest):
             answer_text = str(answer_data)
         
         # Step 3: Format sources for frontend
+        # Use the deduplicated sources from answer_generator instead of rebuilding from retrieved_chunks
         sources = []
-        seen_identifiers = set()
         
-        for i, chunk in enumerate(retrieved_chunks):
-            # Use chunk_id or index as unique identifier if pmc_id is null
-            pmc_id = chunk.get("pmc_id")
-            chunk_id = chunk.get("chunk_id", f"chunk_{i}")
-            identifier = pmc_id if pmc_id else chunk_id
+        for source in answer_data.get("sources", []):
+            # Extract info from the already-deduplicated source
+            citation = source.get("citation", "")
+            journal = source.get("journal", "Unknown Journal")
+            pmid = source.get("pmid", "")
+            pmc_id = source.get("pmc_id", "")
             
-            if identifier not in seen_identifiers:
-                seen_identifiers.add(identifier)
+            # Try to extract title and year from citation if available
+            # Citation format is typically: "Journal. YYYY Mon DD; Vol(Issue):Pages"
+            title = "Research Paper"
+            year = 2023
+            
+            if citation:
+                # Extract year from citation
+                parts = citation.split(";")
+                if len(parts) > 0:
+                    # First part usually has journal and date
+                    date_part = parts[0].split(".")[-1].strip()
+                    year_match = date_part.split()
+                    if year_match and year_match[0].isdigit() and len(year_match[0]) == 4:
+                        year = int(year_match[0])
                 
-                # Extract citation info
-                citation = chunk.get("citation", "")
-                journal = chunk.get("journal", "Unknown Journal")
-                pmid = chunk.get("pmid", "")
-                
-                # Try to extract title and year from citation if available
-                # Citation format is typically: "Journal. YYYY Mon DD; Vol(Issue):Pages"
-                title = "Research Paper"
-                year = 2023
-                
-                if citation:
-                    # Extract year from citation
-                    parts = citation.split(";")
-                    if len(parts) > 0:
-                        # First part usually has journal and date
-                        date_part = parts[0].split(".")[-1].strip()
-                        year_match = date_part.split()
-                        if year_match and year_match[0].isdigit() and len(year_match[0]) == 4:
-                            year = int(year_match[0])
-                    
-                    # Use PMID or journal as title if no better option
-                    if pmid:
-                        title = f"Study {pmid}"
-                    else:
-                        title = f"{journal} Research"
-                
-                sources.append(Source(
-                    journal=journal,
-                    title=title[:100] if len(title) > 100 else title,
-                    year=year,
-                    url=f"https://www.ncbi.nlm.nih.gov/pmc/articles/{pmc_id}/" if pmc_id else f"https://pubmed.ncbi.nlm.nih.gov/{pmid.replace('PMID:', '')}/" if pmid else "#",
-                    pmc_id=pmc_id
-                ))
+                # Use PMID or journal as title if no better option
+                if pmid:
+                    title = f"Study PMID:{pmid}" if not pmid.startswith("PMID:") else f"Study {pmid}"
+                else:
+                    title = f"{journal} Research"
+            
+            # Build PubMed URL
+            url = "#"
+            if pmc_id:
+                url = f"https://www.ncbi.nlm.nih.gov/pmc/articles/{pmc_id}/"
+            elif pmid:
+                clean_pmid = pmid.replace('PMID:', '').strip()
+                url = f"https://pubmed.ncbi.nlm.nih.gov/{clean_pmid}/"
+            
+            sources.append(Source(
+                journal=journal,
+                title=title[:100] if len(title) > 100 else title,
+                year=year,
+                url=url,
+                pmc_id=pmc_id
+            ))
         
         return AskResponse(
             success=True,

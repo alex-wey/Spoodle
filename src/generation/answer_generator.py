@@ -156,14 +156,23 @@ CRITICAL: Use bullet points (-) and numbered lists (1., 2., 3.) for all lists. U
         deduplicated_chunks = []
         
         for chunk in retrieved_chunks:
-            # Use PMID as unique identifier (more reliable than PMC ID)
-            pmid = chunk.get('pmid', chunk.get('pmc_id', ''))
-            if pmid and pmid not in seen_papers:
+            # Use PMID as unique identifier - normalize to string for consistency
+            pmid = chunk.get('pmid') or chunk.get('pmc_id')
+            
+            if pmid:
+                # Convert to string and strip whitespace for consistent comparison
+                pmid_key = str(pmid).strip()
+                
+                if pmid_key not in seen_papers:
+                    deduplicated_chunks.append(chunk)
+                    seen_papers[pmid_key] = True
+                else:
+                    logging.debug(f"Skipping duplicate paper with PMID: {pmid_key}")
+            else:
+                # If no PMID at all, keep the chunk (shouldn't happen but safety)
                 deduplicated_chunks.append(chunk)
-                seen_papers[pmid] = True
-            elif not pmid:
-                # If no PMID, keep the chunk anyway (shouldn't happen but safety)
-                deduplicated_chunks.append(chunk)
+        
+        logging.info(f"📚 Deduplicated {len(retrieved_chunks)} chunks to {len(deduplicated_chunks)} unique papers")
         
         # Format context using deduplicated chunks
         context = self.format_context(deduplicated_chunks)
@@ -298,17 +307,23 @@ Requirements:
             source_number = 1
             
             for chunk in retrieved_chunks:
-                pmid = chunk.get('pmid', chunk.get('pmc_id', ''))
-                if pmid and pmid not in seen_papers:
-                    deduplicated_sources.append({
-                        "source_number": source_number,
-                        "journal": chunk['journal'],
-                        "pmc_id": chunk['pmc_id'],
-                        "similarity": chunk['similarity']
-                    })
-                    seen_papers[pmid] = True
-                    source_number += 1
-                elif not pmid:
+                pmid = chunk.get('pmid') or chunk.get('pmc_id')
+                
+                if pmid:
+                    # Convert to string and strip for consistent comparison
+                    pmid_key = str(pmid).strip()
+                    
+                    if pmid_key not in seen_papers:
+                        deduplicated_sources.append({
+                            "source_number": source_number,
+                            "journal": chunk['journal'],
+                            "pmc_id": chunk['pmc_id'],
+                            "similarity": chunk['similarity']
+                        })
+                        seen_papers[pmid_key] = True
+                        source_number += 1
+                else:
+                    # No PMID, keep anyway
                     deduplicated_sources.append({
                         "source_number": source_number,
                         "journal": chunk.get('journal', 'Unknown'),
