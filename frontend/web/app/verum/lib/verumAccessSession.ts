@@ -12,9 +12,9 @@ export type VerumAccessPayload =
       fullName: string;
     };
 
-// Approved emails bypass the student flow (e.g. internal / demo accounts)
+// Approved emails bypass credential review (internal / demo accounts)
 const APPROVED_EMAILS = [
-  "dev@verum.local",
+  "woof@spoodle.ai",
   // Add more approved emails here
 ];
 
