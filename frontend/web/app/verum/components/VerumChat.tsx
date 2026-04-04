@@ -16,7 +16,7 @@ import { ResponseExportFab } from "./ResponseExportFab";
 import { VERUM_SUGGESTION_CHIP_INNER } from "../lib/clinicalNextStepsDemo";
 
 const DISCLAIMER =
-  "Spoodle is designed to surface and organize licensed veterinary information. It does not diagnose conditions, recommend treatments, or replace clinical judgment. All medical decisions remain the responsibility of the treating veterinarian.";
+  "Verum is designed to surface and organize licensed veterinary information. It does not diagnose conditions, recommend treatments, or replace clinical judgment. All medical decisions remain the responsibility of the treating veterinarian.";
 
 function QuestionComposerBubble({
   value,
@@ -226,8 +226,8 @@ export function VerumChat({ onOpenChat, loadedEntryId, onLoadedEntryCleared }: V
             <div className="verum-main-gutter flex w-full max-w-6xl flex-col items-center">
               <div className="mb-[50px] flex shrink-0 justify-center">
                 <Image
-                  src="/spoodle-logo.png"
-                  alt="Spoodle"
+                  src="/logo.png"
+                  alt="Verum"
                   width={400}
                   height={137}
                   className="h-auto w-[400px] max-w-full object-contain"

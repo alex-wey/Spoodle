@@ -5,7 +5,7 @@ import { CLINICAL_FRAMEWORK_DISCLAIMER, CLINICAL_FRAMEWORK_STEPS } from "./clini
 export type PdfTurn = { question: string; message: VerumMessage };
 
 const FOOTER_NOTE =
-  "Spoodle surfaces licensed veterinary information. It does not diagnose conditions or replace clinical judgment.";
+  "Verum surfaces licensed veterinary information. It does not diagnose conditions or replace clinical judgment.";
 
 async function fetchLogoDataUrl(path: string): Promise<string | null> {
   try {
@@ -47,10 +47,10 @@ function addWrappedText(
 }
 
 /**
- * Builds a PDF with Spoodle logo, question(s), full response text (sections, follow-up, clinical framework, sources).
+ * Builds a PDF with Verum branding, question(s), full response text (sections, follow-up, clinical framework, sources).
  */
-export async function generateSpoodleResponsePdf(turns: PdfTurn[]): Promise<Blob> {
-  const logoDataUrl = await fetchLogoDataUrl("/spoodle-logo.png");
+export async function generateVerumResponsePdf(turns: PdfTurn[]): Promise<Blob> {
+  const logoDataUrl = await fetchLogoDataUrl("/logo.png");
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -69,7 +69,7 @@ export async function generateSpoodleResponsePdf(turns: PdfTurn[]): Promise<Blob
   } else {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
-    doc.text("Spoodle", margin, y + 6);
+    doc.text("Verum", margin, y + 6);
     y += 12;
   }
 
@@ -190,5 +190,5 @@ export async function generateSpoodleResponsePdf(turns: PdfTurn[]): Promise<Blob
 export function defaultPdfFilename(): string {
   const d = new Date();
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `Spoodle-response-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.pdf`;
+  return `Verum-response-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.pdf`;
 }

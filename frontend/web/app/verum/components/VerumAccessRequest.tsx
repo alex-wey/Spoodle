@@ -29,7 +29,7 @@ import {
 import { useVerum } from "./VerumContext";
 
 /** Primary accent — matches Verum confirm / platform green (ProfileView, modals) */
-const SPOODLE_GREEN = "#3BB272";
+const VERUM_ACCENT_GREEN = "#3BB272";
 
 type Role = "veterinarian" | "student" | null;
 type Step = "role" | "vet_form" | "student_form" | "confirm_student" | "confirm_pending";
@@ -148,8 +148,8 @@ export default function VerumAccessRequest({ onGranted }: { onGranted: () => voi
           <header className="flex flex-col items-center text-center">
             <div className="relative mb-5 h-24 w-[min(100%,300px)] sm:mb-6 sm:h-28 sm:w-[min(100%,360px)] md:h-32 md:w-[min(100%,420px)]">
               <Image
-                src="/spoodle-logo.png"
-                alt="Spoodle"
+                src="/logo.png"
+                alt="Verum"
                 fill
                 sizes="(max-width: 640px) 300px, (max-width: 768px) 360px, 420px"
                 className="object-contain object-center drop-shadow-md"
@@ -220,7 +220,7 @@ export default function VerumAccessRequest({ onGranted }: { onGranted: () => voi
                   className={primaryButtonClass}
                   style={
                     role
-                      ? { backgroundColor: SPOODLE_GREEN, color: "#fff" }
+                      ? { backgroundColor: VERUM_ACCENT_GREEN, color: "#fff" }
                       : { backgroundColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.35)" }
                   }
                 >
@@ -312,7 +312,7 @@ export default function VerumAccessRequest({ onGranted }: { onGranted: () => voi
                 <Button
                   type="submit"
                   className={primaryButtonClass}
-                  style={{ backgroundColor: SPOODLE_GREEN, color: "#fff" }}
+                  style={{ backgroundColor: VERUM_ACCENT_GREEN, color: "#fff" }}
                 >
                   Submit for review
                 </Button>
@@ -415,7 +415,7 @@ export default function VerumAccessRequest({ onGranted }: { onGranted: () => voi
                   type="submit"
                   disabled={!studentCanSubmit}
                   className={primaryButtonClass}
-                  style={{ backgroundColor: SPOODLE_GREEN, color: "#fff" }}
+                  style={{ backgroundColor: VERUM_ACCENT_GREEN, color: "#fff" }}
                 >
                   Verify &amp; continue
                 </Button>
@@ -439,7 +439,7 @@ export default function VerumAccessRequest({ onGranted }: { onGranted: () => voi
                   type="button"
                   onClick={handleStudentContinue}
                   className={primaryButtonClass}
-                  style={{ backgroundColor: SPOODLE_GREEN, color: "#fff" }}
+                  style={{ backgroundColor: VERUM_ACCENT_GREEN, color: "#fff" }}
                 >
                   Continue to Verum
                 </Button>

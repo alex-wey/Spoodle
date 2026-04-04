@@ -5,7 +5,7 @@ import { Download, Loader2, Mail, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   defaultPdfFilename,
-  generateSpoodleResponsePdf,
+  generateVerumResponsePdf,
   type PdfTurn,
 } from "../lib/exportResponsePdf";
 
@@ -26,7 +26,7 @@ export function ResponseExportFab({ turns }: ResponseExportFabProps) {
 
   const buildPdf = useCallback(async () => {
     if (turns.length === 0) throw new Error("No conversation to export");
-    return generateSpoodleResponsePdf(turns);
+    return generateVerumResponsePdf(turns);
   }, [turns]);
 
   const downloadPdf = useCallback(async () => {
@@ -86,9 +86,9 @@ export function ResponseExportFab({ turns }: ResponseExportFabProps) {
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 4000);
 
-      const subject = encodeURIComponent("Spoodle literature summary");
+      const subject = encodeURIComponent("Verum literature summary");
       const body = encodeURIComponent(
-        `A PDF of your Spoodle response has been downloaded as "${name}".\n\nPlease attach that file to this email from your Downloads folder (or the folder you use for saved files).\n\n`
+        `A PDF of your Verum response has been downloaded as "${name}".\n\nPlease attach that file to this email from your Downloads folder (or the folder you use for saved files).\n\n`
       );
       // Defer mailto so the browser finishes the download first
       setTimeout(() => {

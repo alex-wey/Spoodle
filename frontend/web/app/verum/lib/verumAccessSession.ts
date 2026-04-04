@@ -14,7 +14,7 @@ export type VerumAccessPayload =
 
 // Approved emails bypass the student flow (e.g. internal / demo accounts)
 const APPROVED_EMAILS = [
-  "woof@spoodle.ai",
+  "dev@verum.local",
   // Add more approved emails here
 ];
 

@@ -1,6 +1,6 @@
 {
   "name": "web",
-  "description": "Spoodle Clinic Web App - Veterinary Practice Management",
+  "description": "Verum — veterinary research assistant (Next.js)",
   "version": "1.0.0",
   "private": true,
   "scripts": {

@@ -7,20 +7,20 @@ import remarkGfm from 'remark-gfm';
 import type { Source, VerumMessage } from "../lib/types";
 import { ClinicalNextSteps } from "./ClinicalNextSteps";
 
-const SPOODLE_TEAL = "#4DB8A4";
+const VERUM_TEAL = "#4DB8A4";
 
 function DocFallbackIcon() {
   return (
     <svg width={16} height={16} viewBox="0 0 16 16" className="shrink-0 rounded-[3px]" aria-hidden>
-      <rect width="16" height="16" rx="3" fill={SPOODLE_TEAL} fillOpacity={0.2} />
+      <rect width="16" height="16" rx="3" fill={VERUM_TEAL} fillOpacity={0.2} />
       <path
         d="M4.5 2.5h4.5L12 5.5v8H4.5v-11z"
-        stroke={SPOODLE_TEAL}
+        stroke={VERUM_TEAL}
         strokeWidth="1.1"
         fill="none"
         strokeLinejoin="round"
       />
-      <path d="M9 2.5v3h2.5" stroke={SPOODLE_TEAL} strokeWidth="1.1" fill="none" strokeLinejoin="round" />
+      <path d="M9 2.5v3h2.5" stroke={VERUM_TEAL} strokeWidth="1.1" fill="none" strokeLinejoin="round" />
     </svg>
   );
 }
