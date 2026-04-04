@@ -2,15 +2,14 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import type { HistoryEntry, VerumFile, Profile } from "../lib/types";
-import { getDemoSeed } from "../lib/demoSeed";
 import { clearVerumAccessSession } from "../lib/verumAccessSession";
 
-const STORAGE_KEY = "verum-mockup-state-v4";
+const STORAGE_KEY = "verum-mockup-state-v5";
 
 const defaultProfile: Profile = {
-  email: "dr.chen@westsidevet.com",
-  name: "Dr. Sarah Chen",
-  phone: "(555) 123-4567",
+  email: "",
+  name: "",
+  phone: "",
   avatarUrl: null,
 };
 
@@ -21,8 +20,7 @@ function loadState(): { history: HistoryEntry[]; files: VerumFile[]; profile: Pr
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      const { history, files } = getDemoSeed();
-      return { history, files, profile: defaultProfile };
+      return { history: [], files: [], profile: defaultProfile };
     }
     const parsed = JSON.parse(raw);
     return {
@@ -168,11 +166,10 @@ export function VerumProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const resetToDemo = useCallback(() => {
-    const { history: h, files: f } = getDemoSeed();
-    setHistory(h);
-    setFiles(f);
+    setHistory([]);
+    setFiles([]);
     setProfile(defaultProfile);
-    saveState(h, f, defaultProfile);
+    saveState([], [], defaultProfile);
   }, []);
 
   const revokeVerumSession = useCallback(() => {

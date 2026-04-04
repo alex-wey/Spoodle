@@ -16,7 +16,7 @@ import { ResponseExportFab } from "./ResponseExportFab";
 import { VERUM_SUGGESTION_CHIP_INNER } from "../lib/clinicalNextStepsDemo";
 
 const DISCLAIMER =
-  "Verum is designed to surface and organize licensed veterinary information. It does not diagnose conditions, recommend treatments, or replace clinical judgment. All medical decisions remain the responsibility of the treating veterinarian.";
+  "Spoodle is designed to surface and organize trusted veterinary information. It does not diagnose conditions, recommend treatments, or replace clinical judgment. All medical decisions remain the responsibility of the treating veterinarian.";
 
 function QuestionComposerBubble({
   value,
@@ -74,6 +74,8 @@ export function VerumChat({ onOpenChat, loadedEntryId, onLoadedEntryCleared }: V
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  /** 1–3 while loading; cycles . → .. → ... over 0.5s then holds ... for 0.5s */
+  const [loadingDotCount, setLoadingDotCount] = useState<1 | 2 | 3>(1);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { history, addHistoryEntry, getHistoryEntry } = useVerum();
 
@@ -103,6 +105,42 @@ export function VerumChat({ onOpenChat, loadedEntryId, onLoadedEntryCleared }: V
       onLoadedEntryCleared?.();
     }
   }, [loadedEntryId, getHistoryEntry, onLoadedEntryCleared]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setLoadingDotCount(1);
+      return;
+    }
+    let cancelled = false;
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+    const stepMs = 500 / 3;
+
+    const runCycle = () => {
+      if (cancelled) return;
+      setLoadingDotCount(1);
+      timeouts.push(
+        setTimeout(() => {
+          if (!cancelled) setLoadingDotCount(2);
+        }, stepMs)
+      );
+      timeouts.push(
+        setTimeout(() => {
+          if (!cancelled) setLoadingDotCount(3);
+        }, 2 * stepMs)
+      );
+      timeouts.push(
+        setTimeout(() => {
+          if (cancelled) return;
+          timeouts.push(setTimeout(runCycle, 500));
+        }, 500)
+      );
+    };
+    runCycle();
+    return () => {
+      cancelled = true;
+      timeouts.forEach(clearTimeout);
+    };
+  }, [isLoading]);
 
   /** Only scroll to the latest answer after the user submits — not when hydrating from History (avoids pinning / jumpy scroll). */
   const scrollToConversationBottom = useCallback(() => {
@@ -223,11 +261,11 @@ export function VerumChat({ onOpenChat, loadedEntryId, onLoadedEntryCleared }: V
       <div className="flex-1 flex flex-col relative z-10 min-h-0">
         {isEmpty ? (
           <div className="flex flex-1 flex-col items-center justify-center pb-32">
-            <div className="verum-main-gutter flex w-full max-w-6xl flex-col items-center">
+            <div className="verum-main-gutter flex w-full max-w-6xl flex-col items-center px-[10px]">
               <div className="mb-[50px] flex shrink-0 justify-center">
                 <Image
                   src="/logo.png"
-                  alt="Verum"
+                  alt="Spoodle"
                   width={400}
                   height={137}
                   className="h-auto w-[400px] max-w-full object-contain"
@@ -243,20 +281,22 @@ export function VerumChat({ onOpenChat, loadedEntryId, onLoadedEntryCleared }: V
                   placeholder="Ask a veterinary medicine question..."
                 />
               </div>
-              <div className="mt-5 flex w-full flex-col gap-1.5">
-                {suggestedQuestions.map((q, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleSuggestClick(q)}
-                    className={`flex w-full min-w-0 items-start gap-2.5 text-left ${VERUM_SUGGESTION_CHIP_INNER}`}
-                  >
-                    <span className="text-primary shrink-0 mt-0.5">•</span>
-                    <span className="min-w-0 flex-1 whitespace-normal break-words text-pretty">
-                      {q}
-                    </span>
-                  </button>
-                ))}
-              </div>
+              {suggestedQuestions.length > 0 && (
+                <div className="mt-5 flex w-full flex-col gap-1.5">
+                  {suggestedQuestions.map((q, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSuggestClick(q)}
+                      className={`flex w-full min-w-0 items-start gap-2.5 text-left ${VERUM_SUGGESTION_CHIP_INNER}`}
+                    >
+                      <span className="text-primary shrink-0 mt-0.5">•</span>
+                      <span className="min-w-0 flex-1 whitespace-normal break-words text-pretty">
+                        {q}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {mostRecent && (
                 <>
@@ -274,7 +314,7 @@ export function VerumChat({ onOpenChat, loadedEntryId, onLoadedEntryCleared }: V
         ) : (
           <>
             <ScrollArea className="flex-1 pb-2">
-              <div className="verum-main-gutter mx-auto w-full min-w-0 max-w-6xl space-y-8 py-6 pb-24">
+              <div className="verum-main-gutter mx-auto w-full min-w-0 max-w-6xl space-y-8 px-[10px] py-6 pb-24">
                 {turns.map((t, idx) => (
                   <AssistantTurn
                     key={idx}
@@ -286,7 +326,10 @@ export function VerumChat({ onOpenChat, loadedEntryId, onLoadedEntryCleared }: V
                 ))}
                 {isLoading && (
                   <div className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-                    Searching sources…
+                    Searching sources
+                    <span className="inline-block min-w-[3ch] text-left tabular-nums">
+                      {".".repeat(loadingDotCount)}
+                    </span>
                   </div>
                 )}
                 <ResponseExportFab turns={turns.map((t) => ({ question: t.q, message: t.a }))} />
@@ -294,7 +337,7 @@ export function VerumChat({ onOpenChat, loadedEntryId, onLoadedEntryCleared }: V
               <div ref={scrollRef} />
             </ScrollArea>
             <div className="py-4 pb-24">
-              <div className="verum-main-gutter mx-auto w-full min-w-0 max-w-6xl">
+              <div className="verum-main-gutter mx-auto w-full min-w-0 max-w-6xl px-[10px]">
                 <QuestionComposerBubble
                   value={input}
                   onChange={setInput}

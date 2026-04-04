@@ -196,7 +196,6 @@ export function ProfileView() {
           />
         ) : (
           <>
-            <h2 className="text-lg font-semibold mb-4">Files</h2>
             <div className="grid grid-cols-4 gap-4">
               {sortedFiles.map((f) => (
                 <FileCard
