@@ -21,8 +21,8 @@ function loadState(): { history: HistoryEntry[]; files: VerumFile[]; profile: Pr
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      const { history, files } = getDemoSeed();
-      return { history, files, profile: defaultProfile };
+      // Start with empty history and files instead of demo data
+      return { history: [], files: [], profile: defaultProfile };
     }
     const parsed = JSON.parse(raw);
     return {
