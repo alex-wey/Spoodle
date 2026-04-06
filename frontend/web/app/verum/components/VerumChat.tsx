@@ -285,8 +285,13 @@ export function VerumChat({ onOpenChat, loadedEntryId, onLoadedEntryCleared }: V
                   />
                 ))}
                 {isLoading && (
-                  <div className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-                    Searching sources…
+                  <div className="rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground flex items-center gap-2">
+                    <span>Searching sources</span>
+                    <span className="flex gap-1">
+                      <span className="animate-bounce-dot">.</span>
+                      <span className="animate-bounce-dot animation-delay-200">.</span>
+                      <span className="animate-bounce-dot animation-delay-400">.</span>
+                    </span>
                   </div>
                 )}
                 <ResponseExportFab turns={turns.map((t) => ({ question: t.q, message: t.a }))} />
