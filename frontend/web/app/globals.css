@@ -138,6 +138,11 @@
     animation-delay: 4s;
   }
   
+  /* Verum main content gutter - 10px horizontal padding */
+  .verum-main-gutter {
+    @apply px-[10px];
+  }
+  
   /* Pulse animation for clicked citations */
   @keyframes pulse-once {
     0%, 100% {
