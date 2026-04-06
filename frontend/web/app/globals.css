@@ -138,34 +138,9 @@
     animation-delay: 4s;
   }
   
-  .animation-delay-200 {
-    animation-delay: 0.2s;
-  }
-  
-  .animation-delay-400 {
-    animation-delay: 0.4s;
-  }
-  
   /* Verum main content gutter - 10px horizontal padding */
   .verum-main-gutter {
     @apply px-[10px];
-  }
-  
-  /* Bouncing dots animation for loading state */
-  @keyframes bounce-dot {
-    0%, 80%, 100% {
-      transform: translateY(0);
-      opacity: 1;
-    }
-    40% {
-      transform: translateY(-8px);
-      opacity: 0.7;
-    }
-  }
-  
-  .animate-bounce-dot {
-    animation: bounce-dot 1.4s ease-in-out infinite;
-    display: inline-block;
   }
   
   /* Pulse animation for clicked citations */

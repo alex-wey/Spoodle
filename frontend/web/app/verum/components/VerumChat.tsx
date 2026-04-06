@@ -74,6 +74,8 @@ export function VerumChat({ onOpenChat, loadedEntryId, onLoadedEntryCleared }: V
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  /** 1–3 while loading; cycles . → .. → ... over 0.5s then holds ... for 0.5s */
+  const [loadingDotCount, setLoadingDotCount] = useState<1 | 2 | 3>(1);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { history, addHistoryEntry, getHistoryEntry } = useVerum();
 
@@ -103,6 +105,42 @@ export function VerumChat({ onOpenChat, loadedEntryId, onLoadedEntryCleared }: V
       onLoadedEntryCleared?.();
     }
   }, [loadedEntryId, getHistoryEntry, onLoadedEntryCleared]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setLoadingDotCount(1);
+      return;
+    }
+    let cancelled = false;
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+    const stepMs = 500 / 3;
+
+    const runCycle = () => {
+      if (cancelled) return;
+      setLoadingDotCount(1);
+      timeouts.push(
+        setTimeout(() => {
+          if (!cancelled) setLoadingDotCount(2);
+        }, stepMs)
+      );
+      timeouts.push(
+        setTimeout(() => {
+          if (!cancelled) setLoadingDotCount(3);
+        }, 2 * stepMs)
+      );
+      timeouts.push(
+        setTimeout(() => {
+          if (cancelled) return;
+          timeouts.push(setTimeout(runCycle, 500));
+        }, 500)
+      );
+    };
+    runCycle();
+    return () => {
+      cancelled = true;
+      timeouts.forEach(clearTimeout);
+    };
+  }, [isLoading]);
 
   /** Only scroll to the latest answer after the user submits — not when hydrating from History (avoids pinning / jumpy scroll). */
   const scrollToConversationBottom = useCallback(() => {
@@ -285,12 +323,10 @@ export function VerumChat({ onOpenChat, loadedEntryId, onLoadedEntryCleared }: V
                   />
                 ))}
                 {isLoading && (
-                  <div className="rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground flex items-center gap-2">
-                    <span>Searching sources</span>
-                    <span className="flex gap-1">
-                      <span className="animate-bounce-dot">.</span>
-                      <span className="animate-bounce-dot animation-delay-200">.</span>
-                      <span className="animate-bounce-dot animation-delay-400">.</span>
+                  <div className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+                    Searching sources
+                    <span className="inline-block min-w-[3ch] text-left tabular-nums">
+                      {".".repeat(loadingDotCount)}
                     </span>
                   </div>
                 )}
