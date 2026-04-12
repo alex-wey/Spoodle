@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import type { HistoryEntry, VerumFile, Profile } from "../lib/types";
-import { getDemoSeed } from "../lib/demoSeed";
 import { clearVerumAccessSession } from "../lib/verumAccessSession";
 
 const STORAGE_KEY = "verum-mockup-state-v5"; // Bumped to clear old demo data
@@ -13,6 +12,21 @@ const defaultProfile: Profile = {
   phone: "(555) 123-4567",
   avatarUrl: null,
 };
+
+/** Remove old bundled demo history/files (ids prefixed with `demo-`). */
+function stripEmbeddedDemo(
+  history: HistoryEntry[],
+  files: VerumFile[]
+): { history: HistoryEntry[]; files: VerumFile[] } {
+  const nextHistory = history.filter((e) => !e.id.startsWith("demo-"));
+  const nextFiles = files
+    .filter((f) => !f.id.startsWith("demo-"))
+    .map((f) => ({
+      ...f,
+      questionIds: f.questionIds.filter((qid) => !qid.startsWith("demo-")),
+    }));
+  return { history: nextHistory, files: nextFiles };
+}
 
 function loadState(): { history: HistoryEntry[]; files: VerumFile[]; profile: Profile } {
   if (typeof window === "undefined") {
@@ -25,9 +39,13 @@ function loadState(): { history: HistoryEntry[]; files: VerumFile[]; profile: Pr
       return { history: [], files: [], profile: defaultProfile };
     }
     const parsed = JSON.parse(raw);
+    const { history: h, files: f } = stripEmbeddedDemo(
+      parsed.history ?? [],
+      parsed.files ?? []
+    );
     return {
-      history: parsed.history ?? [],
-      files: parsed.files ?? [],
+      history: h,
+      files: f,
       profile: { ...defaultProfile, ...parsed.profile },
     };
   } catch {
@@ -167,12 +185,12 @@ export function VerumProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
+  /** Clears history and files for access-gate login (no sample questions). */
   const resetToDemo = useCallback(() => {
-    const { history: h, files: f } = getDemoSeed();
-    setHistory(h);
-    setFiles(f);
+    setHistory([]);
+    setFiles([]);
     setProfile(defaultProfile);
-    saveState(h, f, defaultProfile);
+    saveState([], [], defaultProfile);
   }, []);
 
   const revokeVerumSession = useCallback(() => {
