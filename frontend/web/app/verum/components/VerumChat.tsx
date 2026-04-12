@@ -16,7 +16,7 @@ import { ResponseExportFab } from "./ResponseExportFab";
 import { VERUM_SUGGESTION_CHIP_INNER } from "../lib/clinicalNextStepsDemo";
 
 const DISCLAIMER =
-  "Verum is designed to surface and organize licensed veterinary information. It does not diagnose conditions, recommend treatments, or replace clinical judgment. All medical decisions remain the responsibility of the treating veterinarian.";
+  "Spoodle is designed to surface and organize licensed veterinary information. It does not diagnose conditions, recommend treatments, or replace clinical judgment. All medical decisions remain the responsibility of the treating veterinarian.";
 
 function QuestionComposerBubble({
   value,
