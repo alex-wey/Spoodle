@@ -79,6 +79,7 @@ export default function VerumAccessRequest({ onGranted }: { onGranted: () => voi
     if (isBypassEmail(vetEmail)) {
       writeVerumBypassSession();
       resetToDemo();
+      updateProfile({ name: vetName.trim(), email: vetEmail.trim() });
       onGranted();
       return;
     }
@@ -92,6 +93,7 @@ export default function VerumAccessRequest({ onGranted }: { onGranted: () => voi
     if (isBypassEmail(stuEmail)) {
       writeVerumBypassSession();
       resetToDemo();
+      updateProfile({ name: stuName.trim(), email: stuEmail.trim() });
       onGranted();
       return;
     }
