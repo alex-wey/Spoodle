@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Inter } from "next/font/google";
 import { VerumProviderWrapper } from "@/components/VerumProviderWrapper";
 import "./globals.css";
@@ -22,7 +23,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <VerumProviderWrapper>{children}</VerumProviderWrapper>
+        <ClerkProvider>
+          <VerumProviderWrapper>{children}</VerumProviderWrapper>
+        </ClerkProvider>
       </body>
     </html>
   );

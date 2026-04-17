@@ -1,6 +1,6 @@
 "use client";
 
-import { VerumProvider } from "@/app/verum/components/VerumContext";
+import { VerumProvider } from "@/app/home/components/VerumContext";
 
 export function VerumProviderWrapper({
   children,

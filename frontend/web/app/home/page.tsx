@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
 import { useState } from "react";
-import { VerumSidebar, type VerumView } from "./components/VerumSidebar";
+import { VerumSidebar, type VerumView } from "../../components/VerumSidebar";
 import { VerumChat } from "./components/VerumChat";
 import { HistoryView } from "./views/HistoryView";
-import { ProfileView } from "./views/ProfileView";
+import UserButton from "../../components/UserButton";
 
-export default function VerumPage() {
+export default function HomePage() {
   const [activeView, setActiveView] = useState<VerumView>("home");
   const [scrollToId, setScrollToId] = useState<string | null>(null);
   const [chatEntryId, setChatEntryId] = useState<string | null>(null);
@@ -23,7 +23,6 @@ export default function VerumPage() {
     setChatEntryId(null);
     setActiveView("history");
   };
-  const handleNavProfile = () => setActiveView("profile");
 
   const handleOpenChat = (id: string) => {
     setChatEntryId(id);
@@ -36,26 +35,29 @@ export default function VerumPage() {
         activeView={activeView}
         onNavHome={handleNavHome}
         onNavHistory={handleNavHistory}
-        onNavProfile={handleNavProfile}
       />
-      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        {activeView === "home" && (
-          <VerumChat
-            key={chatShellKey}
-            onOpenChat={handleOpenChat}
-            loadedEntryId={chatEntryId}
-            onLoadedEntryCleared={() => setChatEntryId(null)}
-          />
-        )}
-        {activeView === "history" && (
-          <HistoryView
-            scrollToId={scrollToId}
-            onScrollToHandled={() => setScrollToId(null)}
-            onOpenChat={handleOpenChat}
-          />
-        )}
-        {activeView === "profile" && <ProfileView />}
-      </main>
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="absolute right-4 top-4 z-50 md:right-3 md:top-3">
+          <UserButton />
+        </div>
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          {activeView === "home" && (
+            <VerumChat
+              key={chatShellKey}
+              onOpenChat={handleOpenChat}
+              loadedEntryId={chatEntryId}
+              onLoadedEntryCleared={() => setChatEntryId(null)}
+            />
+          )}
+          {activeView === "history" && (
+            <HistoryView
+              scrollToId={scrollToId}
+              onScrollToHandled={() => setScrollToId(null)}
+              onOpenChat={handleOpenChat}
+            />
+          )}
+        </main>
+      </div>
     </>
   );
 }

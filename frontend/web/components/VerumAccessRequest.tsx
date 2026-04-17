@@ -19,16 +19,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AVMA_ACCREDITED_SCHOOLS } from "../lib/avmaSchools";
-import { US_STATES } from "../lib/usStates";
+import { AVMA_ACCREDITED_SCHOOLS } from "../app/home/lib/avmaSchools";
+import { US_STATES } from "../app/home/lib/usStates";
 import {
   isBypassEmail,
   writeVerumBypassSession,
   writeVerumStudentSession,
-} from "../lib/verumAccessSession";
-import { useVerum } from "./VerumContext";
+} from "../app/home/lib/verumAccessSession";
+import { useVerum } from "../app/home/components/VerumContext";
 
-/** Primary accent — matches Verum confirm / platform green (ProfileView, modals) */
+/** Primary accent — matches Verum confirm / platform green (modals) */
 const VERUM_ACCENT_GREEN = "#3BB272";
 
 type Role = "veterinarian" | "student" | null;
