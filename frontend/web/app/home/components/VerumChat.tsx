@@ -262,15 +262,17 @@ export function VerumChat({ onOpenChat, loadedEntryId, onLoadedEntryCleared }: V
         {isEmpty ? (
           <div className="flex flex-1 flex-col items-center justify-center pb-32">
             <div className="verum-main-gutter flex w-full max-w-6xl flex-col items-center">
-              <div className="mb-[50px] flex shrink-0 justify-center">
-                <Image
-                  src="/logo.png"
-                  alt="Verum"
-                  width={400}
-                  height={137}
-                  className="h-auto w-[400px] max-w-full object-contain"
-                  priority
-                />
+              <div className="mb-[50px] flex w-full shrink-0 justify-center">
+                <div className="relative h-40 w-full max-w-[560px] sm:h-48 sm:max-w-[640px]">
+                  <Image
+                    src="/logo.png"
+                    alt="Verum"
+                    fill
+                    sizes="(max-width: 640px) 560px, 640px"
+                    className="object-contain object-center drop-shadow-md"
+                    priority
+                  />
+                </div>
               </div>
               <div className="w-full min-w-0">
                 <QuestionComposerBubble
