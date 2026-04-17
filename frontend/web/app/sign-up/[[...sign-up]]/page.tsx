@@ -6,13 +6,13 @@ export default function Page() {
   return (
     <AnimatedBackground>
       <div className="flex w-full flex-col items-center gap-6">
-        <div className="relative h-40 w-[min(100%,560px)] sm:h-48 sm:w-[min(100%,640px)]">
+        <div className="flex w-full shrink-0 justify-center">
           <Image
             src="/logo.png"
             alt="Verum"
-            fill
-            sizes="(max-width: 640px) 560px, 640px"
-            className="object-contain object-center drop-shadow-md"
+            width={400}
+            height={137}
+            className="h-auto w-[400px] max-w-full object-contain"
             priority
           />
         </div>
