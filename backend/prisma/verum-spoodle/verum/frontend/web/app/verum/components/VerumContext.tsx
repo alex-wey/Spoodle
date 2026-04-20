@@ -1,0 +1,229 @@
+"use client";
+
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import type { HistoryEntry, VerumFile, Profile } from "../lib/types";
+import { clearVerumAccessSession } from "../lib/verumAccessSession";
+
+const STORAGE_KEY = "verum-mockup-state-v5"; // Bumped to clear old demo data
+
+const defaultProfile: Profile = {
+  email: "dr.chen@westsidevet.com",
+  name: "Dr. Sarah Chen",
+  phone: "(555) 123-4567",
+  avatarUrl: null,
+};
+
+/** Remove old bundled demo history/files (ids prefixed with `demo-`). */
+function stripEmbeddedDemo(
+  history: HistoryEntry[],
+  files: VerumFile[]
+): { history: HistoryEntry[]; files: VerumFile[] } {
+  const nextHistory = history.filter((e) => !e.id.startsWith("demo-"));
+  const nextFiles = files
+    .filter((f) => !f.id.startsWith("demo-"))
+    .map((f) => ({
+      ...f,
+      questionIds: f.questionIds.filter((qid) => !qid.startsWith("demo-")),
+    }));
+  return { history: nextHistory, files: nextFiles };
+}
+
+function loadState(): { history: HistoryEntry[]; files: VerumFile[]; profile: Profile } {
+  if (typeof window === "undefined") {
+    return { history: [], files: [], profile: defaultProfile };
+  }
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      // Start with empty history and files instead of demo data
+      return { history: [], files: [], profile: defaultProfile };
+    }
+    const parsed = JSON.parse(raw);
+    const { history: h, files: f } = stripEmbeddedDemo(
+      parsed.history ?? [],
+      parsed.files ?? []
+    );
+    return {
+      history: h,
+      files: f,
+      profile: { ...defaultProfile, ...parsed.profile },
+    };
+  } catch {
+    return { history: [], files: [], profile: defaultProfile };
+  }
+}
+
+function saveState(history: HistoryEntry[], files: VerumFile[], profile: Profile) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ history, files, profile }));
+  } catch {}
+}
+
+interface VerumContextValue {
+  history: HistoryEntry[];
+  files: VerumFile[];
+  profile: Profile;
+  addHistoryEntry: (entry: Omit<HistoryEntry, "id">) => HistoryEntry;
+  deleteHistoryEntry: (id: string) => void;
+  getHistoryEntry: (id: string) => HistoryEntry | undefined;
+  addFile: (file: Omit<VerumFile, "id" | "order" | "pinned" | "pinnedAt">) => VerumFile;
+  updateFile: (id: string, updates: Partial<VerumFile>) => void;
+  deleteFile: (id: string) => void;
+  reorderFiles: (pinnedIds: string[], unpinnedIds: string[]) => void;
+  updateProfile: (updates: Partial<Profile>) => void;
+  clearAll: () => void;
+  resetToDemo: () => void;
+  /** End Verum session (access gate); reloads to show access request again */
+  revokeVerumSession: () => void;
+}
+
+const VerumContext = createContext<VerumContextValue | null>(null);
+
+export function VerumProvider({ children }: { children: React.ReactNode }) {
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [files, setFiles] = useState<VerumFile[]>([]);
+  const [profile, setProfile] = useState<Profile>(defaultProfile);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const { history: h, files: f, profile: p } = loadState();
+    setHistory(h);
+    setFiles(f);
+    setProfile(p);
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    saveState(history, files, profile);
+  }, [hydrated, history, files, profile]);
+
+  const addHistoryEntry = useCallback((entry: Omit<HistoryEntry, "id">) => {
+    const id = `q-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const newEntry: HistoryEntry = { ...entry, id };
+    setHistory((prev) => [newEntry, ...prev]);
+    return newEntry;
+  }, []);
+
+  const deleteHistoryEntry = useCallback((id: string) => {
+    setHistory((prev) => prev.filter((e) => e.id !== id));
+    setFiles((prev) =>
+      prev.map((f) => ({ ...f, questionIds: f.questionIds.filter((q) => q !== id) }))
+    );
+  }, []);
+
+  const getHistoryEntry = useCallback(
+    (id: string) => history.find((e) => e.id === id),
+    [history]
+  );
+
+  const addFile = useCallback(
+    (file: Omit<VerumFile, "id" | "order" | "pinned" | "pinnedAt">) => {
+      const id = `f-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const maxOrder = files.reduce((m, f) => Math.max(m, f.order), -1);
+      const newFile: VerumFile = {
+        ...file,
+        id,
+        order: maxOrder + 1,
+        pinned: false,
+        pinnedAt: null,
+      };
+      setFiles((prev) => [...prev, newFile]);
+      return newFile;
+    },
+    [files]
+  );
+
+  const updateFile = useCallback((id: string, updates: Partial<VerumFile>) => {
+    setFiles((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, ...updates } : f))
+    );
+  }, []);
+
+  const deleteFile = useCallback((id: string) => {
+    setFiles((prev) => prev.filter((f) => f.id !== id));
+  }, []);
+
+  const reorderFiles = useCallback(
+    (pinnedIds: string[], unpinnedIds: string[]) => {
+      setFiles((prev) => {
+        const byId = new Map(prev.map((f) => [f.id, f]));
+        const pinned: VerumFile[] = pinnedIds
+          .map((id, i) => {
+            const f = byId.get(id);
+            if (!f) return null;
+            return {
+              ...f,
+              pinned: true,
+              pinnedAt: f.pinnedAt ?? new Date().toISOString(),
+              order: i,
+            };
+          })
+          .filter(Boolean) as VerumFile[];
+        const unpinned: VerumFile[] = unpinnedIds
+          .map((id, i) => {
+            const f = byId.get(id);
+            if (!f) return null;
+            return { ...f, pinned: false, pinnedAt: null, order: pinned.length + i };
+          })
+          .filter(Boolean) as VerumFile[];
+        return [...pinned, ...unpinned];
+      });
+    },
+    []
+  );
+
+  const updateProfile = useCallback((updates: Partial<Profile>) => {
+    setProfile((prev) => ({ ...prev, ...updates }));
+  }, []);
+
+  const clearAll = useCallback(() => {
+    setHistory([]);
+    setFiles([]);
+    setProfile(defaultProfile);
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
+
+  /** Clears history and files for access-gate login (no sample questions). */
+  const resetToDemo = useCallback(() => {
+    setHistory([]);
+    setFiles([]);
+    setProfile(defaultProfile);
+    saveState([], [], defaultProfile);
+  }, []);
+
+  const revokeVerumSession = useCallback(() => {
+    clearVerumAccessSession();
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
+  }, []);
+
+  const value: VerumContextValue = {
+    history,
+    files,
+    profile,
+    addHistoryEntry,
+    deleteHistoryEntry,
+    getHistoryEntry,
+    addFile,
+    updateFile,
+    deleteFile,
+    reorderFiles,
+    updateProfile,
+    clearAll,
+    resetToDemo,
+    revokeVerumSession,
+  };
+
+  return (
+    <VerumContext.Provider value={value}>{children}</VerumContext.Provider>
+  );
+}
+
+export function useVerum() {
+  const ctx = useContext(VerumContext);
+  if (!ctx) throw new Error("useVerum must be used within VerumProvider");
+  return ctx;
+}
