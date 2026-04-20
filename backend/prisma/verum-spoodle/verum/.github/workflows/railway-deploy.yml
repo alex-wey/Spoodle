@@ -1,0 +1,58 @@
+name: Deploy to Railway
+
+# This workflow is optional - Railway can deploy automatically when you push to GitHub
+# This is useful if you want more control over when deployments happen
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend-mobile/**'
+      - '.github/workflows/railway-deploy.yml'
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend-mobile/package-lock.json
+
+      - name: Install dependencies
+        working-directory: backend-mobile
+        run: npm ci
+
+      - name: Type check
+        working-directory: backend-mobile
+        run: npm run type-check
+
+      - name: Lint
+        working-directory: backend-mobile
+        run: npm run lint
+
+      - name: Build
+        working-directory: backend-mobile
+        run: |
+          npx prisma generate
+          npm run build
+
+      - name: Deploy to Railway
+        run: echo "Railway will auto-deploy when changes are pushed to main"
+        # Railway automatically deploys when you push to connected GitHub repo
+        # No additional deployment step needed unless using Railway CLI
+
+      - name: Notify deployment
+        run: |
+          echo "✅ Build successful!"
+          echo "Railway will handle the deployment automatically"
+          echo "Monitor deployment at: https://railway.app/dashboard"
+

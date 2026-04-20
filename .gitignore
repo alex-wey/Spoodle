@@ -53,4 +53,12 @@ android/app/build/
 .idea/
 
 # Logs
-*.log 
+*.log
+
+# Backend / Verum: nested clone metadata, Python env, temp snapshot (not source)
+backend/**/.git/
+backend/**/venv/
+backend/**/.venv/
+backend/**/__pycache__/
+backend/prisma/verum-spoodle/verum_backend_temp/
+backend/**/.expo-home/

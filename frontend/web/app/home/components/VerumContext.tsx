@@ -7,9 +7,9 @@ import { clearVerumAccessSession } from "../lib/verumAccessSession";
 const STORAGE_KEY = "verum-mockup-state-v5"; // Bumped to clear old demo data
 
 const defaultProfile: Profile = {
-  email: "dr.chen@westsidevet.com",
-  name: "Dr. Sarah Chen",
-  phone: "(555) 123-4567",
+  email: "",
+  name: "",
+  phone: "",
   avatarUrl: null,
 };
 

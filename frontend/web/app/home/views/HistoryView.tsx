@@ -68,7 +68,7 @@ export function HistoryView({ scrollToId, onScrollToHandled, onOpenChat }: Histo
 
   return (
     <div className="flex flex-col h-full bg-background">
-      <div className="flex-shrink-0 space-y-3 border-b border-border bg-muted/45 py-3 dark:bg-muted/25 verum-main-gutter">
+      <div className="flex-shrink-0 space-y-3 border-b border-border bg-muted/45 px-[10px] py-3 dark:bg-muted/25 verum-main-gutter">
         <div className="flex flex-wrap gap-3">
           <Input
             placeholder="Search..."
@@ -93,7 +93,7 @@ export function HistoryView({ scrollToId, onScrollToHandled, onOpenChat }: Histo
         </div>
       </div>
       <ScrollArea className="flex-1">
-        <div className="space-y-3 py-4 verum-main-gutter">
+        <div className="space-y-3 px-[10px] py-4 verum-main-gutter">
           {filtered.map((entry) => (
             <div key={entry.id} id={`history-q-${entry.id}`}>
               <QuestionBubble

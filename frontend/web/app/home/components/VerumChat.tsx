@@ -261,11 +261,11 @@ export function VerumChat({ onOpenChat, loadedEntryId, onLoadedEntryCleared }: V
       <div className="flex-1 flex flex-col relative z-10 min-h-0">
         {isEmpty ? (
           <div className="flex flex-1 flex-col items-center justify-center pb-32">
-            <div className="verum-main-gutter flex w-full max-w-6xl flex-col items-center">
+            <div className="verum-main-gutter flex w-full max-w-6xl flex-col items-center px-[10px]">
               <div className="mb-[50px] flex shrink-0 justify-center">
                 <Image
                   src="/logo.png"
-                  alt="Verum"
+                  alt="Spoodle"
                   width={400}
                   height={137}
                   className="h-auto w-[400px] max-w-full object-contain"
@@ -281,20 +281,22 @@ export function VerumChat({ onOpenChat, loadedEntryId, onLoadedEntryCleared }: V
                   placeholder="Ask a veterinary medicine question..."
                 />
               </div>
-              <div className="mt-5 flex w-full flex-col gap-1.5">
-                {suggestedQuestions.map((q, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleSuggestClick(q)}
-                    className={`flex w-full min-w-0 items-start gap-2.5 text-left ${VERUM_SUGGESTION_CHIP_INNER}`}
-                  >
-                    <span className="text-primary shrink-0 mt-0.5">•</span>
-                    <span className="min-w-0 flex-1 whitespace-normal break-words text-pretty">
-                      {q}
-                    </span>
-                  </button>
-                ))}
-              </div>
+              {suggestedQuestions.length > 0 && (
+                <div className="mt-5 flex w-full flex-col gap-1.5">
+                  {suggestedQuestions.map((q, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSuggestClick(q)}
+                      className={`flex w-full min-w-0 items-start gap-2.5 text-left ${VERUM_SUGGESTION_CHIP_INNER}`}
+                    >
+                      <span className="text-primary shrink-0 mt-0.5">•</span>
+                      <span className="min-w-0 flex-1 whitespace-normal break-words text-pretty">
+                        {q}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {mostRecent && (
                 <>
@@ -312,7 +314,7 @@ export function VerumChat({ onOpenChat, loadedEntryId, onLoadedEntryCleared }: V
         ) : (
           <>
             <ScrollArea className="flex-1 pb-2">
-              <div className="verum-main-gutter mx-auto w-full min-w-0 max-w-6xl space-y-8 py-6 pb-24">
+              <div className="verum-main-gutter mx-auto w-full min-w-0 max-w-6xl space-y-8 px-[10px] py-6 pb-24">
                 {turns.map((t, idx) => (
                   <AssistantTurn
                     key={idx}
@@ -335,7 +337,7 @@ export function VerumChat({ onOpenChat, loadedEntryId, onLoadedEntryCleared }: V
               <div ref={scrollRef} />
             </ScrollArea>
             <div className="py-4 pb-24">
-              <div className="verum-main-gutter mx-auto w-full min-w-0 max-w-6xl">
+              <div className="verum-main-gutter mx-auto w-full min-w-0 max-w-6xl px-[10px]">
                 <QuestionComposerBubble
                   value={input}
                   onChange={setInput}
