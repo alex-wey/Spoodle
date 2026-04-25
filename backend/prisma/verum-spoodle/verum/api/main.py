@@ -12,13 +12,14 @@ import sys
 from dotenv import load_dotenv
 
 # Add parent directory to path to import our modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_VERUM_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(_VERUM_ROOT)
 
 from src.retrieval.vector_retriever import VectorRetriever
 from src.generation.answer_generator import AnswerGenerator
 
-# Load environment variables
-load_dotenv(override=True)
+# Load environment variables from verum/.env regardless of process cwd
+load_dotenv(os.path.join(_VERUM_ROOT, ".env"), override=True)
 
 app = FastAPI(title="Verum RAG API", version="1.0.0")
 
